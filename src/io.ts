@@ -39,9 +39,12 @@ export function exportFileName(now: Date): string {
   return `babyflair-${now.getFullYear()}-${pad2(now.getMonth() + 1)}-${pad2(now.getDate())}.json`
 }
 
-/** The export envelope (stats.buildExport) as 2-space JSON with a trailing newline. */
+/** The export envelope (stats.buildExport) as 2-space JSON with a trailing newline. The office code never leaves
+ * the phone: it is stripped from the settings before the envelope is built. */
 export function buildExportText(store: Store, now: Date): string {
-  return `${JSON.stringify(buildExport(store, now), null, 2)}\n`
+  const settings = { ...store.settings }
+  delete settings.officeCode
+  return `${JSON.stringify(buildExport({ ...store, settings }, now), null, 2)}\n`
 }
 
 /** ≥ 30 matches since the last export, or ≥ 30 days since it (spec §3.8: caption in --warn). */
@@ -155,11 +158,22 @@ export function importSummary(incoming: Counts, current: Counts): string {
 // Footer, standalone detection, captured install prompt
 // ---------------------------------------------------------------------------
 
-/** « BabyFlair 1.0.0 · 12 joueurs · 148 matchs · données sur cet appareil uniquement » */
-export function settingsFooter(store: Counts): string {
+export type FooterSync = { lastSyncAt?: string; now: Date }
+
+function footerStorage(sync: FooterSync | undefined): string {
+  if (sync === undefined) return 'données sur cet appareil uniquement'
+  if (sync.lastSyncAt === undefined) return 'données partagées · pas encore synchronisé'
+  return `données partagées · dernière synchro ${fmtRelative(sync.lastSyncAt, sync.now)}`
+}
+
+/**
+ * « BabyFlair 1.0.0 · 12 joueurs · 148 matchs · données sur cet appareil uniquement », or in shared mode
+ * « … · données partagées · dernière synchro il y a 2 min ».
+ */
+export function settingsFooter(store: Counts, sync?: FooterSync): string {
   const players = plural(store.players.length, 'joueur')
   const matches = plural(store.matches.length, 'match')
-  return `BabyFlair ${APP_VERSION} · ${players} · ${matches} · données sur cet appareil uniquement`
+  return `BabyFlair ${APP_VERSION} · ${players} · ${matches} · ${footerStorage(sync)}`
 }
 
 export type StandaloneEnv = {

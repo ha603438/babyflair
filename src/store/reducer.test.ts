@@ -237,3 +237,31 @@ describe('clearAll / setSetting', () => {
     expect(state.settings).toEqual({ lastFormat: '2v2', lastTarget: 10 })
   })
 })
+
+describe('replaceData', () => {
+  it('replaces players and matches, keeps settings, recomputes nextSeq and backfills a missing seq', () => {
+    const state = reducer(seeded(), { type: 'setSetting', patch: { officeCode: 'secret', lastTarget: 5 } })
+    const incoming = [{ ...matchInput('s1', ['p1'], ['p2']), seq: 12 }, matchInput('s2', ['p2'], ['p1']) as Match]
+    const after = reducer(state, { type: 'replaceData', players: [player('p1'), player('p2')], matches: incoming })
+    expect(after.players.map((p) => p.id)).toEqual(['p1', 'p2'])
+    expect(after.matches.map((m) => [m.id, m.seq])).toEqual([
+      ['s1', 12],
+      ['s2', 13],
+    ])
+    expect(after.nextSeq).toBe(14)
+    expect(after.settings).toEqual({ lastFormat: '2v2', lastTarget: 5, officeCode: 'secret' })
+  })
+})
+
+describe('importAll with an office code', () => {
+  it('keeps the office code of this phone, never the one of the file', () => {
+    const state = reducer(seeded(), { type: 'setSetting', patch: { officeCode: 'secret' } })
+    const after = reducer(state, {
+      type: 'importAll',
+      players: [],
+      matches: [],
+      settings: { lastFormat: '1v1', lastTarget: 5, officeCode: 'other' },
+    })
+    expect(after.settings).toEqual({ lastFormat: '1v1', lastTarget: 5, officeCode: 'secret' })
+  })
+})

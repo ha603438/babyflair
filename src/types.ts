@@ -31,7 +31,12 @@ export type Settings = {
   installHintDismissedAt?: string
   exportHintDismissedAt?: string
   lastExportAt?: string
+  /** Mode partagé: the office code this phone sends to the server. Never exported. */
+  officeCode?: string
 }
+
+export type SyncMode = 'local' | 'shared'
+export type SyncStatus = 'idle' | 'syncing' | 'offline' | 'unauthorized'
 
 export type Store = { version: 1; players: Player[]; matches: Match[]; settings: Settings; nextSeq: number }
 

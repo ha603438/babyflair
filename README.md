@@ -32,6 +32,22 @@ visité pendant 7 jours. Installer l'app évite ce problème. Dans tous les cas,
 - Export / import JSON depuis Réglages : le fichier contient tout (joueurs, matchs, réglages) et servira à migrer vers un
   petit serveur local quand plusieurs téléphones devront saisir des matchs.
 
+## Mode partagé
+
+Par défaut l'app est locale. Pour que plusieurs téléphones partagent le même classement :
+
+1. Créer un projet Supabase (offre gratuite) et exécuter `docs/supabase/schema.sql` dans son éditeur SQL, après avoir
+   remplacé `OFFICE_CODE` par la phrase secrète du bureau.
+2. Dans le dépôt GitHub, Settings › Secrets and variables › Actions › Variables : créer `VITE_SUPABASE_URL` (URL du
+   projet) et `VITE_SUPABASE_ANON_KEY` (clé « anon », publique par construction). Le workflow Pages les injecte au
+   build ; en local, les mettre dans un fichier `.env.development.local` (voir `.env.example` ; ce nom évite de les charger dans les tests).
+3. Donner le code du bureau aux collègues : à l'ouverture, l'app le demande une fois par téléphone et le mémorise.
+
+Fonctionnement : joueurs et matchs sont un cache de la base (rechargé à l'ouverture, au retour sur l'app et toutes
+les 20 s) ; chaque saisie est appliquée localement puis envoyée au serveur, qui a le dernier mot. Les réglages restent
+sur le téléphone. « Tout effacer » devient « Déconnecter cet appareil » et ne touche pas au serveur ; l'import remplace
+les données du serveur. Sans les deux variables, rien ne change : l'app reste 100 % locale.
+
 ## Structure
 
 ```

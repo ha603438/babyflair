@@ -114,3 +114,41 @@
   color: var(--text-2);
   font-variant-numeric: tabular-nums;
 }
+
+/* ---------- Code du bureau (mode partagé) ---------- */
+/* Full-screen gate rendered instead of the shell: centred card, 16 px input so iOS does not zoom on focus. */
+.gate {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  min-height: 100vh;
+  min-height: 100dvh;
+  padding-inline: var(--s4);
+}
+
+.gate-card {
+  display: flex;
+  flex-direction: column;
+  gap: var(--s3);
+  width: 100%;
+  max-width: 360px;
+}
+
+.gate-title {
+  font-size: var(--fs-h1);
+  font-weight: 700;
+  text-align: center;
+  color: var(--text);
+}
+
+.gate-body {
+  font-size: var(--fs-body);
+  line-height: 1.4;
+  text-align: center;
+  color: var(--text-2);
+}
+
+.gate-input {
+  font-size: 16px;
+  text-align: center;
+}

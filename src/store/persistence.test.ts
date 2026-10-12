@@ -167,3 +167,11 @@ describe('without any localStorage', () => {
     expect(saveStore(sample())).toBe(false)
   })
 })
+
+describe('normaliseSettings · officeCode', () => {
+  it('keeps a non-empty string office code and drops anything else', () => {
+    expect(normaliseSettings({ officeCode: 'secret' }).officeCode).toBe('secret')
+    expect(normaliseSettings({ officeCode: '' }).officeCode).toBeUndefined()
+    expect(normaliseSettings({ officeCode: 42 }).officeCode).toBeUndefined()
+  })
+})

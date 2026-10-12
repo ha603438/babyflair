@@ -64,6 +64,7 @@ export function normaliseSettings(value: unknown): Settings {
   if (installHintDismissedAt !== undefined) settings.installHintDismissedAt = installHintDismissedAt
   if (exportHintDismissedAt !== undefined) settings.exportHintDismissedAt = exportHintDismissedAt
   if (lastExportAt !== undefined) settings.lastExportAt = lastExportAt
+  if (typeof value.officeCode === 'string' && value.officeCode.length > 0) settings.officeCode = value.officeCode
   return settings
 }
 

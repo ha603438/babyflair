@@ -6,6 +6,8 @@ import { playerHasMatches, reducer } from './reducer'
 import { loadStore, saveStore } from './persistence'
 import type { DraftAction } from './draft'
 import { draftReducer, initialDraft } from './draft'
+import type { SyncState } from './use-remote-sync'
+import { useRemoteSync } from './use-remote-sync'
 
 export type ToastInput = { text: string; action?: { label: string; onClick: () => void }; ttlMs?: number }
 export type ToastState = (ToastInput & { id: number }) | null
@@ -19,6 +21,8 @@ export type AppState = {
   draftDispatch: (a: DraftAction) => void
   toast: { current: ToastState; show: (t: ToastInput) => void; dismiss: () => void }
   nav: { get: () => NavPayload; set: (p: NavPayload) => void; take: () => NavPayload }
+  /** Mode partagé (Supabase) or local-only; see src/store/use-remote-sync.ts. */
+  sync: SyncState
 }
 
 const TOAST_TTL_WITH_ACTION_MS = 6000
@@ -111,14 +115,18 @@ function useNavPayload(): AppState['nav'] {
 }
 
 export function AppStateProvider(props: { children: ReactNode }): JSX.Element {
-  const { store, dispatch, storageBlocked } = useStoreWithPersistence()
+  const { store, dispatch: localDispatch, storageBlocked } = useStoreWithPersistence()
   const [draft, draftDispatch] = useReducer(draftReducer, store.settings, initialDraft)
   const toast = useToast()
   const nav = useNavPayload()
+  const showToast = toast.show
+  const showSyncToast = useCallback((text: string) => showToast({ text }), [showToast])
+  // In local mode `dispatch` is the plain reducer dispatch; in shared mode each data action is also sent to the server.
+  const { dispatch, sync } = useRemoteSync(store, localDispatch, showSyncToast)
 
   const value = useMemo<AppState>(
-    () => ({ store, dispatch, storageBlocked, draft, draftDispatch, toast, nav }),
-    [store, dispatch, storageBlocked, draft, draftDispatch, toast, nav],
+    () => ({ store, dispatch, storageBlocked, draft, draftDispatch, toast, nav, sync }),
+    [store, dispatch, storageBlocked, draft, draftDispatch, toast, nav, sync],
   )
 
   return <AppStateContext.Provider value={value}>{props.children}</AppStateContext.Provider>

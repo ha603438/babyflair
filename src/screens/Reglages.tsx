@@ -1,4 +1,5 @@
 // Réglages (spec §3.8): export / import, rules link, install row, « Tout effacer », footer.
+// Mode partagé: « Code du bureau » row, « Déconnecter cet appareil » instead of « Tout effacer », sync footer.
 import { useRef, useState } from 'react'
 import type { ChangeEvent } from 'react'
 import { ConfirmDialog } from '../components/ConfirmDialog'
@@ -29,6 +30,23 @@ const IOS_HINT_BODY =
 
 type Pending = { kind: 'import'; data: ImportOk } | { kind: 'invalid' } | { kind: 'clear' } | null
 
+const CLEAR_COPY = {
+  local: {
+    row: 'Tout effacer',
+    title: 'Tout effacer ?',
+    body: 'Joueurs et matchs seront supprimés définitivement. Pense à exporter avant.',
+    confirm: 'Tout effacer',
+    toast: 'Données effacées',
+  },
+  shared: {
+    row: 'Déconnecter cet appareil',
+    title: 'Déconnecter cet appareil ?',
+    body: 'Les données restent sur le serveur. Ce téléphone oublie le code du bureau et sa copie locale.',
+    confirm: 'Déconnecter',
+    toast: 'Appareil déconnecté',
+  },
+} as const
+
 // Server rendering (tests) has no real window; a bare object reads as « not standalone ».
 function browserEnv(): StandaloneEnv {
   if (typeof window === 'undefined') return {}
@@ -36,7 +54,9 @@ function browserEnv(): StandaloneEnv {
 }
 
 export function Reglages() {
-  const { store, dispatch, toast } = useAppState()
+  const { store, dispatch, toast, sync } = useAppState()
+  const shared = sync.mode === 'shared'
+  const clearCopy = CLEAR_COPY[sync.mode]
   const [pending, setPending] = useState<Pending>(null)
   const [iosHint, setIosHint] = useState(false)
   const installEnv = useInstallEnv()
@@ -68,17 +88,23 @@ export function Reglages() {
     setPending({ kind: 'import', data: parsed })
   }
 
+  // In shared mode the provider also sends the file to the server (replaceAll) and refetches.
   function confirmImport(data: ImportOk): void {
     dispatch({ type: 'importAll', players: data.players, matches: data.matches, settings: data.settings })
     setPending(null)
     toast.show({ text: 'Données importées' })
   }
 
+  // Shared mode: clearAll only drops the local cache and the office code (the gate shows again), never the server.
   function confirmClear(): void {
     setPending(null)
     dispatch({ type: 'clearAll' })
     navigate({ name: 'classement' })
-    toast.show({ text: 'Données effacées' })
+    toast.show({ text: clearCopy.toast })
+  }
+
+  function forgetOfficeCode(): void {
+    dispatch({ type: 'setSetting', patch: { officeCode: undefined } })
   }
 
   function install(): void {
@@ -91,6 +117,7 @@ export function Reglages() {
   }
 
   const importBody = pending?.kind === 'import' ? importSummary(pending.data, store) : ''
+  const footerSync = shared ? { lastSyncAt: sync.lastSyncAt, now } : undefined
 
   return (
     <div className="settings-col">
@@ -112,6 +139,13 @@ export function Reglages() {
       <SectionHeader title="Application" />
       <div className="settings-group">
         <SettingRow title="Comment ça marche" chevron href={hrefOf({ name: 'comment-ca-marche' })} />
+        {shared && (
+          <SettingRow
+            title="Code du bureau"
+            caption="Modifier le code mémorisé sur ce téléphone"
+            onClick={forgetOfficeCode}
+          />
+        )}
         {!isStandalone(browserEnv()) && <SettingRow title="Installer sur l'écran d'accueil" onClick={install} />}
         {iosHint && (
           <div className="settings-hint">
@@ -122,10 +156,10 @@ export function Reglages() {
 
       <SectionHeader title="Zone dangereuse" />
       <div className="settings-group">
-        <SettingRow title="Tout effacer" danger onClick={() => setPending({ kind: 'clear' })} />
+        <SettingRow title={clearCopy.row} danger onClick={() => setPending({ kind: 'clear' })} />
       </div>
 
-      <p className="settings-footer">{settingsFooter(store)}</p>
+      <p className="settings-footer">{settingsFooter(store, footerSync)}</p>
 
       <input
         ref={fileInput}
@@ -156,9 +190,9 @@ export function Reglages() {
       />
       <ConfirmDialog
         open={pending?.kind === 'clear'}
-        title="Tout effacer ?"
-        body="Joueurs et matchs seront supprimés définitivement. Pense à exporter avant."
-        confirmLabel="Tout effacer"
+        title={clearCopy.title}
+        body={clearCopy.body}
+        confirmLabel={clearCopy.confirm}
         danger
         onConfirm={confirmClear}
         onCancel={() => setPending(null)}

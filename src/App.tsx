@@ -9,7 +9,7 @@ import { IconButton } from './components/Button'
 import { Help, Settings } from './components/icons'
 import { hrefOf, useRoute } from './router'
 import type { Route } from './router'
-import { AppStateProvider, useAppState } from './store'
+import { AppStateProvider, isGateNeeded, useAppState } from './store'
 import type { Format } from './types'
 import { Classement } from './screens/Classement'
 import { Match } from './screens/Match'
@@ -20,6 +20,7 @@ import { Joueurs } from './screens/Joueurs'
 import { Joueur } from './screens/Joueur'
 import { Reglages } from './screens/Reglages'
 import { CommentCaMarche } from './screens/CommentCaMarche'
+import { CodeGate } from './screens/CodeGate'
 
 const STORAGE_BLOCKED_TEXT = "Impossible d'enregistrer : le stockage du navigateur est bloqué (navigation privée ?)."
 
@@ -147,10 +148,17 @@ function AppShell() {
   )
 }
 
+/** Mode partagé: the office code gate replaces the shell until the server accepts this phone's code. */
+function Root() {
+  const { store, sync } = useAppState()
+  if (isGateNeeded(sync.mode, store.settings.officeCode, sync.status)) return <CodeGate />
+  return <AppShell />
+}
+
 export default function App() {
   return (
     <AppStateProvider>
-      <AppShell />
+      <Root />
     </AppStateProvider>
   )
 }

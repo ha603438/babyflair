@@ -22,3 +22,6 @@ dist-ssr
 *.njsproj
 *.sln
 *.sw?
+
+# Supabase local config (public anon key, but keep it out of the repo)
+.env

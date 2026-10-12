@@ -395,3 +395,29 @@ describe('isStandalone', () => {
     expect(isStandalone(env)).toBe(false)
   })
 })
+
+describe('mode partagé', () => {
+  it('settingsFooter describes the shared data and the last sync', () => {
+    const now = new Date('2025-10-06T12:00:00.000Z')
+    const counts = { players: [1, 2], matches: [1] }
+    expect(settingsFooter(counts, { now })).toContain('· données partagées · pas encore synchronisé')
+    const lastSyncAt = '2025-10-06T11:58:00.000Z'
+    expect(settingsFooter(counts, { lastSyncAt, now })).toContain(
+      `· données partagées · dernière synchro ${fmtRelative(lastSyncAt, now)}`,
+    )
+  })
+
+  it('buildExportText never includes the office code', () => {
+    const store = {
+      version: 1 as const,
+      players: [],
+      matches: [],
+      settings: { lastFormat: '2v2' as const, lastTarget: 10 as const, officeCode: 'secret' },
+      nextSeq: 1,
+    }
+    const text = buildExportText(store, new Date('2025-10-06T12:00:00.000Z'))
+    expect(text).not.toContain('secret')
+    expect(text).not.toContain('officeCode')
+    expect(JSON.parse(text).settings).toEqual({ lastFormat: '2v2', lastTarget: 10 })
+  })
+})
