@@ -14,7 +14,7 @@ function renderAt(hash: string): string {
 
 const CASES: Array<[string, string]> = [
   ['#/', 'Classement'],
-  ['#/match', 'BabyFlair'],
+  ['#/match', 'Nouveau match'],
   ['#/match/m1/modifier', 'Modifier le match'],
   ['#/historique', 'Historique'],
   ['#/historique/m1', 'Match'],

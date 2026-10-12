@@ -100,13 +100,13 @@ describe('Header', () => {
     expect(html).toContain('<h1 class="header-title">Réglages</h1>')
   })
 
-  it('compact: brand span instead of h1', () => {
-    const html = render(Header, { title: 'BabyFlair', compact: true, right: 'S' })
-    expect(html).toContain('class="header header-compact"')
-    expect(html).toContain('class="header-brand"')
+  it('tab root: brand line (mark + wordmark) above the title', () => {
+    const html = render(Header, { title: 'Nouveau match', right: 'S' })
+    expect(html).toContain('class="header header-root"')
+    expect(html).toContain('class="header-brandline"')
     expect(html).toContain('class="header-brand-mark"')
-    expect(html).toContain('BabyFlair')
-    expect(html).not.toContain('<h1')
+    expect(html).toContain('class="header-wordmark"')
+    expect(html).toContain('Nouveau match</h1>')
   })
 })
 

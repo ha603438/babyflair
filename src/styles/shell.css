@@ -135,16 +135,6 @@
 }
 
 /* Tab root: title 22 / 700 left, one icon button on the right. */
-.header-root .header-inner {
-  grid-template-columns: minmax(0, 1fr) auto;
-}
-
-.header-root .header-title {
-  font-size: var(--fs-h1);
-  font-weight: 700;
-}
-
-/* Pushed: 44 px back chevron, title 17 / 600 centred between two 44 px columns. */
 .header-pushed .header-inner {
   grid-template-columns: 44px minmax(0, 1fr) 44px;
   padding-inline: max(var(--s1), var(--safe-left)) max(var(--s1), var(--safe-right));
@@ -156,17 +146,6 @@
   text-align: center;
 }
 
-/* Compact (Match): « BabyFlair » 15 / 600 in --text-2 left, segmented control right. */
-.header-compact .header-inner {
-  grid-template-columns: minmax(0, 1fr) auto;
-}
-
-.header-brand {
-  font-size: var(--fs-label);
-  font-weight: 600;
-  color: var(--text-2);
-}
-
 /* ---------- TabBar (§2) ---------- */
 .tabbar {
   padding-bottom: var(--safe-bottom);
@@ -176,7 +155,7 @@
 
 .tabbar-inner {
   display: grid;
-  grid-template-columns: repeat(4, minmax(0, 1fr));
+  grid-template-columns: repeat(5, minmax(0, 1fr));
   height: var(--tabbar-h);
   max-width: var(--content-max);
   margin-inline: auto;
@@ -400,17 +379,49 @@
   margin-top: var(--s1);
 }
 
-/* Brand mark next to « BabyFlair » in the compact (Match) header. */
-.header-brand { display: inline-flex; align-items: center; gap: 8px; }
-.header-brand-mark { width: 26px; height: 26px; border-radius: 7px; display: block; }
-
-/* Tab-root headers carry the brand mark before the title (identity on every tab). */
-.header-root .header-title { display: inline-flex; align-items: center; gap: 10px; }
-.header-root .header-brand-mark { width: 28px; height: 28px; border-radius: 8px; }
-
 /* Nouveautés tab badge. */
 .tab-icon { position: relative; display: inline-flex; }
 .tab-badge {
   position: absolute; top: -6px; right: -10px; min-width: 18px; height: 18px; padding: 0 5px; border-radius: 999px;
   background: var(--neg); color: #fff; font-size: 11px; font-weight: 700; line-height: 18px; text-align: center;
 }
+
+/* ---------- Tab-root header: brand (mark + wordmark) centred, screen title under it, right slot on the side ---------- */
+.header-root .header-inner--brand {
+  position: relative;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  height: auto;
+  min-height: 84px;
+  padding-block: 8px 10px;
+  gap: 2px;
+}
+.header-brandline {
+  display: inline-flex;
+  align-items: center;
+  gap: 10px;
+  user-select: none;
+  -webkit-user-select: none;
+  -webkit-touch-callout: none;
+}
+.header-brandline .header-brand-mark { width: 40px; height: 40px; border-radius: 11px; display: block; }
+.header-wordmark { font-size: 22px; font-weight: 800; letter-spacing: .02em; line-height: 1; }
+.header-wordmark-b { color: var(--team-1); }
+.header-wordmark-r { color: var(--team-2); }
+.header-root .header-title {
+  font-size: var(--fs-caption);
+  font-weight: 600;
+  color: var(--text-2);
+  text-transform: uppercase;
+  letter-spacing: .06em;
+  text-align: center;
+}
+.header-root .header-right {
+  position: absolute;
+  right: max(var(--s4), var(--safe-right));
+  top: 50%;
+  transform: translateY(-50%);
+}
+.header-below { width: 100%; max-width: 320px; margin-top: 8px; }

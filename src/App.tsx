@@ -82,9 +82,8 @@ function AppHeader({ route }: { route: Route }) {
       return (
         <Header
           onBrandDoubleTap={onBrandDoubleTap}
-          title="BabyFlair"
-          compact
-          right={
+          title="Nouveau match"
+          below={
             <SegmentedControl
               options={FORMAT_OPTIONS}
               value={draft.format}
