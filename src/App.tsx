@@ -24,7 +24,12 @@ import { CommentCaMarche } from './screens/CommentCaMarche'
 import { Nouveautes } from './screens/Nouveautes'
 import { unseenEntries } from './changelog'
 import { CodeGate } from './screens/CodeGate'
+import { Journal } from './screens/Journal'
 import { CallWatcher } from './calls/CallWatcher'
+import { JOURNAL_COPY } from './profile/journal'
+import { needsProfileChoice } from './profile/profile'
+import { ProfileGate } from './profile/ProfileGate'
+import { useProfilePush } from './profile/useProfilePush'
 
 const STORAGE_BLOCKED_TEXT = "Impossible d'enregistrer : le stockage du navigateur est bloqué (navigation privée ?)."
 
@@ -55,6 +60,8 @@ function Screen({ route }: { route: Route }): ReactNode {
       return <CommentCaMarche />
     case 'nouveautes':
       return <Nouveautes />
+    case 'journal':
+      return <Journal />
     case 'appel':
       return <Classement />
   }
@@ -130,6 +137,8 @@ function AppHeader({ route }: { route: Route }) {
       return <Header title="Comment ça marche" back />
     case 'nouveautes':
       return <Header title="Nouveautés" onBrandDoubleTap={onBrandDoubleTap} />
+    case 'journal':
+      return <Header title={JOURNAL_COPY.title} back />
   }
 }
 
@@ -167,10 +176,15 @@ function AppShell() {
   )
 }
 
-/** Mode partagé: the office code gate replaces the shell until the server accepts this phone's code. */
+/**
+ * Mode partagé: the office code gate replaces the shell until the server accepts this phone's code, then
+ * « Qui es-tu ? » until this phone has a profile (player or visitor).
+ */
 function Root() {
   const { store, sync } = useAppState()
+  useProfilePush()
   if (isGateNeeded(sync.mode, store.settings.officeCode, sync.status)) return <CodeGate />
+  if (needsProfileChoice(sync.mode, store.settings, store.players)) return <ProfileGate />
   return <AppShell />
 }
 

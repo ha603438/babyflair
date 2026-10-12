@@ -2,6 +2,7 @@ import { useCallback, useRef, useState } from 'react'
 import { InlinePlayerForm } from '../../components/InlinePlayerForm'
 import type { PlayerFormValue } from '../../components/InlinePlayerForm'
 import { PlayerRow } from '../../components/rows'
+import type { Guard } from '../../profile/useWriteGuard'
 import { hrefOf } from '../../router'
 import { sortByName } from '../../stats'
 import type { Player } from '../../types'
@@ -12,7 +13,8 @@ import { useOutsideTap } from './useOutsideTap'
 // Joueurs screen body (spec §3.6): sub-count, the « + Ajouter un joueur » row expanding into the inline form at the
 // top (bulk adds keep it open), and the alphabetical PlayerRow list.
 
-export type JoueursViewProps = { app: ScreenContext; replay: ReplayData; add: boolean }
+/** `guard`: adding a player is a write, refused to a visitor (src/profile/useWriteGuard.ts). */
+export type JoueursViewProps = { app: ScreenContext; replay: ReplayData; add: boolean; guard: Guard }
 
 const EMPTY_TEXT = "Aucun joueur pour l'instant. Il en faut au moins 2 pour un match."
 
@@ -75,19 +77,21 @@ function PlayerList({ players, replay }: { players: Player[]; replay: ReplayData
   )
 }
 
-export function JoueursView({ app, replay, add }: JoueursViewProps) {
+export function JoueursView({ app, replay, add, guard }: JoueursViewProps) {
   const { store, dispatch, toast } = app
   const { players } = store
   // `add` only changes with the hash; the shell keys this view by it, so a change remounts and re-reads it here.
   const [formOpen, setFormOpen] = useState(add || players.length === 0)
   const formRef = useRef<HTMLDivElement>(null)
-  const open = useCallback(() => setFormOpen(true), [])
+  const open = useCallback(() => guard('ajouter un joueur', () => setFormOpen(true)), [guard])
   const close = useCallback(() => setFormOpen(false), [])
   useOutsideTap(formRef, formOpen, close)
 
   const handleAdd = (value: PlayerFormValue): void => {
-    dispatch({ type: 'addPlayer', player: newPlayer(value) })
-    toast.show({ text: `Joueur ajouté : ${value.name}` })
+    guard('ajouter un joueur', () => {
+      dispatch({ type: 'addPlayer', player: newPlayer(value) })
+      toast.show({ text: `Joueur ajouté : ${value.name}` })
+    })
   }
 
   return (

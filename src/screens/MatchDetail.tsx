@@ -4,6 +4,7 @@ import { Button } from '../components/Button'
 import { ConfirmDialog } from '../components/ConfirmDialog'
 import { MatchSummary } from '../components/MatchSummary'
 import { fmtDateLine } from '../format'
+import { useWriteGuard } from '../profile/useWriteGuard'
 import { useReplay } from '../rating/useReplay'
 import { back, hrefOf, navigate } from '../router'
 import { useAppState } from '../store'
@@ -27,6 +28,7 @@ function emptyResult(matchId: MatchId): MatchResult {
 export function MatchDetail({ id }: { id: MatchId }) {
   const { store, dispatch, toast } = useAppState()
   const { result, players } = useReplay()
+  const guard = useWriteGuard()
   const [confirming, setConfirming] = useState(false)
   const leaving = useRef(false)
   const match = store.matches.find((candidate) => candidate.id === id)
@@ -70,10 +72,14 @@ export function MatchDetail({ id }: { id: MatchId }) {
         dateLine={fmtDateLine(match.playedAt, match.target)}
       />
       <div className="md-actions">
-        <Button variant="secondary" size="md" onClick={() => navigate({ name: 'match-edit', id })}>
+        <Button
+          variant="secondary"
+          size="md"
+          onClick={() => guard('modifier ce match', () => navigate({ name: 'match-edit', id }))}
+        >
           Modifier
         </Button>
-        <Button variant="text" danger size="md" onClick={() => setConfirming(true)}>
+        <Button variant="text" danger size="md" onClick={() => guard('supprimer ce match', () => setConfirming(true))}>
           Supprimer
         </Button>
       </div>

@@ -92,6 +92,8 @@ function updateMatch(state: Store, incoming: Match): Store {
     createdAt: previous.createdAt,
     playedAt: previous.playedAt,
   }
+  // The author never changes; the edit flow rebuilds the match from its draft and does not carry it.
+  if (previous.createdBy !== undefined) updated.createdBy = previous.createdBy
   const matches = state.matches.slice()
   matches[index] = updated
   return { ...state, matches }
@@ -105,11 +107,27 @@ function restoreMatch(state: Store, match: Match, index: number): Store {
   return { ...state, matches, nextSeq: Math.max(state.nextSeq, match.seq + 1) }
 }
 
-/** The office code belongs to this phone, not to the file: an import must not log the device out. */
+/** What belongs to this phone, not to a file: an import must not log the device out nor forget its profile. */
+function phoneSettings(settings: Settings): Partial<Settings> {
+  const kept: Partial<Settings> = {}
+  if (settings.officeCode !== undefined) kept.officeCode = settings.officeCode
+  if (settings.myPlayerId !== undefined) kept.myPlayerId = settings.myPlayerId
+  if (settings.profileConfirmed !== undefined) kept.profileConfirmed = settings.profileConfirmed
+  if (settings.visitor !== undefined) kept.visitor = settings.visitor
+  if (settings.pushEnabled !== undefined) kept.pushEnabled = settings.pushEnabled
+  return kept
+}
+
 function mergeImportedSettings(current: Settings, imported: Settings): Settings {
-  const settings: Settings = { ...DEFAULT_SETTINGS, ...imported }
-  if (current.officeCode !== undefined) settings.officeCode = current.officeCode
-  return settings
+  const {
+    officeCode: _code,
+    myPlayerId: _me,
+    profileConfirmed: _confirmed,
+    visitor: _visitor,
+    pushEnabled: _push,
+    ...fromFile
+  } = imported
+  return { ...DEFAULT_SETTINGS, ...fromFile, ...phoneSettings(current) }
 }
 
 function importAll(state: Store, players: Player[], incoming: Match[], settings: Settings): Store {

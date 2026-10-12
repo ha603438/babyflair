@@ -23,6 +23,9 @@ export type Match = {
   /** Exactly one equals target, the other is in [0, target - 1]. */
   scoreA: number
   scoreB: number
+  /** Mode partagé: who saved / last changed it, set by a server trigger from x-player-id. Never sent by the app. */
+  createdBy?: PlayerId
+  updatedBy?: PlayerId
 }
 
 export type Settings = {
@@ -35,8 +38,12 @@ export type Settings = {
   officeCode?: string
   /** Id of the newest Nouveautés entry seen on this phone (tab badge). */
   seenChangelogId?: string
-  /** « Qui es-tu ? » : the last name picked on this phone (appels à jouer). Never exported. */
+  /** Profile of this phone (« Qui es-tu ? »): signs its matches and call answers (x-player-id). Never exported. */
   myPlayerId?: PlayerId
+  /** The profile was chosen on the « Qui es-tu ? » screen (player or visitor); cleared by « Changer ». */
+  profileConfirmed?: boolean
+  /** Mode invité: read-only, no x-player-id. */
+  visitor?: boolean
   /** This phone holds a push subscription on the server (Réglages › Notifications). */
   pushEnabled?: boolean
   notifHintDismissedAt?: string
@@ -54,6 +61,24 @@ export type Call = {
 }
 
 export type CallPlayer = { callId: string; playerId: PlayerId; joinedAt: string }
+
+// Journal des modifications (mode partagé): match_events rows, written by a server trigger only.
+
+export type MatchEventAction = 'created' | 'updated' | 'deleted' | 'restored'
+
+/** The parts of a match row the journal displays (before / after of an event). */
+export type MatchSnapshot = { target: Target; teamA: PlayerId[]; teamB: PlayerId[]; scoreA: number; scoreB: number }
+
+export type MatchEvent = {
+  id: number
+  at: string
+  action: MatchEventAction
+  matchId: MatchId
+  /** Null when the request carried no (valid) x-player-id, or the player was deleted since. */
+  actorId: PlayerId | null
+  before: MatchSnapshot | null
+  after: MatchSnapshot | null
+}
 
 export type SyncMode = 'local' | 'shared'
 export type SyncStatus = 'idle' | 'syncing' | 'offline' | 'unauthorized'

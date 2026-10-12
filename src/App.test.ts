@@ -22,6 +22,7 @@ const CASES: Array<[string, string]> = [
   ['#/joueurs/p1', 'Joueur'],
   ['#/reglages', 'Réglages'],
   ['#/comment-ca-marche', 'Comment ça marche'],
+  ['#/journal', 'Journal'],
 ]
 
 describe('App shell', () => {
@@ -50,6 +51,16 @@ describe('App shell', () => {
     expect(html).toContain('>Classement<')
     // Local mode knows no call: the dialog reads « Appel terminé ».
     expect(html).toContain('Appel terminé')
+  })
+
+  it('local mode: no profile gate, no visitor badge, no « Proposer un baby », no profile or journal rows', () => {
+    expect(renderAt('#/')).not.toContain('Qui es-tu ?')
+    expect(renderAt('#/')).not.toContain('Mode invité')
+    expect(renderAt('#/')).not.toContain('Proposer un baby')
+    const reglages = renderAt('#/reglages')
+    expect(reglages).not.toContain('Mon profil')
+    expect(reglages).not.toContain('Journal des modifications')
+    expect(renderAt('#/journal')).toContain("Aucune modification enregistrée pour l&#x27;instant.")
   })
 
   it('falls back to Classement on an unknown hash', () => {

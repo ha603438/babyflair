@@ -76,12 +76,21 @@ const SECTIONS: Section[] = [
       "depuis le tout premier match, et un match corrigé garde sa place dans l'historique.",
   },
   {
+    title: 'Ton profil',
+    text:
+      'Tu le choisis au premier lancement, dans la liste des joueurs (ou tu te crées si tu n’y es pas). Il signe ' +
+      'les matchs que tu saisis, modifies ou supprimes, et tes réponses aux appels : Réglages › Journal des ' +
+      'modifications dit qui a fait quoi. En mode invité, tu vois tout mais tu ne modifies rien. Tu peux en ' +
+      'changer dans Réglages › Mon profil.',
+  },
+  {
     title: 'Proposer un baby',
     text:
-      'Depuis le classement, « Proposer un baby » envoie une notification à tous les téléphones qui ont activé ' +
-      'les notifications dans Réglages. Chacun dit s’il est chaud ; dès que 4 joueurs sont là, « Former les ' +
-      'équipes » compose les équipes les plus équilibrées selon le classement, tire les postes et les couleurs au ' +
-      'sort, et ouvre le match. Sans 4 joueurs au bout de 5 minutes, l’appel est annulé.',
+      'Depuis le classement, « Proposer un baby » envoie, au nom de ton profil, une notification à tous les ' +
+      'téléphones qui ont activé les notifications dans Réglages. Chacun répond « Chauuud 🔥 » ou « Non je fais ' +
+      'semblant de bosser » ; dès que 4 joueurs sont là, « Former les équipes » compose les équipes les plus ' +
+      'équilibrées selon le classement, tire les postes et les couleurs au sort, et ouvre le match. Sans 4 joueurs ' +
+      'au bout de 5 minutes, l’appel est annulé.',
   },
   {
     title: 'Tes données',

@@ -6,6 +6,16 @@ export type ChangelogEntry = { id: string; date: string; title: string; items: s
 
 export const CHANGELOG: ChangelogEntry[] = [
   {
+    id: '2026-10-12-5',
+    date: '2026-10-12',
+    title: 'Profils',
+    items: [
+      'Choisis ton profil au premier lancement : il signe tes matchs et tes réponses aux appels.',
+      'Mode invité pour tout voir sans rien modifier ; Réglages › Journal des modifications dit qui a fait quoi.',
+      '« Proposer un baby » sans choisir son nom, et on répond « Chauuud 🔥 » en un geste.',
+    ],
+  },
+  {
     id: '2026-10-12-4',
     date: '2026-10-12',
     title: 'Proposer un baby',

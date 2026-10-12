@@ -58,6 +58,10 @@ describe('notificationsHint', () => {
     expect(notificationsHint(env({ standalone: true }), settings(), now)).toBeNull()
     expect(notificationsHint(env({ pushSupported: true }), settings(), now)).toBeNull()
   })
+
+  it('never for a visitor, who cannot answer the appels', () => {
+    expect(notificationsHint(installed, settings({ visitor: true }), now)).toBeNull()
+  })
   it('respects the 30-day snooze and ranks between install and export', () => {
     expect(notificationsHint(installed, settings({ notifHintDismissedAt: daysAgo(5) }), now)).toBeNull()
     expect(notificationsHint(installed, settings({ notifHintDismissedAt: daysAgo(40) }), now)).toEqual({

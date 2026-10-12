@@ -10,10 +10,13 @@ export const CALL_FULL_MS = 45 * 60 * 1000
 
 export const CALL_COPY = {
   propose: 'Proposer un baby',
-  whoAreYou: 'Qui es-tu ?',
+  confirmSend: 'Envoyer la notification à tout le monde ?',
   send: 'Envoyer la notification',
   hot: 'Chaud pour prendre une branlée ?',
-  join: 'Je suis chaud',
+  join: 'Chauuud 🔥',
+  decline: 'Non je fais semblant de bosser',
+  alreadyIn: 'Déjà inscrit',
+  chooseToAnswer: 'Choisir mon profil pour répondre',
   notThisTime: 'Pas cette fois',
   formTeams: 'Former les équipes',
   over: 'Appel terminé',

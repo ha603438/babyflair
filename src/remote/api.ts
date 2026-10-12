@@ -1,7 +1,7 @@
 // PostgREST client for the shared mode, over plain fetch (no supabase-js). Everything is injected (fetch, config,
-// office code) so the client is unit-testable in node with a fake fetch. Rows are snake_case on the server and
+// office code, profile) so the client is unit-testable in node with a fake fetch. Rows are snake_case on the server and
 // mapped to the app types here; dates are normalised back to the `...Z` ISO form the app writes everywhere.
-import type { Call, CallPlayer, Match, Player, Target } from '../types'
+import type { Call, CallPlayer, Match, MatchEvent, MatchEventAction, MatchSnapshot, Player, Target } from '../types'
 import type { RemoteConfig } from './config'
 
 export type RemoteErrorKind = 'unauthorized' | 'network' | 'server'
@@ -19,7 +19,8 @@ export class RemoteError extends Error {
 export type ResponseLike = { ok: boolean; status: number; text(): Promise<string> }
 export type FetchLike = (url: string, init: RequestInit) => Promise<ResponseLike>
 
-export type ApiDeps = { fetch: FetchLike; config: RemoteConfig; officeCode: string }
+/** `playerId`: this phone's profile, sent as x-player-id so the server signs match changes; none for visitors. */
+export type ApiDeps = { fetch: FetchLike; config: RemoteConfig; officeCode: string; playerId?: string | null }
 
 export type RemoteData = { players: Player[]; matches: Match[]; calls: Call[]; callPlayers: CallPlayer[] }
 export type CallsData = { calls: Call[]; callPlayers: CallPlayer[] }
@@ -49,6 +50,8 @@ export type RemoteApi = {
   deleteMatch(id: string): Promise<void>
   restoreMatch(match: Match): Promise<void>
   replaceAll(players: Player[], matches: Match[]): Promise<void>
+  /** Journal des modifications: the newest match_events first. */
+  fetchMatchEvents(limit?: number): Promise<MatchEvent[]>
 }
 
 // ---------------------------------------------------------------------------
@@ -68,6 +71,23 @@ export type MatchRow = {
   team_b: string[]
   score_a: number
   score_b: number
+  /** Filled by the server trigger (docs/supabase/profiles.sql); absent before that migration. */
+  created_by?: string | null
+  updated_by?: string | null
+}
+
+/** What the app writes: the authorship columns are the trigger's, never sent. */
+export type MatchWriteRow = Omit<MatchRow, 'seq' | 'created_by' | 'updated_by'> & { seq?: number }
+
+export type MatchEventRow = {
+  id: number
+  at: string
+  action: string
+  match_id: string
+  actor_id: string | null
+  /** `to_jsonb(old)` / `to_jsonb(new)` of the matches row. */
+  before: unknown
+  after: unknown
 }
 
 export type CallPlayerRow = { call_id: string; player_id: string; joined_at: string }
@@ -102,8 +122,13 @@ export function playerToRow(player: Player): PlayerRow {
   return { id: player.id, name: player.name, is_guest: player.isGuest, created_at: player.createdAt }
 }
 
+function nonEmptyString(value: unknown): string | undefined {
+  if (typeof value !== 'string' || value.length === 0) return undefined
+  return value
+}
+
 export function matchFromRow(row: MatchRow): Match {
-  return {
+  const match: Match = {
     id: row.id,
     seq: row.seq,
     playedAt: toIso(row.played_at),
@@ -115,11 +140,19 @@ export function matchFromRow(row: MatchRow): Match {
     scoreA: row.score_a,
     scoreB: row.score_b,
   }
+  const createdBy = nonEmptyString(row.created_by)
+  const updatedBy = nonEmptyString(row.updated_by)
+  if (createdBy !== undefined) match.createdBy = createdBy
+  if (updatedBy !== undefined) match.updatedBy = updatedBy
+  return match
 }
 
-/** Without `seq` the server assigns one (insertMatch); with it the original is kept (restoreMatch, replaceAll). */
-export function matchToRow(match: Omit<Match, 'seq'> & { seq?: number }): Omit<MatchRow, 'seq'> & { seq?: number } {
-  const row: Omit<MatchRow, 'seq'> & { seq?: number } = {
+/**
+ * Without `seq` the server assigns one (insertMatch); with it the original is kept (restoreMatch, replaceAll).
+ * `createdBy` / `updatedBy` are never sent: the trigger owns them.
+ */
+export function matchToRow(match: Omit<Match, 'seq'> & { seq?: number }): MatchWriteRow {
+  const row: MatchWriteRow = {
     id: match.id,
     played_at: match.playedAt,
     created_at: match.createdAt,
@@ -132,6 +165,44 @@ export function matchToRow(match: Omit<Match, 'seq'> & { seq?: number }): Omit<M
   }
   if (match.seq !== undefined) row.seq = match.seq
   return row
+}
+
+function isRecord(value: unknown): value is Record<string, unknown> {
+  return typeof value === 'object' && value !== null && !Array.isArray(value)
+}
+
+function isIdList(value: unknown): value is string[] {
+  return Array.isArray(value) && value.every((item) => typeof item === 'string')
+}
+
+/** A jsonb image of a matches row → the displayed parts, or null when it is missing or unreadable. */
+export function snapshotFromJson(value: unknown): MatchSnapshot | null {
+  if (!isRecord(value)) return null
+  const { target, team_a: teamA, team_b: teamB, score_a: scoreA, score_b: scoreB } = value
+  if (!isIdList(teamA) || !isIdList(teamB)) return null
+  if (typeof scoreA !== 'number' || typeof scoreB !== 'number' || typeof target !== 'number') return null
+  return { target: targetOf(target), teamA: [...teamA], teamB: [...teamB], scoreA, scoreB }
+}
+
+const EVENT_ACTIONS: readonly MatchEventAction[] = ['created', 'updated', 'deleted', 'restored']
+
+function actionOf(value: string): MatchEventAction | null {
+  return EVENT_ACTIONS.find((action) => action === value) ?? null
+}
+
+/** Null for an action this version of the app does not know. */
+export function matchEventFromRow(row: MatchEventRow): MatchEvent | null {
+  const action = actionOf(row.action)
+  if (action === null) return null
+  return {
+    id: row.id,
+    at: toIso(row.at),
+    action,
+    matchId: row.match_id,
+    actorId: nonEmptyString(row.actor_id) ?? null,
+    before: snapshotFromJson(row.before),
+    after: snapshotFromJson(row.after),
+  }
 }
 
 export function callFromRow(row: CallRow): Call {
@@ -184,12 +255,15 @@ type Method = 'GET' | 'POST' | 'PATCH' | 'DELETE'
 const ALL_ROWS = 'id=not.is.null'
 
 function baseHeaders(deps: ApiDeps): Record<string, string> {
-  return {
+  const headers: Record<string, string> = {
     apikey: deps.config.anonKey,
     Authorization: `Bearer ${deps.config.anonKey}`,
     'x-office-code': deps.officeCode,
     'Content-Type': 'application/json',
   }
+  const playerId = nonEmptyString(deps.playerId)
+  if (playerId !== undefined) headers['x-player-id'] = playerId
+  return headers
 }
 
 function headersFor(deps: ApiDeps, write: boolean, prefer?: string): Record<string, string> {
@@ -359,8 +433,10 @@ export function createApi(deps: ApiDeps): RemoteApi {
     await sendDelete(deps, `matches?id=eq.${id}`)
   }
 
+  // A restored match keeps its original author (the trigger only fills created_by when it is missing).
   async function restoreMatch(match: Match): Promise<void> {
-    await sendWrite(deps, 'POST', 'matches', matchToRow(match))
+    const row = match.createdBy === undefined ? matchToRow(match) : { ...matchToRow(match), created_by: match.createdBy }
+    await sendWrite(deps, 'POST', 'matches', row)
   }
 
   /** Import: wipe then reinsert in order. Fine for an office-sized dataset; not transactional. */
@@ -369,6 +445,17 @@ export function createApi(deps: ApiDeps): RemoteApi {
     await sendDelete(deps, `players?${ALL_ROWS}`)
     if (players.length > 0) await sendWrite(deps, 'POST', 'players', players.map(playerToRow))
     if (matches.length > 0) await sendWrite(deps, 'POST', 'matches', matches.map(matchToRow))
+  }
+
+  async function fetchMatchEvents(limit = 100): Promise<MatchEvent[]> {
+    const path = `match_events?select=id,at,action,match_id,actor_id,before,after&order=at.desc&limit=${limit}`
+    const rows = rowsOf<MatchEventRow>(await send(deps, 'GET', path))
+    const events: MatchEvent[] = []
+    for (const row of rows) {
+      const event = matchEventFromRow(row)
+      if (event !== null) events.push(event)
+    }
+    return events
   }
 
   return {
@@ -389,5 +476,6 @@ export function createApi(deps: ApiDeps): RemoteApi {
     deleteMatch,
     restoreMatch,
     replaceAll,
+    fetchMatchEvents,
   }
 }

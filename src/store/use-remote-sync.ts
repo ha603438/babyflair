@@ -4,6 +4,7 @@ import { useCallback, useEffect, useMemo, useRef, useState } from 'react'
 import type { RemoteApi } from '../remote/api'
 import { createApi } from '../remote/api'
 import { remoteConfig } from '../remote/config'
+import { headerPlayerId } from '../profile/profile'
 import type { Store, SyncMode, SyncStatus } from '../types'
 import type { Action } from './reducer'
 import {
@@ -22,16 +23,17 @@ export type SyncState = {
   lastSyncAt?: string
   /** Fetches the server's data into the local cache (no-op in local mode). */
   refresh: () => Promise<void>
-  /** The PostgREST client of this phone's office code, for flows that sequence several calls (src/calls/). */
+  /** The PostgREST client of this phone's office code and profile, for flows that sequence several calls. */
   api: RemoteApi | null
 }
 
 type Dispatch = (action: Action) => void
 
-function apiFor(officeCode: string | undefined): RemoteApi | null {
+/** Rebuilt when the office code or the profile changes: every request carries both (x-office-code, x-player-id). */
+function apiFor(officeCode: string | undefined, playerId: string | undefined): RemoteApi | null {
   const config = remoteConfig()
   if (config === null || officeCode === undefined) return null
-  return createApi({ fetch: (url, init) => fetch(url, init), config, officeCode })
+  return createApi({ fetch: (url, init) => fetch(url, init), config, officeCode, playerId })
 }
 
 function useSyncStatus(): {
@@ -56,7 +58,8 @@ export function useRemoteSync(
 ): { dispatch: Dispatch; sync: SyncState } {
   const mode: SyncMode = remoteConfig() === null ? 'local' : 'shared'
   const officeCode = store.settings.officeCode
-  const api = useMemo(() => apiFor(officeCode), [officeCode])
+  const playerId = headerPlayerId(store.settings)
+  const api = useMemo(() => apiFor(officeCode, playerId), [officeCode, playerId])
   const { status, lastSyncAt, setStatus, markSynced } = useSyncStatus()
   // Polls are skipped while a write is in flight: its own refetch follows, and an interleaved poll would briefly
   // undo the optimistic change.

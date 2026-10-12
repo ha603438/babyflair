@@ -10,6 +10,7 @@ import { Pencil } from '../../components/icons'
 import { SectionHeader } from '../../components/SectionHeader'
 import { Sparkline } from '../../components/Sparkline'
 import { HistoryRow } from '../../components/rows'
+import type { Guard } from '../../profile/useWriteGuard'
 import { fmtInt } from '../../format'
 import { back, hrefOf, navigate } from '../../router'
 import { playerHasMatches } from '../../store'
@@ -30,7 +31,8 @@ import {
 // Joueur screen body (spec §3.7): hero card (with the « Renommer » pencil and the inline rename form), sparkline,
 // stat tiles, favourite partner, last matches and the danger zone. Unknown id → redirect to the list.
 
-export type JoueurViewProps = { app: ScreenContext; replay: ReplayData; id: PlayerId }
+/** `guard`: renaming and deleting are writes, refused to a visitor (src/profile/useWriteGuard.ts). */
+export type JoueurViewProps = { app: ScreenContext; replay: ReplayData; id: PlayerId; guard: Guard }
 
 const NO_MATCH_TEXT = "Aucun match pour l'instant."
 const CANNOT_DELETE_TEXT =
@@ -259,9 +261,9 @@ function HeroArea({ editing, player, players, stats, replay, onEdit, onSubmit, o
   return <Hero player={player} stats={stats} replay={replay} onEdit={onEdit} />
 }
 
-type PageProps = { app: ScreenContext; replay: ReplayData; player: Player; onLeave: () => void }
+type PageProps = { app: ScreenContext; replay: ReplayData; player: Player; onLeave: () => void; guard: Guard }
 
-function PlayerPage({ app, replay, player, onLeave }: PageProps) {
+function PlayerPage({ app, replay, player, onLeave, guard }: PageProps) {
   const { store, dispatch, toast } = app
   const stats = replay.result.byPlayer.get(player.id) ?? emptyStats(player.id)
   const [editing, setEditing] = useState(false)
@@ -291,15 +293,15 @@ function PlayerPage({ app, replay, player, onLeave }: PageProps) {
           players={store.players}
           stats={stats}
           replay={replay}
-          onEdit={() => setEditing(true)}
-          onSubmit={rename}
+          onEdit={() => guard('renommer ce joueur', () => setEditing(true))}
+          onSubmit={(value) => guard('renommer ce joueur', () => rename(value))}
           onCancel={() => setEditing(false)}
         />
         <Details player={player} stats={stats} replay={replay} matches={store.matches} />
       </div>
       <RecentMatches player={player} stats={stats} replay={replay} />
       <div className="content danger-zone">
-        <DangerZone canDelete={canDelete} onAsk={() => setConfirming(true)} />
+        <DangerZone canDelete={canDelete} onAsk={() => guard('supprimer ce joueur', () => setConfirming(true))} />
       </div>
       <ConfirmDialog
         open={confirming}
@@ -314,7 +316,7 @@ function PlayerPage({ app, replay, player, onLeave }: PageProps) {
   )
 }
 
-export function JoueurView({ app, replay, id }: JoueurViewProps) {
+export function JoueurView({ app, replay, id, guard }: JoueurViewProps) {
   const player = replay.players.get(id)
   // Set right before deletePlayer so the "player vanished" redirect does not fight the history.back().
   const leaving = useRef(false)
@@ -333,5 +335,5 @@ export function JoueurView({ app, replay, id }: JoueurViewProps) {
 
   if (player === undefined) return null
   // Keyed by player: moving to a partner's page must not carry over the edit / confirm state.
-  return <PlayerPage key={player.id} app={app} replay={replay} player={player} onLeave={markLeaving} />
+  return <PlayerPage key={player.id} app={app} replay={replay} player={player} onLeave={markLeaving} guard={guard} />
 }

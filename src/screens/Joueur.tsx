@@ -1,3 +1,4 @@
+import { useWriteGuard } from '../profile/useWriteGuard'
 import { useReplay } from '../rating/useReplay'
 import { useAppState } from '../store'
 import type { PlayerId } from '../types'
@@ -8,5 +9,6 @@ import { JoueurView } from './lists/JoueurView'
 export function Joueur({ id }: { id: PlayerId }) {
   const app = useAppState()
   const replay: ReplayData = useReplay()
-  return <JoueurView app={app} replay={replay} id={id} />
+  const guard = useWriteGuard()
+  return <JoueurView app={app} replay={replay} id={id} guard={guard} />
 }

@@ -39,7 +39,7 @@ function normaliseMatch(value: unknown): Match | null {
   const updatedAt = typeof value.updatedAt === 'string' ? value.updatedAt : createdAt
   // `seq` may be missing in data written before seq existed; backfillSeq assigns it afterwards.
   const seq = Number.isInteger(value.seq) ? (value.seq as number) : (undefined as unknown as number)
-  return {
+  const match: Match = {
     id: value.id,
     seq,
     playedAt: value.playedAt,
@@ -51,6 +51,10 @@ function normaliseMatch(value: unknown): Match | null {
     scoreA: value.scoreA,
     scoreB: value.scoreB,
   }
+  // Mode partagé authorship (server trigger); optional, so older data and exports stay valid without it.
+  if (typeof value.createdBy === 'string' && value.createdBy.length > 0) match.createdBy = value.createdBy
+  if (typeof value.updatedBy === 'string' && value.updatedBy.length > 0) match.updatedBy = value.updatedBy
+  return match
 }
 
 function normaliseCall(value: unknown): Call | null {
@@ -88,6 +92,8 @@ export function normaliseSettings(value: unknown): Settings {
   if (typeof value.officeCode === 'string' && value.officeCode.length > 0) settings.officeCode = value.officeCode
   if (typeof value.seenChangelogId === 'string') settings.seenChangelogId = value.seenChangelogId
   if (typeof value.myPlayerId === 'string' && value.myPlayerId.length > 0) settings.myPlayerId = value.myPlayerId
+  if (value.profileConfirmed === true) settings.profileConfirmed = true
+  if (value.visitor === true) settings.visitor = true
   if (value.pushEnabled === true) settings.pushEnabled = true
   const notifHintDismissedAt = optionalIso(value.notifHintDismissedAt)
   if (notifHintDismissedAt !== undefined) settings.notifHintDismissedAt = notifHintDismissedAt

@@ -3,6 +3,7 @@ import { Button } from '../components/Button'
 import { EmptyState } from '../components/EmptyState'
 import { Check } from '../components/icons'
 import { MatchSummary } from '../components/MatchSummary'
+import { useWriteGuard } from '../profile/useWriteGuard'
 import { useReplay } from '../rating/useReplay'
 import { navigate } from '../router'
 import { useAppState, visibleSlots } from '../store'
@@ -110,6 +111,7 @@ export function Match() {
   const teams = draftTeams(draft)
   const savedMatch = savedMatchOf(draft.lastSavedMatchId, matchesById)
   const showToast = toast.show
+  const guard = useWriteGuard()
 
   // A slot may still hold a player deleted from the Joueurs screen while the draft lived in memory: free it.
   useEffect(() => {
@@ -125,7 +127,7 @@ export function Match() {
     draftDispatch({ type: 'reset' })
   }, [draft.step, savedMatch, draftDispatch])
 
-  function onSave() {
+  function save() {
     if (draft.score === null || teams === null) return
     const created = newMatchFromDraft(draft, crypto.randomUUID(), new Date().toISOString())
     setRankBefore({ matchId: created.id, ranks: rankMapOf(ranking, [...created.teamA, ...created.teamB]) })
@@ -149,7 +151,7 @@ export function Match() {
     navigate({ name: 'classement' })
   }
 
-  function onCancelMatch(match: MatchRecord) {
+  function cancelMatch(match: MatchRecord) {
     const index = store.matches.findIndex((candidate) => candidate.id === match.id)
     dispatch({ type: 'deleteMatch', id: match.id })
     draftDispatch({ type: 'reset' })
@@ -176,7 +178,7 @@ export function Match() {
         onKeepWinners={() => onKeepWinners(savedMatch)}
         onNewMatch={() => draftDispatch({ type: 'reset' })}
         onShowRanking={() => onShowRanking(savedMatch, ranks)}
-        onCancelMatch={() => onCancelMatch(savedMatch)}
+        onCancelMatch={() => guard('annuler ce match', () => cancelMatch(savedMatch))}
       />
     )
   }
@@ -194,7 +196,7 @@ export function Match() {
         }
         saveText={saveLabel(draft.target, draft.score)}
         canSave={draft.score !== null}
-        onSave={onSave}
+        onSave={() => guard('enregistrer ce match', save)}
         animate
       />
     )

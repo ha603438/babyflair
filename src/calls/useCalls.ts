@@ -1,20 +1,23 @@
 // React side of the appels: the organizer flow (insert, then the notification), joining, and « Former les équipes ».
 // Decisions are in calls.ts / teams.ts; the server calls go through sync.api so they can be sequenced and awaited.
+// The organizer and the participant are always this phone's profile (« Qui es-tu ? »); a visitor has none.
 import { useCallback, useMemo, useState } from 'react'
+import { profileId } from '../profile/profile'
+import { useProfile } from '../profile/useWriteGuard'
 import { replay } from '../rating'
 import { navigate } from '../router'
 import { useAppState } from '../store'
 import { toastTextFor } from '../store/remote-sync'
-import type { Call, PlayerId } from '../types'
+import type { Call } from '../types'
 import { CALL_CAPACITY, CALL_COPY, newCall, newCallPlayer, notifyToast, participantIdsOf } from './calls'
 import { currentSubscription } from './push'
 import { balanceTeams } from './teams'
 
 export type CallsApi = {
   busy: boolean
-  /** Creates the call and notifies the office; resolves to the call id, or null when the server refused it. */
-  propose: (playerId: PlayerId) => Promise<string | null>
-  join: (callId: string, playerId: PlayerId) => void
+  /** Creates the call and notifies the office; resolves to the call id, or null (no profile, server refusal). */
+  propose: () => Promise<string | null>
+  join: (callId: string) => void
   /** Balanced Blancs / Noirs from the first 4 participants, draft prefilled, call closed, → #/match. */
   formTeams: (call: Call) => void
 }
@@ -25,21 +28,14 @@ export function useCalls(): CallsApi {
   const showToast = toast.show
   const api = sync.api
   const refresh = sync.refresh
-
-  const rememberMe = useCallback(
-    (playerId: PlayerId) => {
-      if (store.settings.myPlayerId === playerId) return
-      dispatch({ type: 'setSetting', patch: { myPlayerId: playerId } })
-    },
-    [dispatch, store.settings.myPlayerId],
-  )
+  const playerId = profileId(useProfile())
 
   const propose = useCallback(
-    async (playerId: PlayerId): Promise<string | null> => {
+    async (): Promise<string | null> => {
+      if (playerId === undefined) return null
       const now = new Date()
       const call = newCall(crypto.randomUUID(), playerId, now)
       const organizer = newCallPlayer(call.id, playerId, now)
-      rememberMe(playerId)
       if (api === null) {
         dispatch({ type: 'addCall', call, organizer })
         showToast({ text: CALL_COPY.created })
@@ -55,7 +51,7 @@ export function useCalls(): CallsApi {
         return null
       }
       dispatch({ type: 'addCall', call, organizer })
-      // The organizer's own phone is skipped; its subscription is also tied to the chosen name for later calls.
+      // The organizer's own phone is skipped; its subscription is also tied to the profile for later calls.
       const mine = await currentSubscription(playerId)
       if (mine !== null) await api.upsertPushSubscription(mine).catch(() => undefined)
       try {
@@ -68,15 +64,15 @@ export function useCalls(): CallsApi {
       void refresh()
       return call.id
     },
-    [api, dispatch, refresh, rememberMe, showToast],
+    [api, dispatch, playerId, refresh, showToast],
   )
 
   const join = useCallback(
-    (callId: string, playerId: PlayerId) => {
-      rememberMe(playerId)
+    (callId: string) => {
+      if (playerId === undefined) return
       dispatch({ type: 'joinCall', callPlayer: newCallPlayer(callId, playerId, new Date()) })
     },
-    [dispatch, rememberMe],
+    [dispatch, playerId],
   )
 
   const formTeams = useCallback(

@@ -6,13 +6,14 @@ import {
   callsFromRows,
   callToRow,
   createApi,
+  matchEventFromRow,
   matchFromRow,
   matchToRow,
   playerFromRow,
   playerToRow,
   RemoteError,
 } from './api'
-import type { CallRow } from './api'
+import type { CallRow, MatchEventRow } from './api'
 import { remoteConfigFrom } from './config'
 
 const config = { url: 'https://x.supabase.co', anonKey: 'anon-key' }
@@ -105,6 +106,41 @@ describe('row mapping', () => {
     const { seq: _seq, ...noSeq } = match
     expect('seq' in matchToRow(noSeq)).toBe(false)
   })
+
+  it('maps created_by / updated_by when the server sends them, and never writes them back', () => {
+    const signed = matchFromRow({ ...matchRow, created_by: 'p1', updated_by: 'p2' })
+    expect(signed).toEqual({ ...match, createdBy: 'p1', updatedBy: 'p2' })
+    expect(matchFromRow({ ...matchRow, created_by: null, updated_by: null })).toEqual(match)
+    const row = matchToRow(signed)
+    expect('created_by' in row).toBe(false)
+    expect('updated_by' in row).toBe(false)
+  })
+
+  it('maps match_events rows: action, actor, before / after images', () => {
+    const image = { ...matchRow, created_by: 'p1' }
+    const row: MatchEventRow = {
+      id: 12,
+      at: '2025-10-06T12:44:00+00:00',
+      action: 'updated',
+      match_id: 'm1',
+      actor_id: 'p2',
+      before: { ...image, score_b: 2 },
+      after: image,
+    }
+    expect(matchEventFromRow(row)).toEqual({
+      id: 12,
+      at: '2025-10-06T12:44:00.000Z',
+      action: 'updated',
+      matchId: 'm1',
+      actorId: 'p2',
+      before: { target: 5, teamA: ['p1', 'p2'], teamB: ['p3', 'p4'], scoreA: 5, scoreB: 2 },
+      after: { target: 5, teamA: ['p1', 'p2'], teamB: ['p3', 'p4'], scoreA: 5, scoreB: 3 },
+    })
+    const deleted = matchEventFromRow({ ...row, action: 'deleted', actor_id: null, after: null })
+    expect(deleted).toMatchObject({ action: 'deleted', actorId: null, after: null })
+    expect(matchEventFromRow({ ...row, before: { team_a: 'x' } })?.before).toBeNull()
+    expect(matchEventFromRow({ ...row, action: 'archived' })).toBeNull()
+  })
 })
 
 describe('createApi', () => {
@@ -125,6 +161,41 @@ describe('createApi', () => {
     expect(calls[0].headers.Prefer).toBeUndefined()
     expect(calls[3].method).toBe('DELETE')
     expect(calls[3].headers.Prefer).toBe('return=representation')
+  })
+
+  it('sends x-player-id on PostgREST and function calls when the phone has a profile', async () => {
+    const { fetch, calls } = fakeFetch(() => ({ status: 200, body: { sent: 0, removed: 0 } }))
+    await createApi({ fetch, config, officeCode: 'secret', playerId: 'p1' }).fetchCalls()
+    await createApi({ fetch, config, officeCode: 'secret', playerId: 'p1' }).notifyCall('c1')
+    await createApi({ fetch, config, officeCode: 'secret', playerId: null }).fetchCalls()
+    await createApi({ fetch, config, officeCode: 'secret', playerId: '' }).fetchCalls()
+    await createApi({ fetch, config, officeCode: 'secret' }).fetchCalls()
+    expect(calls.map((call) => call.headers['x-player-id'])).toEqual(['p1', 'p1', undefined, undefined, undefined])
+    expect(calls.every((call) => call.headers['x-office-code'] === 'secret')).toBe(true)
+  })
+
+  it('fetchMatchEvents reads the newest events and skips unknown actions', async () => {
+    const row: MatchEventRow = {
+      id: 3,
+      at: '2025-10-06T12:44:00+00:00',
+      action: 'created',
+      match_id: 'm1',
+      actor_id: null,
+      before: null,
+      after: matchRow,
+    }
+    const { fetch, calls } = fakeFetch(() => ({ status: 200, body: [row, { ...row, id: 2, action: 'other' }] }))
+    const events = await createApi({ fetch, config, officeCode: 'secret' }).fetchMatchEvents(100)
+    expect(calls[0].method).toBe('GET')
+    const query = 'select=id,at,action,match_id,actor_id,before,after&order=at.desc&limit=100'
+    expect(calls[0].url).toBe(`https://x.supabase.co/rest/v1/match_events?${query}`)
+    expect(events.map((event) => [event.id, event.action, event.actorId])).toEqual([[3, 'created', null]])
+  })
+
+  it('fetchMatchEvents defaults to the last 100 events', async () => {
+    const { fetch, calls } = fakeFetch(() => ({ status: 200, body: [] }))
+    expect(await createApi({ fetch, config, officeCode: 'secret' }).fetchMatchEvents()).toEqual([])
+    expect(calls[0].url).toMatch(/&limit=100$/)
   })
 
   it('fetchAll maps rows to app types', async () => {

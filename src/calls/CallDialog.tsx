@@ -1,21 +1,23 @@
-import { useId, useState } from 'react'
+import { useId } from 'react'
 import { Button } from '../components/Button'
 import { useDialog } from '../components/useDialog'
-import type { Player, PlayerId } from '../types'
+import type { PlayerId } from '../types'
 import { CALL_COPY, canFormTeams, rosterLine } from './calls'
 import type { Roster } from './calls'
-import { PlayerPicker } from './PlayerPicker'
 
 export type CallDialogProps = {
   open: boolean
   /** Null once the call is closed or expired: the dialog then reads « Appel terminé ». */
   roster: Roster | null
-  players: Player[]
+  /** This phone's player profile; undefined for a visitor, who sees the roster but cannot answer. */
   viewerId: PlayerId | undefined
   busy: boolean
-  onJoin: (playerId: PlayerId) => void
+  /** Joins with this phone's profile. */
+  onJoin: () => void
   onFormTeams: () => void
   onDismiss: () => void
+  /** Visitor: back to « Qui es-tu ? » to be able to answer. */
+  onChooseProfile: () => void
 }
 
 function ParticipantList({ roster }: { roster: Roster }) {
@@ -42,52 +44,74 @@ function OverBody({ onDismiss }: { onDismiss: () => void }) {
   )
 }
 
-type OpenBodyProps = Omit<CallDialogProps, 'open' | 'roster'> & { roster: Roster }
+type BodyProps = Omit<CallDialogProps, 'open' | 'roster'> & { roster: Roster }
 
-function OpenBody({ roster, players, viewerId, busy, onJoin, onFormTeams, onDismiss }: OpenBodyProps) {
-  const [picked, setPicked] = useState<PlayerId | undefined>(viewerId)
-  const taken = new Set(roster.participantIds)
-  const value = picked !== undefined && !taken.has(picked) ? picked : undefined
-  const full = canFormTeams(roster.participantIds.length)
-  const inCall = viewerId !== undefined && taken.has(viewerId)
+function FullActions({ busy, onFormTeams, onDismiss }: Pick<BodyProps, 'busy' | 'onFormTeams' | 'onDismiss'>) {
+  return (
+    <div className="dialog-actions">
+      <Button variant="secondary" size="md" onClick={onDismiss}>
+        {CALL_COPY.notThisTime}
+      </Button>
+      <Button variant="primary" size="md" disabled={busy} onClick={onFormTeams}>
+        {CALL_COPY.formTeams}
+      </Button>
+    </div>
+  )
+}
+
+function VisitorActions({ onDismiss, onChooseProfile }: Pick<BodyProps, 'onDismiss' | 'onChooseProfile'>) {
+  return (
+    <div className="dialog-actions dialog-actions-single">
+      <Button variant="primary" size="md" onClick={onChooseProfile}>
+        {CALL_COPY.chooseToAnswer}
+      </Button>
+      <Button variant="secondary" size="md" onClick={onDismiss}>
+        {CALL_COPY.decline}
+      </Button>
+    </div>
+  )
+}
+
+type AnswerProps = Pick<BodyProps, 'roster' | 'busy' | 'onJoin' | 'onDismiss'> & { viewerId: PlayerId }
+
+/** « Chauuud 🔥 » joins with this phone's profile; « Non je fais semblant de bosser » only closes the dialog. */
+function AnswerActions({ roster, viewerId, busy, onJoin, onDismiss }: AnswerProps) {
+  const inCall = roster.participantIds.includes(viewerId)
+  return (
+    <>
+      <div className="dialog-actions dialog-actions-single">
+        <Button variant="primary" size="md" disabled={busy || inCall} onClick={onJoin}>
+          {CALL_COPY.join}
+        </Button>
+        <Button variant="secondary" size="md" onClick={onDismiss}>
+          {CALL_COPY.decline}
+        </Button>
+      </div>
+      {inCall && <p className="call-dialog__caption">{CALL_COPY.alreadyIn}</p>}
+    </>
+  )
+}
+
+function Actions(props: BodyProps) {
+  if (canFormTeams(props.roster.participantIds.length)) return <FullActions {...props} />
+  if (props.viewerId === undefined) return <VisitorActions {...props} />
+  return <AnswerActions {...props} viewerId={props.viewerId} />
+}
+
+function OpenBody(props: BodyProps) {
+  const { roster } = props
   return (
     <>
       <div className="dialog-text">
         <p>{rosterLine(roster.organizer?.name, roster.participantIds.length)}</p>
         <ParticipantList roster={roster} />
-        {!full && (
-          <div className="call-dialog__picker">
-            <PlayerPicker players={players} value={value} taken={taken} onChange={setPicked} />
-          </div>
-        )}
       </div>
-      <div className="dialog-actions">
-        <Button variant="secondary" size="md" onClick={onDismiss}>
-          {CALL_COPY.notThisTime}
-        </Button>
-        {full && (
-          <Button variant="primary" size="md" disabled={busy} onClick={onFormTeams}>
-            {CALL_COPY.formTeams}
-          </Button>
-        )}
-        {!full && (
-          <Button
-            variant="primary"
-            size="md"
-            disabled={value === undefined || busy || inCall}
-            onClick={() => {
-              if (value !== undefined) onJoin(value)
-            }}
-          >
-            {CALL_COPY.join}
-          </Button>
-        )}
-      </div>
+      <Actions {...props} />
     </>
   )
 }
 
-/** « Chaud pour prendre une branlée ? »: organizer, roster x/4, name picker, join / pass, « Former les équipes ». */
+/** « Chaud pour prendre une branlée ? »: organizer, roster x/4, answer as this phone's profile, then form teams. */
 export function CallDialog(props: CallDialogProps) {
   const { open, roster, onDismiss } = props
   const { ref, onClose, onClick } = useDialog(open, onDismiss)

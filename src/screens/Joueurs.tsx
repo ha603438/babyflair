@@ -1,3 +1,4 @@
+import { useWriteGuard } from '../profile/useWriteGuard'
 import { useReplay } from '../rating/useReplay'
 import { useAppState } from '../store'
 import type { ReplayData } from './lists/context'
@@ -7,6 +8,7 @@ import { JoueursView } from './lists/JoueursView'
 export function Joueurs({ add }: { add: boolean }) {
   const app = useAppState()
   const replay: ReplayData = useReplay()
+  const guard = useWriteGuard()
   // Keyed by `add`: `#/joueurs?add=1` arriving on an already-mounted screen remounts the view with the form open.
-  return <JoueursView key={String(add)} app={app} replay={replay} add={add} />
+  return <JoueursView key={String(add)} app={app} replay={replay} add={add} guard={guard} />
 }

@@ -508,10 +508,6 @@
   padding-top: var(--s2);
 }
 
-.call-dialog__picker {
-  margin-top: var(--s3);
-}
-
 .call-dialog__list {
   margin: var(--s2) 0 0;
   padding-left: var(--s4);
@@ -522,6 +518,40 @@
   margin-top: var(--s1);
 }
 
-.dialog .call-picker {
-  grid-template-columns: repeat(3, minmax(0, 1fr));
+/* « Déjà inscrit » under a disabled « Chauuud 🔥 ». */
+.call-dialog__caption {
+  margin-top: var(--s2);
+  font-size: var(--fs-caption);
+  text-align: center;
+  color: var(--text-3);
+}
+
+/* ---------- Profils : auteur d'un match, badge du mode invité ---------- */
+.ms-author {
+  margin-top: 2px;
+  font-size: var(--fs-micro);
+  color: var(--text-3);
+}
+
+.visitor-badge-row {
+  display: flex;
+  justify-content: center;
+  padding-top: var(--s1);
+}
+
+.visitor-badge {
+  display: inline-flex;
+  align-items: center;
+  min-height: 32px;
+  padding: 0 var(--s3);
+  border: 1px solid var(--border);
+  border-radius: var(--r-pill);
+  background: var(--surface);
+  color: var(--text-2);
+  font-size: var(--fs-caption);
+  font-weight: 600;
+}
+
+.visitor-badge:active {
+  background: var(--surface-2);
 }

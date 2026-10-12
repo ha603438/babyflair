@@ -1,4 +1,6 @@
 import { useEffect, useMemo, useState } from 'react'
+import { profileId } from '../profile/profile'
+import { useChooseProfile, useProfile, useWriteGuard } from '../profile/useWriteGuard'
 import { navigate } from '../router'
 import type { Route } from '../router'
 import { useAppState } from '../store'
@@ -6,7 +8,7 @@ import type { Player, PlayerId } from '../types'
 import { CallDialog } from './CallDialog'
 import { rosterOf } from './calls'
 import { seenCalls } from './seen'
-import { clearRequestedCall, useRequestedCall } from './signal'
+import { clearRequestedCall, requestCall, useRequestedCall } from './signal'
 import { useCalls } from './useCalls'
 import { callToShow } from './watch'
 
@@ -36,9 +38,14 @@ export function CallWatcher({ route }: { route: Route }) {
   const calls = useCalls()
   const requested = useRequestedCall()
   const now = useNow()
-  const viewerId = store.settings.myPlayerId
+  const guard = useWriteGuard()
+  const chooseProfile = useChooseProfile()
+  const viewerId = profileId(useProfile())
   const playersById = useMemo(() => new Map<PlayerId, Player>(store.players.map((p) => [p.id, p])), [store.players])
   const awaitingFirstSync = sync.mode === 'shared' && sync.lastSyncAt === undefined
+  // The call on screen stays there until dismissed: being marked as seen only stops it from opening again later
+  // (without this, the next render — a poll, the clock — closed the dialog right after it opened).
+  const [onScreenId, setOnScreenId] = useState<string | undefined>(undefined)
   const shown = callToShow({
     calls: store.calls,
     callPlayers: store.callPlayers,
@@ -46,9 +53,11 @@ export function CallWatcher({ route }: { route: Route }) {
     now,
     forcedId: forcedIdOf(route, requested),
     awaitingFirstSync,
-    hasSeen: (id) => seenCalls().has(id),
+    hasSeen: (id) => id !== onScreenId && seenCalls().has(id),
   })
   const shownId = shown?.id
+  // Adjusted during render (React's pattern for state derived from a change), not in an effect.
+  if (shownId !== undefined && shownId !== onScreenId) setOnScreenId(shownId)
 
   useEffect(() => {
     if (shownId === undefined) return
@@ -56,28 +65,39 @@ export function CallWatcher({ route }: { route: Route }) {
   }, [shownId])
 
   function dismiss(): void {
+    setOnScreenId(undefined)
     if (shownId !== undefined) seenCalls().add(shownId)
     clearRequestedCall()
     if (route.name === 'appel') navigate({ name: 'classement' })
   }
 
   if (shown === null) return null
-  const roster = shown.call === null ? null : rosterOf(shown.call, store.callPlayers, playersById)
+  const { id, call } = shown
+  const roster = call === null ? null : rosterOf(call, store.callPlayers, playersById)
+
+  function formTeams(): void {
+    if (call === null) return
+    dismiss()
+    calls.formTeams(call)
+  }
+
+  // The call is asked for again so it reopens once the profile is chosen (it was already marked as seen).
+  function answerWithProfile(): void {
+    requestCall(id)
+    chooseProfile()
+  }
+
   return (
     <CallDialog
-      key={shown.id}
+      key={id}
       open
       roster={roster}
-      players={store.players}
       viewerId={viewerId}
       busy={calls.busy}
-      onJoin={(playerId) => calls.join(shown.id, playerId)}
-      onFormTeams={() => {
-        if (shown.call === null) return
-        dismiss()
-        calls.formTeams(shown.call)
-      }}
+      onJoin={() => guard("répondre à l'appel", () => calls.join(id))}
+      onFormTeams={() => guard('former les équipes', formTeams)}
       onDismiss={dismiss}
+      onChooseProfile={answerWithProfile}
     />
   )
 }

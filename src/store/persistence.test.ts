@@ -199,3 +199,35 @@ describe('appels à jouer', () => {
     expect(none.pushEnabled).toBeUndefined()
   })
 })
+
+describe('profils', () => {
+  it('normaliseSettings keeps profileConfirmed and visitor only when true', () => {
+    expect(normaliseSettings({ profileConfirmed: true, visitor: true })).toMatchObject({
+      profileConfirmed: true,
+      visitor: true,
+    })
+    const none = normaliseSettings({ profileConfirmed: 'yes', visitor: false })
+    expect(none.profileConfirmed).toBeUndefined()
+    expect(none.visitor).toBeUndefined()
+  })
+
+  it('normaliseStore keeps the authorship of a match when present', () => {
+    const match = {
+      id: 'm1',
+      seq: 1,
+      playedAt: '2025-10-06T12:42:00.000Z',
+      target: 5,
+      teamA: ['a'],
+      teamB: ['b'],
+      scoreA: 5,
+      scoreB: 1,
+    }
+    const store = normaliseStore({
+      version: 1,
+      players: [],
+      matches: [{ ...match, createdBy: 'a', updatedBy: 'b' }, { ...match, id: 'm2', seq: 2, createdBy: 3 }],
+    })
+    expect(store?.matches[0]).toMatchObject({ createdBy: 'a', updatedBy: 'b' })
+    expect(store?.matches[1].createdBy).toBeUndefined()
+  })
+})

@@ -17,6 +17,8 @@ export type InlinePlayerFormProps = {
   existingNames: string[]
   /** Optional heading, e.g. « Ajoute tes collègues » on an empty Joueurs screen. */
   title?: string
+  /** « Qui es-tu ? »: someone creating their own profile is a colleague, so the « Invité » box is not offered. */
+  hideGuestToggle?: boolean
 }
 
 // The two helpers below are exported for the Joueurs screen (existingNames) and for unit tests; they hold no
@@ -56,6 +58,7 @@ export function InlinePlayerForm({
   onCancel,
   existingNames,
   title,
+  hideGuestToggle = false,
 }: InlinePlayerFormProps) {
   const inputRef = useRef<HTMLInputElement>(null)
   const [name, setName] = useState(initial?.name ?? '')
@@ -123,13 +126,15 @@ export function InlinePlayerForm({
           {error}
         </p>
       )}
-      <label className="inline-form-check">
-        <input type="checkbox" checked={isGuest} onChange={(e) => setIsGuest(e.target.checked)} />
-        <span className="inline-form-check-text">
-          <span className="inline-form-check-label">Invité</span>
-          <span className="inline-form-check-caption">Pas un collègue : badge invité dans les listes</span>
-        </span>
-      </label>
+      {!hideGuestToggle && (
+        <label className="inline-form-check">
+          <input type="checkbox" checked={isGuest} onChange={(e) => setIsGuest(e.target.checked)} />
+          <span className="inline-form-check-text">
+            <span className="inline-form-check-label">Invité</span>
+            <span className="inline-form-check-caption">Pas un collègue : badge invité dans les listes</span>
+          </span>
+        </label>
+      )}
       <div className="inline-form-actions">
         <Button variant="primary" size="md" type="submit">
           {submitLabel}

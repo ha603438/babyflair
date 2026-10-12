@@ -54,6 +54,7 @@ function recordingApi(overrides: Partial<RemoteApi> = {}): { api: RemoteApi; cal
     deleteMatch: record('deleteMatch'),
     restoreMatch: record('restoreMatch'),
     replaceAll: record('replaceAll'),
+    fetchMatchEvents: record('fetchMatchEvents'),
     ...overrides,
   }
   return { api, calls }

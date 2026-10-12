@@ -12,6 +12,8 @@ export type Route =
   | { name: 'reglages' }
   | { name: 'comment-ca-marche' }
   | { name: 'nouveautes' }
+  /** Réglages › Journal des modifications (mode partagé). */
+  | { name: 'journal' }
   /** Notification click target: Classement with the call's modal open (src/calls/CallWatcher.tsx). */
   | { name: 'appel'; id: string }
 
@@ -55,7 +57,7 @@ function parseAppel(segments: string[]): Route {
   return HOME
 }
 
-function parseSimple(segments: string[], name: 'reglages' | 'comment-ca-marche' | 'nouveautes'): Route {
+function parseSimple(segments: string[], name: 'reglages' | 'comment-ca-marche' | 'nouveautes' | 'journal'): Route {
   if (segments.length === 1) return { name }
   return HOME
 }
@@ -82,6 +84,8 @@ export function parseHash(hash: string): Route {
       return parseSimple(segments, 'comment-ca-marche')
     case 'nouveautes':
       return parseSimple(segments, 'nouveautes')
+    case 'journal':
+      return parseSimple(segments, 'journal')
     case 'appel':
       return parseAppel(segments)
     default:
@@ -112,6 +116,8 @@ export function hrefOf(route: Route): string {
       return '#/comment-ca-marche'
     case 'nouveautes':
       return '#/nouveautes'
+    case 'journal':
+      return '#/journal'
     case 'appel':
       return `#/appel/${encodeURIComponent(route.id)}`
   }

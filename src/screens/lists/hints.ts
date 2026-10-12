@@ -61,6 +61,8 @@ export function installHint(env: InstallEnv, settings: Settings, now: Date): Hin
 }
 
 export function notificationsHint(env: InstallEnv, settings: Settings, now: Date): Hint | null {
+  // A visitor cannot answer the appels: Réglages hides the activation for them, so the hint would lead nowhere.
+  if (settings.visitor === true) return null
   if (isSnoozed(settings.notifHintDismissedAt, now)) return null
   const pushEnv = { userAgent: env.userAgent, standalone: env.standalone, pushManager: env.pushSupported }
   if (!shouldOfferPush(pushEnv, settings.pushEnabled)) return null

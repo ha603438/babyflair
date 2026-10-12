@@ -3,6 +3,7 @@ import type { ReactNode, RefObject } from 'react'
 import { Button } from '../../components/Button'
 import { CALL_COPY } from '../../calls/calls'
 import { PUSH_COPY } from '../../calls/push'
+import { PROFILE_COPY } from '../../profile/profile'
 import { Card } from '../../components/Card'
 import { EmptyState } from '../../components/EmptyState'
 import type { EmptyStateAction } from '../../components/EmptyState'
@@ -30,6 +31,8 @@ export type ClassementViewProps = {
   installEnv: InstallEnv
   /** « Proposer un baby » (shared mode); absent → no button. */
   onPropose?: () => void
+  /** Mode invité: the « Mode invité · Choisir mon profil » badge; absent → no badge. */
+  onChooseProfile?: () => void
 }
 
 const INSTALL_TITLE = "Installe BabyFlair sur l'écran d'accueil"
@@ -64,7 +67,19 @@ function ContextStrip({ app, replay }: { app: ScreenContext; replay: ReplayData 
   )
 }
 
-/** Under the context strip (also with 0 matches): opens « Qui es-tu ? », or the open call when there is one. */
+/** Under the context strip, discreet: a visitor is one tap away from « Qui es-tu ? ». */
+function VisitorBadge({ onChooseProfile }: { onChooseProfile: (() => void) | undefined }) {
+  if (onChooseProfile === undefined) return null
+  return (
+    <div className="content visitor-badge-row">
+      <button type="button" className="visitor-badge" onClick={onChooseProfile}>
+        {PROFILE_COPY.visitorBadge}
+      </button>
+    </div>
+  )
+}
+
+/** Under the context strip (also with 0 matches): confirms the notification, or shows the open call if there is one. */
 function ProposeButton({ onPropose, playerCount }: { onPropose: (() => void) | undefined; playerCount: number }) {
   if (onPropose === undefined || playerCount === 0) return null
   return (
@@ -279,13 +294,14 @@ function useHighlight(nav: ScreenContext['nav'], rootRef: RefObject<HTMLDivEleme
   return highlight
 }
 
-export function ClassementView({ app, replay, installEnv, onPropose }: ClassementViewProps) {
+export function ClassementView({ app, replay, installEnv, onPropose, onChooseProfile }: ClassementViewProps) {
   const rootRef = useRef<HTMLDivElement>(null)
   const highlight = useHighlight(app.nav, rootRef)
   const hint = pickHint(installEnv, app.store.matches, app.store.settings, replay.now)
   return (
     <div ref={rootRef} className="lists-screen classement">
       <ContextStrip app={app} replay={replay} />
+      <VisitorBadge onChooseProfile={onChooseProfile} />
       <ProposeButton onPropose={onPropose} playerCount={app.store.players.length} />
       <HintSlot hint={hint} dispatch={app.dispatch} />
       <Body app={app} replay={replay} highlight={highlight} />

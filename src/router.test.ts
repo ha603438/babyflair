@@ -53,6 +53,7 @@ describe('parseHash', () => {
     ['#/joueurs/p1?add=1', { name: 'joueur', id: 'p1' }],
     ['#/reglages', { name: 'reglages' }],
     ['#/comment-ca-marche', { name: 'comment-ca-marche' }],
+    ['#/journal', { name: 'journal' }],
   ] satisfies Array<[string, Route]>)('parses %j', (hash, expected) => {
     expect(parseHash(hash)).toEqual(expected)
   })
@@ -66,6 +67,7 @@ describe('parseHash', () => {
     '#/joueurs/p1/extra',
     '#/reglages/extra',
     '#/comment-ca-marche/extra',
+    '#/journal/extra',
     '#/Match',
     '#//inconnu',
   ])('falls back to classement for %j', (hash) => {
@@ -99,6 +101,7 @@ describe('hrefOf', () => {
     [{ name: 'joueur', id: 'p1' }, '#/joueurs/p1'],
     [{ name: 'reglages' }, '#/reglages'],
     [{ name: 'comment-ca-marche' }, '#/comment-ca-marche'],
+    [{ name: 'journal' }, '#/journal'],
     [{ name: 'appel', id: 'c 1' }, '#/appel/c%201'],
   ] satisfies Array<[Route, string]>)('builds %j', (route, expected) => {
     expect(hrefOf(route)).toBe(expected)

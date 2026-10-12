@@ -27,7 +27,7 @@ const TABS: Tab[] = [
 function sectionOf(name: Route['name']): TabName {
   if (name === 'match' || name === 'match-edit') return 'match'
   if (name === 'historique' || name === 'match-detail') return 'historique'
-  if (name === 'joueurs' || name === 'joueur' || name === 'reglages') return 'joueurs'
+  if (name === 'joueurs' || name === 'joueur' || name === 'reglages' || name === 'journal') return 'joueurs'
   if (name === 'nouveautes') return 'nouveautes'
   return 'classement'
 }

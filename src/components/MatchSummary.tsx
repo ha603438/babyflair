@@ -1,5 +1,6 @@
 import type { Match, MatchPlayerResult, MatchResult, Player, PlayerId, PlayerStats } from '../types'
 import { fmtInt, fmtOrdinal, fmtScore } from '../format'
+import { authorshipLine } from '../profile/journal'
 import { teamLabel } from '../stats'
 import { Badge } from './Badge'
 import { POSITION_LABEL, positionOf } from '../stats'
@@ -122,9 +123,13 @@ export function MatchSummary({ match, result, players, byPlayer, rankBefore, ran
   const losersLabel = teamLabel(sides.losers, players)
   const entries = orderedResults(result, [...sides.winners, ...sides.losers])
   const heroLabel = `${winnersLabel} ${fmtScore(sides.winScore, sides.loseScore)} ${losersLabel}`
+  const authors = authorshipLine(match, players)
   return (
     <section className="ms">
-      <div className="ms-date">{dateLine}</div>
+      <div className="ms-date">
+        {dateLine}
+        {authors !== null && <div className="ms-author">{authors}</div>}
+      </div>
       <div className="ms-hero" role="img" aria-label={heroLabel}>
         <div className="ms-side">
           <div className="ms-score">{fmtInt(sides.winScore)}</div>

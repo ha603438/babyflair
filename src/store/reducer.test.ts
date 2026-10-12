@@ -134,6 +134,14 @@ describe('updateMatch', () => {
     const after = reducer(state, { type: 'updateMatch', match: { ...state.matches[0], id: 'ghost' } })
     expect(after).toBe(state)
   })
+
+  it('keeps the author: the edit flow rebuilds the match without it', () => {
+    const first = { ...seeded().matches[0], createdBy: 'alice' }
+    const signed = reducer(seeded(), { type: 'replaceData', players: [], matches: [first] })
+    const { createdBy: _author, ...rebuilt } = signed.matches[0]
+    const after = reducer(signed, { type: 'updateMatch', match: { ...rebuilt, scoreB: 9 } })
+    expect(after.matches[0]).toMatchObject({ createdBy: 'alice', scoreB: 9 })
+  })
 })
 
 describe('deleteMatch / restoreMatch', () => {
@@ -265,6 +273,24 @@ describe('importAll with an office code', () => {
       settings: { lastFormat: '1v1', lastTarget: 5, officeCode: 'other' },
     })
     expect(after.settings).toEqual({ lastFormat: '1v1', lastTarget: 5, officeCode: 'secret' })
+  })
+
+  it('keeps the profile and the notifications of this phone, never the ones of the file', () => {
+    const phone = {
+      officeCode: 'secret',
+      myPlayerId: 'alice',
+      profileConfirmed: true,
+      visitor: false,
+      pushEnabled: true,
+    }
+    const state = reducer(seeded(), { type: 'setSetting', patch: phone })
+    const after = reducer(state, {
+      type: 'importAll',
+      players: [],
+      matches: [],
+      settings: { lastFormat: '2v2', lastTarget: 10, myPlayerId: 'bob', visitor: true },
+    })
+    expect(after.settings).toEqual({ lastFormat: '2v2', lastTarget: 10, ...phone })
   })
 })
 

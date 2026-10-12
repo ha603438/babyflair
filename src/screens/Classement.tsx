@@ -3,9 +3,9 @@ import { anyOpenCall } from '../calls/calls'
 import { ProposeDialog } from '../calls/ProposeDialog'
 import { requestCall } from '../calls/signal'
 import { useCalls } from '../calls/useCalls'
+import { useChooseProfile, useProfile, useWriteGuard } from '../profile/useWriteGuard'
 import { useReplay } from '../rating/useReplay'
 import { useAppState } from '../store'
-import type { PlayerId } from '../types'
 import { ClassementView } from './lists/ClassementView'
 import type { ReplayData } from './lists/context'
 import { useInstallEnv } from './lists/install'
@@ -16,6 +16,10 @@ export function Classement() {
   const replay: ReplayData = useReplay()
   const installEnv = useInstallEnv()
   const calls = useCalls()
+  const guard = useWriteGuard()
+  const chooseProfile = useChooseProfile()
+  const visitor = useProfile().kind === 'visitor'
+  const shared = app.sync.mode === 'shared'
   const [proposing, setProposing] = useState(false)
 
   // A call already open (full or not) is simply shown again instead of creating a second one.
@@ -25,27 +29,27 @@ export function Classement() {
       requestCall(open.id)
       return
     }
-    setProposing(true)
+    guard('proposer un baby', () => setProposing(true))
   }
 
-  async function onSend(playerId: PlayerId): Promise<void> {
-    const callId = await calls.propose(playerId)
+  async function onSend(): Promise<void> {
+    const callId = await calls.propose()
     setProposing(false)
     if (callId !== null) requestCall(callId)
   }
 
+  // « Proposer un baby » needs a profile to sign the call: shared mode only (local mode has no profiles).
   return (
     <>
-      <ClassementView app={app} replay={replay} installEnv={installEnv} onPropose={onPropose} />
+      <ClassementView
+        app={app}
+        replay={replay}
+        installEnv={installEnv}
+        onPropose={shared ? onPropose : undefined}
+        onChooseProfile={visitor ? chooseProfile : undefined}
+      />
       {proposing && (
-        <ProposeDialog
-          open
-          players={app.store.players}
-          initial={app.store.settings.myPlayerId}
-          busy={calls.busy}
-          onSend={(id) => void onSend(id)}
-          onCancel={() => setProposing(false)}
-        />
+        <ProposeDialog open busy={calls.busy} onSend={() => void onSend()} onCancel={() => setProposing(false)} />
       )}
     </>
   )

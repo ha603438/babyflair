@@ -1,5 +1,6 @@
 // Réglages (spec §3.8): export / import, rules link, install row, « Tout effacer », footer.
-// Mode partagé: « Code du bureau » row, « Déconnecter cet appareil » instead of « Tout effacer », sync footer.
+// Mode partagé: « Mon profil », « Journal des modifications », « Code du bureau » rows, « Déconnecter cet appareil »
+// instead of « Tout effacer », sync footer.
 import { useRef, useState } from 'react'
 import type { ChangeEvent } from 'react'
 import { PUSH_COPY, unsupportedCopy } from '../calls/push'
@@ -7,6 +8,10 @@ import { usePush } from '../calls/usePush'
 import { Button } from '../components/Button'
 import { ConfirmDialog } from '../components/ConfirmDialog'
 import { HintCard } from '../components/HintCard'
+import { JOURNAL_COPY } from '../profile/journal'
+import { profileCaption, PROFILE_COPY } from '../profile/profile'
+import type { Profile } from '../profile/profile'
+import { useChooseProfile, useProfile, useWriteGuard } from '../profile/useWriteGuard'
 import { SectionHeader } from '../components/SectionHeader'
 import { SettingRow } from '../components/rows'
 import type { ImportOk, StandaloneEnv } from '../io'
@@ -56,7 +61,9 @@ function browserEnv(): StandaloneEnv {
   return window
 }
 
-function PushAction({ push }: { push: ReturnType<typeof usePush> }) {
+type PushState = ReturnType<typeof usePush>
+
+function PushAction({ push }: { push: PushState }) {
   if (push.support !== 'ok') return null
   const label = push.enabled ? PUSH_COPY.disable : PUSH_COPY.enable
   const onClick = push.enabled ? push.disable : push.enable
@@ -67,9 +74,45 @@ function PushAction({ push }: { push: ReturnType<typeof usePush> }) {
   )
 }
 
+/** A visitor cannot answer the appels: no activation, only the way to a profile (turning off stays possible). */
+function NotificationsRow({ push, visitor }: { push: PushState; visitor: boolean }) {
+  if (visitor && !push.enabled) {
+    return <SettingRow title={PUSH_COPY.title} caption={PROFILE_COPY.notificationsVisitor} />
+  }
+  return (
+    <SettingRow
+      title={PUSH_COPY.title}
+      caption={unsupportedCopy(push.support) ?? PUSH_COPY.caption}
+      trailing={<PushAction push={push} />}
+    />
+  )
+}
+
+function ProfileGroup({ profile, onChange }: { profile: Profile; onChange: () => void }) {
+  return (
+    <>
+      <SectionHeader title="Profil" />
+      <div className="settings-group">
+        <SettingRow
+          title={PROFILE_COPY.mine}
+          caption={profileCaption(profile)}
+          trailing={
+            <Button variant="secondary" inline onClick={onChange}>
+              {PROFILE_COPY.change}
+            </Button>
+          }
+        />
+      </div>
+    </>
+  )
+}
+
 export function Reglages() {
   const { store, dispatch, toast, sync } = useAppState()
   const push = usePush()
+  const profile = useProfile()
+  const chooseProfile = useChooseProfile()
+  const guard = useWriteGuard()
   const shared = sync.mode === 'shared'
   const clearCopy = CLEAR_COPY[sync.mode]
   const [pending, setPending] = useState<Pending>(null)
@@ -136,6 +179,7 @@ export function Reglages() {
 
   return (
     <div className="settings-col">
+      {shared && <ProfileGroup profile={profile} onChange={chooseProfile} />}
       <SectionHeader title="Données" />
       <div className="settings-group">
         <SettingRow
@@ -147,8 +191,9 @@ export function Reglages() {
         <SettingRow
           title="Importer des données"
           caption="Remplace tout par un fichier JSON BabyFlair"
-          onClick={() => fileInput.current?.click()}
+          onClick={() => guard('importer des données', () => fileInput.current?.click())}
         />
+        {shared && <SettingRow title={JOURNAL_COPY.row} chevron href={hrefOf({ name: 'journal' })} />}
       </div>
 
       <SectionHeader title="Application" />
@@ -162,11 +207,7 @@ export function Reglages() {
           />
         )}
         {!isStandalone(browserEnv()) && <SettingRow title="Installer sur l'écran d'accueil" onClick={install} />}
-        <SettingRow
-          title={PUSH_COPY.title}
-          caption={unsupportedCopy(push.support) ?? PUSH_COPY.caption}
-          trailing={<PushAction push={push} />}
-        />
+        <NotificationsRow push={push} visitor={profile.kind === 'visitor'} />
         {iosHint && (
           <div className="settings-hint">
             <HintCard title={IOS_HINT_TITLE} body={IOS_HINT_BODY} onDismiss={() => setIosHint(false)} />

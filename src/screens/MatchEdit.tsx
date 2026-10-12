@@ -1,5 +1,6 @@
 import { useEffect, useReducer } from 'react'
 import { SegmentedControl } from '../components/SegmentedControl'
+import { useWriteGuard } from '../profile/useWriteGuard'
 import { useReplay } from '../rating/useReplay'
 import { back, navigate } from '../router'
 import { draftReducer, useAppState } from '../store'
@@ -36,8 +37,9 @@ function MatchEditForm({ stored }: { stored: Match }) {
   const teams = draftTeams(draft)
   const canSave = isDraftChanged(draft, stored)
   const showToast = toast.show
+  const guard = useWriteGuard()
 
-  function onSave() {
+  function save() {
     if (!canSave) return
     const previous = stored
     dispatch({ type: 'updateMatch', match: draftToMatch(draft, stored, new Date().toISOString()) })
@@ -57,7 +59,7 @@ function MatchEditForm({ stored }: { stored: Match }) {
         playersById={playersById}
         saveText="Enregistrer les modifications"
         canSave={canSave}
-        onSave={onSave}
+        onSave={() => guard('modifier ce match', save)}
         animate={visitedPlayers}
       />
     )

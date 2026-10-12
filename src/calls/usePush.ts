@@ -1,5 +1,6 @@
 // Réglages › Notifications: permission, PushManager subscription and the server row. Pure helpers are in push.ts.
 import { useCallback, useMemo, useState } from 'react'
+import { headerPlayerId } from '../profile/profile'
 import { useInstallEnv } from '../screens/lists/install'
 import { useAppState } from '../store'
 import { toastTextFor } from '../store/remote-sync'
@@ -32,7 +33,8 @@ export function usePush(): PushState {
   const [busy, setBusy] = useState(false)
   const showToast = toast.show
   const api = sync.api
-  const myPlayerId = store.settings.myPlayerId
+  // The subscription is tied to this phone's player profile (none for a visitor), like x-player-id.
+  const myPlayerId = headerPlayerId(store.settings)
   const enabled = store.settings.pushEnabled === true
   const support = pushSupport({ userAgent: env.userAgent, standalone: env.standalone, pushManager: env.pushSupported })
 
