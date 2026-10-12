@@ -37,7 +37,7 @@ describe('initialStore', () => {
       version: 1,
       players: [],
       matches: [],
-      settings: { lastFormat: '2v2', lastTarget: 10 },
+      settings: { lastFormat: '2v2', lastTarget: 5 },
       nextSeq: 1,
     })
   })
@@ -233,8 +233,8 @@ describe('clearAll / setSetting', () => {
     const state = seeded()
     const patch = { lastFormat: '1v1', lastExportAt: '2025-10-10T00:00:00.000Z' } as const
     const after = reducer(state, { type: 'setSetting', patch })
-    expect(after.settings).toEqual({ lastFormat: '1v1', lastTarget: 10, lastExportAt: '2025-10-10T00:00:00.000Z' })
-    expect(state.settings).toEqual({ lastFormat: '2v2', lastTarget: 10 })
+    expect(after.settings).toEqual({ lastFormat: '1v1', lastTarget: 5, lastExportAt: '2025-10-10T00:00:00.000Z' })
+    expect(state.settings).toEqual({ lastFormat: '2v2', lastTarget: 5 })
   })
 })
 

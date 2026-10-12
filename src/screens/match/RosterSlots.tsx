@@ -13,8 +13,8 @@ export type RosterSlotsProps = {
 }
 
 const TEAMS = [
-  { team: 1, caption: 'ÉQUIPE 1', first: TEAM_A_FIRST_SLOT },
-  { team: 2, caption: 'ÉQUIPE 2', first: TEAM_B_FIRST_SLOT },
+  { team: 1, caption: 'BLANCS', first: TEAM_A_FIRST_SLOT },
+  { team: 2, caption: 'NOIRS', first: TEAM_B_FIRST_SLOT },
 ] as const
 
 type TeamColumnProps = (typeof TEAMS)[number] & Omit<RosterSlotsProps, 'shaking'>

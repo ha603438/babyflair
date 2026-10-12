@@ -1,12 +1,12 @@
 import { useId } from 'react'
 import type { PlayerId, Score, Target, Team } from '../types'
-import { fmtScore } from '../format'
+import { nextScore } from './score'
 
-/** One side of the match as the grid sees it: the display label and the ids (count drives « gagne » / « gagnent »). */
+/** One side of the match as the grid sees it: the display label and the ids. */
 export type ScoreTeam = { label: string; players: PlayerId[] }
 
 export type ScoreGridProps = {
-  /** Index 0 is team A (Équipe 1), index 1 is team B (Équipe 2). */
+  /** Index 0 is team A (Blancs, left), index 1 is team B (Noirs, right). */
   teams: readonly [ScoreTeam, ScoreTeam]
   target: Target
   value: Score | null
@@ -14,30 +14,20 @@ export type ScoreGridProps = {
 }
 
 const TEAM_KEYS: readonly [Team, Team] = ['A', 'B']
+const SIDE_NAMES: readonly [string, string] = ['Blancs', 'Noirs']
 
-function verbOf(team: ScoreTeam): string {
-  if (team.players.length > 1) return 'gagnent'
-  return 'gagne'
+function goalsRange(target: Target): number[] {
+  return Array.from({ length: target + 1 }, (_, goals) => goals)
 }
 
-function loserGoalsRange(target: Target): number[] {
-  return Array.from({ length: target }, (_, goals) => goals)
-}
-
-/** The loser goals selected for this team, or null when the selection is empty or belongs to the other team. */
-function selectedGoalsFor(value: Score | null, teamKey: Team): number | null {
-  if (value === null || value.winner !== teamKey) return null
+/** The goals shown as selected on this side: the target for the winner, the loser's goals for the loser. */
+function selectedGoalsFor(value: Score | null, teamKey: Team, target: Target): number | null {
+  if (value === null) return null
+  if (value.winner === teamKey) return target
   return value.loserGoals
 }
 
-function blockClassName(index: 0 | 1, winner: boolean, dimmed: boolean): string {
-  const parts = ['scoregrid__block', `scoregrid__block--team${index + 1}`]
-  if (winner) parts.push('is-winner')
-  if (dimmed) parts.push('is-dimmed')
-  return parts.join(' ')
-}
-
-type BlockProps = {
+type SideProps = {
   team: ScoreTeam
   index: 0 | 1
   target: Target
@@ -45,48 +35,37 @@ type BlockProps = {
   onChange: (score: Score) => void
 }
 
-function BlockLabel({ team, target, selectedGoals }: { team: ScoreTeam; target: Target; selectedGoals: number | null }) {
-  const verb = verbOf(team)
-  if (selectedGoals === null) {
-    return (
-      <>
-        <span className="scoregrid__team">{team.label}</span> {verb} {target} à
-      </>
-    )
-  }
-  return (
-    <>
-      <span className="scoregrid__check" aria-hidden="true">
-        ✓
-      </span>{' '}
-      <span className="scoregrid__team">{team.label}</span> {verb} {fmtScore(target, selectedGoals)}
-    </>
-  )
+function sideClassName(index: 0 | 1, status: 'winner' | 'loser' | 'none'): string {
+  const parts = ['scoregrid__side', `scoregrid__side--team${index + 1}`]
+  if (status === 'winner') parts.push('is-winner')
+  if (status === 'loser') parts.push('is-loser')
+  return parts.join(' ')
 }
 
-function ScoreBlock({ team, index, target, value, onChange }: BlockProps) {
+function ScoreSide({ team, index, target, value, onChange }: SideProps) {
   const labelId = useId()
   const teamKey = TEAM_KEYS[index]
-  const selectedGoals = selectedGoalsFor(value, teamKey)
-  const winner = selectedGoals !== null
-  const dimmed = value !== null && !winner
-  const verb = verbOf(team)
+  const selected = selectedGoalsFor(value, teamKey, target)
+  const status = value === null ? 'none' : value.winner === teamKey ? 'winner' : 'loser'
   return (
-    <div className={blockClassName(index, winner, dimmed)} role="group" aria-labelledby={labelId}>
+    <div className={sideClassName(index, status)} role="group" aria-labelledby={labelId}>
       <p id={labelId} className="scoregrid__label">
-        <BlockLabel team={team} target={target} selectedGoals={selectedGoals} />
+        <span className="scoregrid__side-name">{SIDE_NAMES[index]}</span>
+        <span className="scoregrid__team">{team.label}</span>
       </p>
       <div className="scoregrid__cells">
-        {loserGoalsRange(target).map((goals) => {
-          const selected = selectedGoals === goals
+        {goalsRange(target).map((goals) => {
+          const isSelected = selected === goals
+          const isTarget = goals === target
+          const cls = ['scoregrid__cell', isTarget ? 'scoregrid__cell--target' : '', isSelected ? 'is-selected' : '']
           return (
             <button
               key={goals}
               type="button"
-              className={selected ? 'scoregrid__cell is-selected' : 'scoregrid__cell'}
-              aria-label={`${team.label} ${verb} ${target} à ${goals}`}
-              aria-pressed={selected}
-              onClick={() => onChange({ winner: teamKey, loserGoals: goals })}
+              className={cls.filter(Boolean).join(' ')}
+              aria-label={isTarget ? `${team.label} gagne ${target}` : `${team.label} ${goals} but${goals > 1 ? 's' : ''}`}
+              aria-pressed={isSelected}
+              onClick={() => onChange(nextScore(value, teamKey, goals, target))}
             >
               {goals}
             </button>
@@ -98,14 +77,18 @@ function ScoreBlock({ team, index, target, value, onChange }: BlockProps) {
 }
 
 /**
- * Step B key widget: one block per team, « {Équipe} gagne(nt) {target} à » over the loser's possible goals.
- * One tap encodes the winner and the loser's score; the other block dims once a value exists.
+ * Step B key widget: the two teams side by side (Blancs left, Noirs right), each with its goals 0…target.
+ * Tapping the target on a side makes it the winner; tapping any other number makes that side the loser with
+ * that many goals (the other side wins). The winner's side is highlighted, the loser's dimmed.
  */
 export function ScoreGrid({ teams, target, value, onChange }: ScoreGridProps) {
   return (
     <div className="scoregrid">
-      <ScoreBlock team={teams[0]} index={0} target={target} value={value} onChange={onChange} />
-      <ScoreBlock team={teams[1]} index={1} target={target} value={value} onChange={onChange} />
+      <ScoreSide team={teams[0]} index={0} target={target} value={value} onChange={onChange} />
+      <span className="scoregrid__vs" aria-hidden="true">
+        –
+      </span>
+      <ScoreSide team={teams[1]} index={1} target={target} value={value} onChange={onChange} />
     </div>
   )
 }

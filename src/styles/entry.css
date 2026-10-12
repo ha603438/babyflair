@@ -111,11 +111,13 @@
 .chip--team1 {
   background: var(--team-1-soft);
   border-color: var(--team-1);
+  color: var(--team-1-ink);
 }
 
 .chip--team2 {
   background: var(--team-2-soft);
   border-color: var(--team-2);
+  color: var(--team-2-ink);
 }
 
 .chip__badge {
@@ -133,11 +135,13 @@
 }
 
 .chip--team1 .chip__badge {
-  background: var(--team-1);
+  background: var(--team-1-ink);
+  color: var(--team-1-soft);
 }
 
 .chip--team2 .chip__badge {
-  background: var(--team-2);
+  background: var(--team-2-ink);
+  color: var(--team-2-soft);
 }
 
 /* Inactive > 30 days: dimmed, still tappable */
@@ -290,77 +294,6 @@
 /* ======================================================================
    ScoreGrid — two blocks (one per team), label 24 px + 5-column cells of 48 px
    ====================================================================== */
-.scoregrid {
-  display: flex;
-  flex-direction: column;
-  gap: var(--s3);
-}
-
-.scoregrid__block {
-  transition: opacity var(--t-fast) var(--ease);
-}
-
-/* The non-winning block once a value exists */
-.scoregrid__block.is-dimmed {
-  opacity: 0.5;
-}
-
-.scoregrid__label {
-  height: 24px;
-  margin: 0;
-  font-size: var(--fs-label);
-  font-weight: 600;
-  line-height: 24px;
-  color: var(--text);
-  white-space: nowrap;
-  overflow: hidden;
-  text-overflow: ellipsis;
-}
-
-.scoregrid__block--team1 .scoregrid__team {
-  color: var(--team-1);
-}
-
-.scoregrid__block--team2 .scoregrid__team {
-  color: var(--team-2);
-}
-
-.scoregrid__check {
-  color: var(--accent);
-}
-
-.scoregrid__cells {
-  display: grid;
-  grid-template-columns: repeat(5, minmax(0, 1fr));
-  gap: var(--s2);
-}
-
-.scoregrid__cell {
-  height: 48px;
-  border-radius: var(--r-md);
-  background: var(--surface-2);
-  color: var(--text);
-  font-size: 20px;
-  font-weight: 700;
-  font-variant-numeric: tabular-nums;
-  line-height: 1;
-  user-select: none;
-  -webkit-user-select: none;
-  -webkit-touch-callout: none;
-  transition:
-    transform var(--t-fast) var(--ease),
-    background-color var(--t-fast) var(--ease),
-    color var(--t-fast) var(--ease);
-}
-
-.scoregrid__cell:active {
-  transform: scale(0.97);
-}
-
-.scoregrid__cell.is-selected {
-  background: var(--accent);
-  color: var(--on-accent);
-}
 
 /* ======================================================================
    PreviewTable — chance line + 4 × 3 what-if table, or one exact line
@@ -513,3 +446,29 @@
     animation: none;
   }
 }
+
+/* ---------- ScoreGrid: Blancs left, Noirs right, one tap per score ---------- */
+.scoregrid {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) 20px minmax(0, 1fr);
+  align-items: start;
+  gap: 8px;
+}
+.scoregrid__vs { align-self: center; text-align: center; font-size: 20px; font-weight: 700; color: var(--text-3); padding-top: 44px; }
+.scoregrid__side { border-radius: 14px; padding: 8px; background: var(--surface); border: 2px solid var(--border); transition: opacity 150ms, border-color 150ms; }
+.scoregrid__side--team1 { border-color: var(--team-1); }
+.scoregrid__side--team2 { border-color: var(--team-2); }
+.scoregrid__side.is-loser { opacity: 0.6; }
+.scoregrid__side.is-winner { box-shadow: 0 0 0 2px var(--accent); }
+.scoregrid__label { margin: 0 0 8px; display: flex; flex-direction: column; gap: 2px; min-width: 0; }
+.scoregrid__side-name { font-size: 12px; font-weight: 700; text-transform: uppercase; letter-spacing: .06em; color: var(--text-3); }
+.scoregrid__team { font-size: 15px; font-weight: 600; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+.scoregrid__cells { display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); gap: 6px; }
+.scoregrid__cell {
+  height: 44px; border-radius: 10px; background: var(--surface-2); color: var(--text);
+  font-size: 18px; font-weight: 700; font-variant-numeric: tabular-nums; border: 0; cursor: pointer;
+  transition: transform 150ms, background-color 150ms;
+}
+.scoregrid__cell:active { transform: scale(0.96); }
+.scoregrid__cell--target { background: var(--accent-soft); color: var(--accent); }
+.scoregrid__cell.is-selected { background: var(--accent); color: var(--on-accent); }

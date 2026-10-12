@@ -16,7 +16,7 @@ const DAY_MS = 24 * 60 * 60 * 1000
 const SEVEN_DAYS_MS = 7 * DAY_MS
 const INACTIVE_AFTER_MS = 30 * DAY_MS
 const MIN_SHARED_FOR_PARTNER = 2
-const DEFAULT_SETTINGS: Settings = { lastFormat: '2v2', lastTarget: 10 }
+const DEFAULT_SETTINGS: Settings = { lastFormat: '2v2', lastTarget: 5 }
 
 type Outcome = 'win' | 'loss'
 

@@ -56,7 +56,7 @@ function normaliseMatch(value: unknown): Match | null {
 export function normaliseSettings(value: unknown): Settings {
   if (!isRecord(value)) return DEFAULT_SETTINGS
   const lastFormat = value.lastFormat === '1v1' || value.lastFormat === '2v2' ? value.lastFormat : '2v2'
-  const lastTarget = value.lastTarget === 5 || value.lastTarget === 10 ? value.lastTarget : 10
+  const lastTarget = value.lastTarget === 5 || value.lastTarget === 10 ? value.lastTarget : 5
   const settings: Settings = { lastFormat, lastTarget }
   const installHintDismissedAt = optionalIso(value.installHintDismissedAt)
   const exportHintDismissedAt = optionalIso(value.exportHintDismissedAt)

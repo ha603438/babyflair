@@ -103,7 +103,7 @@ describe('with a working localStorage', () => {
     expect(store.matches[0].createdAt).toBe('2025-10-06T12:42:00.000Z')
     expect(store.matches[0].updatedAt).toBe('2025-10-06T12:42:00.000Z')
     expect(store.players[0]).toEqual({ id: 'a', name: 'Alice', isGuest: false, createdAt: new Date(0).toISOString() })
-    expect(store.settings).toEqual({ lastFormat: '2v2', lastTarget: 10 })
+    expect(store.settings).toEqual({ lastFormat: '2v2', lastTarget: 5 })
   })
 
   it('drops malformed items and keeps a nextSeq that is ahead of the matches', () => {
@@ -135,7 +135,7 @@ describe('with a working localStorage', () => {
     expect(store?.nextSeq).toBe(12)
     expect(store?.settings).toEqual({ lastFormat: '1v1', lastTarget: 5, installHintDismissedAt: 'd' })
     expect(normaliseStore({ ...data, nextSeq: 2 })?.nextSeq).toBe(5)
-    expect(normaliseSettings(null)).toEqual({ lastFormat: '2v2', lastTarget: 10 })
+    expect(normaliseSettings(null)).toEqual({ lastFormat: '2v2', lastTarget: 5 })
   })
 
   it('saveStore returns false when setItem throws (quota, private mode)', () => {

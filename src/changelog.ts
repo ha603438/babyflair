@@ -10,6 +10,9 @@ export const CHANGELOG: ChangelogEntry[] = [
     date: '2026-10-12',
     title: 'Mises à jour et nouveautés',
     items: [
+      'Partie en 5 par défaut.',
+      'Saisie du score simplifiée : un sélecteur par équipe, un seul geste.',
+      'Les équipes deviennent Blancs et Noirs.',
       'Onglet Nouveautés : la liste des mises à jour de l’app.',
       'En-tête avec le blason et le nom BabyFlair sur chaque onglet.',
       'Double-tap sur le blason pour forcer la mise à jour de l’app.',

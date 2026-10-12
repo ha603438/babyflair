@@ -62,8 +62,8 @@ afterEach(() => {
 describe('Match screen, step A', () => {
   it('renders the slot block, the caption, the ordered chips and the add chip', () => {
     const html = render(createElement(MatchScreen), storeOf(PLAYERS, [MATCH]))
-    expect(html).toContain('ÉQUIPE 1')
-    expect(html).toContain('ÉQUIPE 2')
+    expect(html).toContain('BLANCS')
+    expect(html).toContain('NOIRS')
     expect(html).toContain('0 joueur sur 4')
     expect(html).toContain('Choisis un joueur')
     expect(html).toContain('+ Nouveau joueur')
@@ -93,7 +93,7 @@ describe('Match screen, step A', () => {
     expect(html).toContain("Ajoute d'abord des joueurs")
     expect(html).toContain('Il en faut au moins 2 pour enregistrer un match.')
     expect(html).toContain('Ajouter des joueurs')
-    expect(html).not.toContain('ÉQUIPE 1')
+    expect(html).not.toContain('BLANCS')
   })
 })
 
@@ -108,8 +108,7 @@ describe('MatchEdit screen', () => {
     expect(copy).toContain('>Score<')
     expect(copy).toContain('>En 5<')
     expect(copy).toContain('>En 10<')
-    expect(copy).toContain('Alice & Bob</span> gagnent 10 – 8')
-    expect(html).toContain('class="scoregrid__cell is-selected" aria-label="Alice &amp; Bob gagnent 10 à 8"')
+    expect(html).toContain('class="scoregrid__cell is-selected" aria-label="Chloé &amp; Dan 8 buts"')
     expect(html).toContain('aria-checked="true" tabindex="0" class="segmented__option is-active">En 10<')
     expect(copy).toContain('Enregistrer les modifications')
     expect(html).toContain('disabled=""')

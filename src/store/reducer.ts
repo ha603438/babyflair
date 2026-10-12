@@ -14,7 +14,7 @@ export type Action =
   | { type: 'clearAll' }
   | { type: 'setSetting'; patch: Partial<Settings> }
 
-export const DEFAULT_SETTINGS: Settings = { lastFormat: '2v2', lastTarget: 10 }
+export const DEFAULT_SETTINGS: Settings = { lastFormat: '2v2', lastTarget: 5 }
 
 export const initialStore: Store = {
   version: 1,

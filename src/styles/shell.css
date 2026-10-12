@@ -408,8 +408,8 @@
 }
 .header-brandline .header-brand-mark { width: 40px; height: 40px; border-radius: 11px; display: block; }
 .header-wordmark { font-size: 22px; font-weight: 800; letter-spacing: .02em; line-height: 1; }
-.header-wordmark-b { color: var(--team-1); }
-.header-wordmark-r { color: var(--team-2); }
+.header-wordmark-b { color: var(--brand-blue); }
+.header-wordmark-r { color: var(--brand-red); }
 .header-root .header-title {
   font-size: var(--fs-caption);
   font-weight: 600;

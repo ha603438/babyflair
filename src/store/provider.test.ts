@@ -64,7 +64,7 @@ describe('AppStateProvider', () => {
     const state = renderWithProvider()
     expect(state.store).toBe(initialStore)
     expect(state.draft.format).toBe('2v2')
-    expect(state.draft.target).toBe(10)
+    expect(state.draft.target).toBe(5)
   })
 
   it('keeps the navigation payload in memory: set, get, take clears', () => {

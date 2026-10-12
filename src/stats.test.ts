@@ -548,7 +548,7 @@ describe('validateImport', () => {
   it('defaults the settings when they are missing or partially invalid', () => {
     const missing = validateImport({ ...validFile(), settings: undefined })
     expectOk(missing)
-    expect(missing.settings).toEqual({ lastFormat: '2v2', lastTarget: 10 })
+    expect(missing.settings).toEqual({ lastFormat: '2v2', lastTarget: 5 })
 
     const partial = validateImport({
       ...validFile(),
@@ -593,6 +593,6 @@ describe('validateImport', () => {
     expectOk(result)
     expect(result.players).toEqual([])
     expect(result.matches).toEqual([])
-    expect(result.settings).toEqual({ lastFormat: '2v2', lastTarget: 10 })
+    expect(result.settings).toEqual({ lastFormat: '2v2', lastTarget: 5 })
   })
 })

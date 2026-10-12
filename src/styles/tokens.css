@@ -19,10 +19,17 @@
   --on-accent: #ffffff;
 
   /* teams (never red/green) */
-  --team-1: #2563eb;
-  --team-1-soft: #dbe7fd;
-  --team-2: #dc2626;
-  --team-2-soft: #fde2e2;
+  /* brand (logo) */
+  --brand-blue: #1d4ed8;
+  --brand-red: #dc2626;
+
+  /* teams: Blancs (team 1) and Noirs (team 2); -soft is the chip background, -ink the text on it */
+  --team-1: #a1a1aa;
+  --team-1-soft: #ffffff;
+  --team-1-ink: #111827;
+  --team-2: #111827;
+  --team-2-soft: #1f2937;
+  --team-2-ink: #ffffff;
 
   /* semantic */
   --pos: #15803d;
@@ -79,10 +86,14 @@
     --accent-soft: #172554;
     --on-accent: #ffffff;
 
-    --team-1: #60a5fa;
-    --team-1-soft: #1e2f4d;
-    --team-2: #f87171;
-    --team-2-soft: #4a1d1d;
+    --brand-blue: #3b82f6;
+    --brand-red: #f87171;
+    --team-1: #ffffff;
+    --team-1-soft: #e5e7eb;
+    --team-1-ink: #111827;
+    --team-2: #6b7280;
+    --team-2-soft: #000000;
+    --team-2-ink: #ffffff;
 
     --pos: #4ade80;
     --neg: #fb7185;
