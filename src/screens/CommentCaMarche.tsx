@@ -81,7 +81,7 @@ const SECTIONS: Section[] = [
       'Depuis le classement, « Proposer un baby » envoie une notification à tous les téléphones qui ont activé ' +
       'les notifications dans Réglages. Chacun dit s’il est chaud ; dès que 4 joueurs sont là, « Former les ' +
       'équipes » compose les équipes les plus équilibrées selon le classement, tire les postes et les couleurs au ' +
-      'sort, et ouvre le match. Un appel expire au bout de 45 minutes.',
+      'sort, et ouvre le match. Sans 4 joueurs au bout de 5 minutes, l’appel est annulé.',
   },
   {
     title: 'Tes données',
