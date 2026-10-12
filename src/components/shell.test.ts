@@ -86,7 +86,9 @@ describe('Header', () => {
   it('tab root: h1 title left and the right slot', () => {
     const html = render(Header, { title: 'Classement', right: 'R' })
     expect(html).toContain('class="header header-root"')
-    expect(html).toContain('<h1 class="header-title">Classement</h1>')
+    expect(html).toContain('<h1 class="header-title">')
+    expect(html).toContain('class="header-brand-mark"')
+    expect(html).toContain('Classement</h1>')
     expect(html).toContain('<div class="header-right">R</div>')
     expect(html).not.toContain('Retour')
   })

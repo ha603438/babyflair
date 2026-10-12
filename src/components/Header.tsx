@@ -34,7 +34,12 @@ export function Header({ title, back: isBack = false, right, compact = false }: 
             {title}
           </span>
         ) : (
-          <h1 className="header-title">{title}</h1>
+          <h1 className="header-title">
+            {!isBack && (
+              <img className="header-brand-mark" src={`${import.meta.env.BASE_URL}logo-mark.png`} alt="" width="28" height="28" />
+            )}
+            {title}
+          </h1>
         )}
         <div className="header-right">{right}</div>
       </div>
