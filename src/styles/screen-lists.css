@@ -233,3 +233,4 @@
 /* Meilleur allié / Némésis: two rows in one card, each a link to the other player's page. */
 .rivalries { display: flex; flex-direction: column; gap: 12px; }
 .rivalry { display: block; color: inherit; text-decoration: none; }
+.rivalries .partner-value, .partner .partner-value { white-space: normal; overflow: visible; text-overflow: clip; }

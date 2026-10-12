@@ -216,7 +216,7 @@ function RivalriesCard({ playerId, matches, players }: PartnerProps) {
       <RivalryRow
         label="Némésis"
         rivalry={enemy}
-        text={(r) => `${nameOf(players, r.playerId)} · ${r.losses} défaites en ${r.matches} matchs face à ce joueur`}
+        text={(r) => `${nameOf(players, r.playerId)} · ${r.losses} défaites en ${r.matches} matchs`}
       />
     </section>
   )
