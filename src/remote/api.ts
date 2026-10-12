@@ -296,18 +296,22 @@ export function createApi(deps: ApiDeps): RemoteApi {
   }
 
   // push_subscriptions has no SELECT policy: writes must not ask for the row back (`return=minimal`).
+  // The table is write-only from the browser (no SELECT policy), so an upsert or a filtered delete cannot run there:
+  // both go through security-definer functions that check the office code first (docs/supabase/notifications.sql).
   async function upsertPushSubscription(subscription: PushSubscriptionInput): Promise<void> {
-    const row = {
-      endpoint: subscription.endpoint,
-      p256dh: subscription.p256dh,
-      auth: subscription.auth,
-      player_id: subscription.playerId,
+    const body = {
+      p_endpoint: subscription.endpoint,
+      p_p256dh: subscription.p256dh,
+      p_auth: subscription.auth,
+      p_player_id: subscription.playerId,
     }
-    await send(deps, 'POST', 'push_subscriptions', row, 'resolution=merge-duplicates,return=minimal')
+    const ok = await send(deps, 'POST', 'rpc/register_push', body)
+    if (ok !== true) throw new RemoteError('unauthorized', 'register_push refused')
   }
 
   async function deletePushSubscription(endpoint: string): Promise<void> {
-    await sendDelete(deps, `push_subscriptions?endpoint=eq.${encodeURIComponent(endpoint)}`)
+    const ok = await send(deps, 'POST', 'rpc/unregister_push', { p_endpoint: endpoint })
+    if (ok !== true) throw new RemoteError('unauthorized', 'unregister_push refused')
   }
 
   async function notifyCall(callId: string): Promise<NotifyResult> {

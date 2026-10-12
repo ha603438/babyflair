@@ -47,3 +47,29 @@ create policy office_push_update on public.push_subscriptions
   for update to anon, authenticated using (public.office_ok()) with check (public.office_ok());
 
 alter publication supabase_realtime add table public.calls, public.call_players;
+
+-- Abonnement / désabonnement passant par des fonctions : la table n'a pas de règle de lecture (personne ne peut lister
+-- les abonnements), or un upsert ou un delete filtré en ont besoin. Ces fonctions vérifient le code du bureau, puis
+-- écrivent avec les droits du propriétaire.
+create or replace function public.register_push(p_endpoint text, p_p256dh text, p_auth text, p_player_id uuid)
+returns boolean language plpgsql security definer set search_path = public as $$
+begin
+  if not public.office_ok() then return false; end if;
+  insert into public.push_subscriptions (endpoint, p256dh, auth, player_id)
+    values (p_endpoint, p_p256dh, p_auth, p_player_id)
+    on conflict (endpoint) do update set p256dh = excluded.p256dh, auth = excluded.auth, player_id = excluded.player_id;
+  return true;
+end;
+$$;
+
+create or replace function public.unregister_push(p_endpoint text)
+returns boolean language plpgsql security definer set search_path = public as $$
+begin
+  if not public.office_ok() then return false; end if;
+  delete from public.push_subscriptions where endpoint = p_endpoint;
+  return true;
+end;
+$$;
+
+grant execute on function public.register_push(text, text, text, uuid) to anon, authenticated;
+grant execute on function public.unregister_push(text) to anon, authenticated;

@@ -176,17 +176,23 @@ describe('createApi', () => {
     expect(callsFromRows([{ ...callToRow(call), call_players: undefined }]).callPlayers).toEqual([])
   })
 
-  it('push subscriptions: upsert without asking the row back, delete by endpoint', async () => {
-    const { fetch, calls } = fakeFetch(() => ({ status: 201 }))
+  it('push subscriptions go through the register_push / unregister_push functions', async () => {
+    const { fetch, calls } = fakeFetch(() => ({ status: 200, body: true }))
     const api = createApi({ fetch, config, officeCode: 'secret' })
     await api.upsertPushSubscription({ endpoint: 'https://push/a?b=1', p256dh: 'P', auth: 'A', playerId: null })
     await api.deletePushSubscription('https://push/a?b=1')
     expect(calls[0].method).toBe('POST')
-    expect(calls[0].url).toBe('https://x.supabase.co/rest/v1/push_subscriptions')
-    expect(calls[0].headers.Prefer).toBe('resolution=merge-duplicates,return=minimal')
-    expect(calls[0].body).toEqual({ endpoint: 'https://push/a?b=1', p256dh: 'P', auth: 'A', player_id: null })
-    expect(calls[1].method).toBe('DELETE')
-    expect(calls[1].url).toBe('https://x.supabase.co/rest/v1/push_subscriptions?endpoint=eq.https%3A%2F%2Fpush%2Fa%3Fb%3D1')
+    expect(calls[0].url).toBe('https://x.supabase.co/rest/v1/rpc/register_push')
+    expect(calls[0].headers['x-office-code']).toBe('secret')
+    expect(calls[0].body).toEqual({ p_endpoint: 'https://push/a?b=1', p_p256dh: 'P', p_auth: 'A', p_player_id: null })
+    expect(calls[1].url).toBe('https://x.supabase.co/rest/v1/rpc/unregister_push')
+    expect(calls[1].body).toEqual({ p_endpoint: 'https://push/a?b=1' })
+  })
+
+  it('push subscriptions refused by the office code raise unauthorized', async () => {
+    const { fetch } = fakeFetch(() => ({ status: 200, body: false }))
+    const api = createApi({ fetch, config, officeCode: 'wrong' })
+    await expect(api.upsertPushSubscription({ endpoint: 'e', p256dh: 'P', auth: 'A', playerId: null })).rejects.toMatchObject({ kind: 'unauthorized' })
   })
 
   it('notifyCall posts to the edge function with the same headers and reads the counts', async () => {
