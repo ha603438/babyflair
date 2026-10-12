@@ -11,6 +11,7 @@ export const CHANGELOG: ChangelogEntry[] = [
     title: 'Mises à jour et nouveautés',
     items: [
       'Onglet Nouveautés : la liste des mises à jour de l’app.',
+      'En-tête avec le blason et le nom BabyFlair sur chaque onglet.',
       'Double-tap sur le blason pour forcer la mise à jour de l’app.',
       'Date de version affichée dans Réglages.',
       'Icône d’app corrigée (logo plein cadre).',
