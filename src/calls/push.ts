@@ -76,3 +76,13 @@ export function vapidPublicKey(env: { VITE_VAPID_PUBLIC_KEY?: string }): string 
   if (key === undefined || key.length === 0) return null
   return key
 }
+
+/** This phone's current push subscription as a server row (or null: no service worker, no subscription, timeout). */
+export async function currentSubscription(playerId: PlayerId | undefined, timeoutMs = 1500): Promise<PushSubscriptionInput | null> {
+  if (typeof navigator === 'undefined' || !('serviceWorker' in navigator)) return null
+  const lookup = navigator.serviceWorker.ready.then((registration) => registration.pushManager.getSubscription())
+  const timeout = new Promise<null>((resolve) => setTimeout(() => resolve(null), timeoutMs))
+  const subscription = await Promise.race([lookup, timeout]).catch(() => null)
+  if (subscription === null) return null
+  return subscriptionInput(subscription.toJSON() as SubscriptionJson, playerId)
+}

@@ -7,6 +7,7 @@ import { useAppState } from '../store'
 import { toastTextFor } from '../store/remote-sync'
 import type { Call, PlayerId } from '../types'
 import { CALL_CAPACITY, CALL_COPY, newCall, newCallPlayer, notifyToast, participantIdsOf } from './calls'
+import { currentSubscription } from './push'
 import { balanceTeams } from './teams'
 
 export type CallsApi = {
@@ -54,8 +55,11 @@ export function useCalls(): CallsApi {
         return null
       }
       dispatch({ type: 'addCall', call, organizer })
+      // The organizer's own phone is skipped; its subscription is also tied to the chosen name for later calls.
+      const mine = await currentSubscription(playerId)
+      if (mine !== null) await api.upsertPushSubscription(mine).catch(() => undefined)
       try {
-        const result = await api.notifyCall(call.id)
+        const result = await api.notifyCall(call.id, mine?.endpoint ?? null)
         showToast({ text: notifyToast(result.sent) })
       } catch (error) {
         showToast({ text: `${CALL_COPY.created}, mais notification impossible : ${toastTextFor(error)}` })

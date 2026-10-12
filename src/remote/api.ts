@@ -39,7 +39,8 @@ export type RemoteApi = {
   upsertPushSubscription(subscription: PushSubscriptionInput): Promise<void>
   deletePushSubscription(endpoint: string): Promise<void>
   /** Edge function notify-call: Web Push to every subscribed phone of the office. */
-  notifyCall(callId: string): Promise<NotifyResult>
+  /** `excludeEndpoint`: the organizer's own push subscription, skipped by the function. */
+  notifyCall(callId: string, excludeEndpoint?: string | null): Promise<NotifyResult>
   insertPlayer(player: Player): Promise<void>
   updatePlayer(id: string, patch: { name: string; isGuest: boolean }): Promise<void>
   deletePlayer(id: string): Promise<void>
@@ -314,8 +315,9 @@ export function createApi(deps: ApiDeps): RemoteApi {
     if (ok !== true) throw new RemoteError('unauthorized', 'unregister_push refused')
   }
 
-  async function notifyCall(callId: string): Promise<NotifyResult> {
-    const data = await invoke(deps, 'notify-call', { call_id: callId })
+  async function notifyCall(callId: string, excludeEndpoint?: string | null): Promise<NotifyResult> {
+    const body = excludeEndpoint ? { call_id: callId, exclude_endpoint: excludeEndpoint } : { call_id: callId }
+    const data = await invoke(deps, 'notify-call', body)
     const record = (data ?? {}) as { sent?: unknown; removed?: unknown }
     const sent = typeof record.sent === 'number' ? record.sent : 0
     const removed = typeof record.removed === 'number' ? record.removed : 0

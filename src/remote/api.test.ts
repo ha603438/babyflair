@@ -195,6 +195,15 @@ describe('createApi', () => {
     await expect(api.upsertPushSubscription({ endpoint: 'e', p256dh: 'P', auth: 'A', playerId: null })).rejects.toMatchObject({ kind: 'unauthorized' })
   })
 
+  it('notifyCall passes the organizer endpoint to exclude', async () => {
+    const { fetch, calls } = fakeFetch(() => ({ status: 200, body: { sent: 1, removed: 0 } }))
+    const api = createApi({ fetch, config, officeCode: 'secret' })
+    await api.notifyCall('c1', 'https://push/me')
+    expect(calls[0].body).toEqual({ call_id: 'c1', exclude_endpoint: 'https://push/me' })
+    await api.notifyCall('c1')
+    expect(calls[1].body).toEqual({ call_id: 'c1' })
+  })
+
   it('notifyCall posts to the edge function with the same headers and reads the counts', async () => {
     const { fetch, calls } = fakeFetch(() => ({ status: 200, body: { sent: 3, removed: 1 } }))
     const api = createApi({ fetch, config, officeCode: 'secret' })
