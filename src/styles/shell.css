@@ -1,0 +1,401 @@
+/*
+ * shell.css — Button, IconButton, Header, TabBar, Toast, ConfirmDialog, InlinePlayerForm, icons.
+ * Spec references: §2 (header, tab bar), §5 (component table), §7 (type scale), §8 (motion), §10 (safe areas).
+ * Tokens come from tokens.css; the layout root, resets and utilities from base.css.
+ */
+
+/* ---------- icons ---------- */
+.icon {
+  flex: none;
+}
+
+/* ---------- Button (§5) ---------- */
+.btn {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: var(--s2);
+  width: 100%;
+  min-height: 44px;
+  padding-inline: var(--s4);
+  border-radius: var(--r-md);
+  font-weight: 600;
+  font-size: var(--fs-label);
+  line-height: 1.25;
+  white-space: nowrap;
+  user-select: none;
+  -webkit-user-select: none;
+  transition: transform var(--t-fast) var(--ease), background-color var(--t-fast) var(--ease),
+    opacity var(--t-fast) var(--ease);
+}
+
+.btn:active:not(:disabled) {
+  transform: scale(.97);
+}
+
+.btn:disabled {
+  opacity: .4;
+}
+
+.btn-lg {
+  min-height: 56px;
+}
+
+.btn-md {
+  min-height: 48px;
+}
+
+.btn-inline {
+  width: auto;
+}
+
+.btn-primary {
+  background: var(--accent);
+  color: var(--on-accent);
+  font-size: var(--fs-h2);
+}
+
+.btn-primary:active:not(:disabled) {
+  background: var(--accent-strong);
+}
+
+.btn-primary.btn-danger {
+  background: var(--neg);
+  color: #ffffff;
+}
+
+.btn-secondary {
+  background: var(--surface-2);
+  color: var(--text);
+}
+
+.btn-secondary.btn-danger {
+  color: var(--neg);
+}
+
+.btn-text {
+  background: transparent;
+  color: var(--accent);
+}
+
+.btn-text.btn-danger {
+  color: var(--neg);
+}
+
+/* 44 × 44 icon-only target (header « ? », gear, pencil, back chevron). Colour inherits so headers can tint it. */
+.icon-btn {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  flex: none;
+  width: 44px;
+  height: 44px;
+  border-radius: var(--r-md);
+  color: var(--text);
+  user-select: none;
+  -webkit-user-select: none;
+  transition: background-color var(--t-fast) var(--ease);
+}
+
+.icon-btn:active {
+  background: var(--surface-2);
+}
+
+/* ---------- Header (§2) ---------- */
+/* Safe-area padding and the opaque surface are also set by base.css for `.app > header`; repeating them here keeps
+   the component correct when it is not a direct child of .app. */
+.header {
+  padding-top: var(--safe-top);
+  background: var(--surface);
+  color: var(--text);
+}
+
+.header-inner {
+  display: grid;
+  align-items: center;
+  height: var(--header-h);
+  max-width: var(--content-max);
+  margin-inline: auto;
+  padding-inline: max(var(--s4), var(--safe-left)) max(var(--s4), var(--safe-right));
+}
+
+.header-title {
+  min-width: 0;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+  line-height: 1.25;
+}
+
+.header-right {
+  display: flex;
+  align-items: center;
+  justify-content: flex-end;
+  min-width: 44px;
+}
+
+/* Tab root: title 22 / 700 left, one icon button on the right. */
+.header-root .header-inner {
+  grid-template-columns: minmax(0, 1fr) auto;
+}
+
+.header-root .header-title {
+  font-size: var(--fs-h1);
+  font-weight: 700;
+}
+
+/* Pushed: 44 px back chevron, title 17 / 600 centred between two 44 px columns. */
+.header-pushed .header-inner {
+  grid-template-columns: 44px minmax(0, 1fr) 44px;
+  padding-inline: max(var(--s1), var(--safe-left)) max(var(--s1), var(--safe-right));
+}
+
+.header-pushed .header-title {
+  font-size: var(--fs-h2);
+  font-weight: 600;
+  text-align: center;
+}
+
+/* Compact (Match): « BabyFlair » 15 / 600 in --text-2 left, segmented control right. */
+.header-compact .header-inner {
+  grid-template-columns: minmax(0, 1fr) auto;
+}
+
+.header-brand {
+  font-size: var(--fs-label);
+  font-weight: 600;
+  color: var(--text-2);
+}
+
+/* ---------- TabBar (§2) ---------- */
+.tabbar {
+  padding-bottom: var(--safe-bottom);
+  background: var(--surface);
+  border-top: 1px solid var(--border);
+}
+
+.tabbar-inner {
+  display: grid;
+  grid-template-columns: repeat(4, minmax(0, 1fr));
+  height: var(--tabbar-h);
+  max-width: var(--content-max);
+  margin-inline: auto;
+  padding-inline: var(--safe-left) var(--safe-right);
+}
+
+.tab {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  gap: 2px;
+  min-height: 44px;
+  color: var(--text-3);
+  user-select: none;
+  -webkit-user-select: none;
+  -webkit-touch-callout: none;
+}
+
+.tab-active {
+  color: var(--accent);
+}
+
+.tab-label {
+  font-size: var(--fs-tab);
+  font-weight: 600;
+  line-height: 1.2;
+}
+
+/* ---------- Toast (§5, §8) ---------- */
+/* The region is always mounted (live region) but takes no space and no taps; the toast itself does. */
+.toast-region {
+  position: fixed;
+  left: max(var(--s4), var(--safe-left));
+  right: max(var(--s4), var(--safe-right));
+  bottom: calc(var(--tabbar-h) + var(--safe-bottom) + var(--s2));
+  z-index: 20;
+  pointer-events: none;
+}
+
+.toast {
+  display: flex;
+  align-items: center;
+  gap: var(--s3);
+  max-width: 480px;
+  min-height: 48px;
+  margin-inline: auto;
+  padding: var(--s3) var(--s4);
+  border-radius: var(--r-md);
+  background: var(--toast-bg);
+  color: var(--toast-text);
+  font-size: var(--fs-label);
+  font-weight: 500;
+  line-height: 1.4;
+  pointer-events: auto;
+  animation: toast-in var(--t-base) var(--ease);
+}
+
+.toast-text {
+  flex: 1;
+  min-width: 0;
+}
+
+.toast-action {
+  flex: none;
+  min-height: 44px;
+  margin-block: calc(-1 * var(--s2));
+  margin-right: calc(-1 * var(--s2));
+  padding-inline: var(--s2);
+  border-radius: var(--r-sm);
+  color: var(--toast-action);
+  font-size: var(--fs-label);
+  font-weight: 700;
+  white-space: nowrap;
+}
+
+@keyframes toast-in {
+  from {
+    opacity: 0;
+    transform: translateY(8px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+
+/* ---------- ConfirmDialog (§5) ---------- */
+/* base.css already strips the UA border/padding and paints ::backdrop with --backdrop. Padding lives on .dialog-body
+   so a click whose target is the <dialog> itself can only come from the backdrop. */
+.dialog {
+  width: min(92vw, 360px);
+  max-width: min(92vw, 360px);
+  border-radius: var(--r-lg);
+  background: var(--surface);
+  color: var(--text);
+  box-shadow: var(--shadow-1);
+}
+
+@media (prefers-color-scheme: dark) {
+  .dialog {
+    border: 1px solid var(--border);
+  }
+}
+
+.dialog-body {
+  padding: var(--s5);
+}
+
+.dialog-title {
+  font-size: var(--fs-h2);
+  font-weight: 700;
+  line-height: 1.25;
+}
+
+.dialog-text {
+  margin-top: var(--s2);
+  color: var(--text-2);
+  font-size: var(--fs-label);
+  font-weight: 400;
+  line-height: 1.4;
+}
+
+.dialog-actions {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: var(--s2);
+  margin-top: var(--s5);
+}
+
+.dialog-actions-single {
+  grid-template-columns: 1fr;
+}
+
+/* ---------- InlinePlayerForm (§3.6, §5, §10) ---------- */
+.inline-form {
+  display: flex;
+  flex-direction: column;
+  gap: var(--s2);
+  padding: var(--s3) 0 var(--s4);
+}
+
+.inline-form-title {
+  font-size: var(--fs-h2);
+  font-weight: 600;
+  line-height: 1.25;
+  margin-bottom: var(--s1);
+}
+
+/* 16 px font: never smaller, or iOS zooms the page on focus. */
+.inline-form-input {
+  width: 100%;
+  height: 48px;
+  padding-inline: var(--s3);
+  border: 1px solid var(--border);
+  border-radius: var(--r-md);
+  background: var(--surface);
+  color: var(--text);
+  font-size: var(--fs-body);
+  line-height: 1.4;
+  -webkit-appearance: none;
+  appearance: none;
+}
+
+.inline-form-input::placeholder {
+  color: var(--text-3);
+}
+
+.inline-form-input[aria-invalid="true"] {
+  border-color: var(--neg);
+}
+
+.inline-form-error {
+  color: var(--neg);
+  font-size: var(--fs-caption);
+  font-weight: 500;
+  line-height: 1.4;
+}
+
+.inline-form-check {
+  display: flex;
+  align-items: center;
+  gap: var(--s3);
+  min-height: 44px;
+  cursor: pointer;
+  user-select: none;
+  -webkit-user-select: none;
+}
+
+.inline-form-check input {
+  flex: none;
+  width: 22px;
+  height: 22px;
+  margin: 0;
+  accent-color: var(--accent);
+}
+
+.inline-form-check-text {
+  display: flex;
+  flex-direction: column;
+  min-width: 0;
+}
+
+.inline-form-check-label {
+  font-size: var(--fs-body);
+  font-weight: 500;
+  line-height: 1.4;
+}
+
+.inline-form-check-caption {
+  color: var(--text-2);
+  font-size: var(--fs-caption);
+  line-height: 1.4;
+}
+
+.inline-form-actions {
+  display: grid;
+  grid-template-columns: 1fr auto;
+  gap: var(--s2);
+  align-items: center;
+  margin-top: var(--s1);
+}

@@ -1,0 +1,239 @@
+import { describe, expect, it } from 'vitest'
+import type { Match, Player, Store } from '../types'
+import { backfillSeq, initialStore, nextSeqOf, playerHasMatches, reducer } from './reducer'
+
+function player(id: string, name = id, isGuest = false): Player {
+  return { id, name, isGuest, createdAt: '2025-10-01T10:00:00.000Z' }
+}
+
+const PLAYED_AT = '2025-10-06T12:42:00.000Z'
+
+function matchInput(id: string, teamA: string[], teamB: string[], playedAt = PLAYED_AT): Omit<Match, 'seq'> {
+  return { id, playedAt, createdAt: playedAt, updatedAt: playedAt, target: 10, teamA, teamB, scoreA: 10, scoreB: 8 }
+}
+
+function deepFreeze<T>(value: T): T {
+  if (typeof value !== 'object' || value === null) return value
+  Object.freeze(value)
+  for (const key of Object.keys(value)) deepFreeze((value as Record<string, unknown>)[key])
+  return value
+}
+
+function seeded(): Store {
+  let state = initialStore
+  state = reducer(state, { type: 'addPlayer', player: player('alice', 'Alice') })
+  state = reducer(state, { type: 'addPlayer', player: player('bob', 'Bob') })
+  state = reducer(state, { type: 'addPlayer', player: player('chloe', 'Chloé') })
+  state = reducer(state, { type: 'addPlayer', player: player('dan', 'Dan') })
+  state = reducer(state, { type: 'addMatch', match: matchInput('m1', ['alice', 'bob'], ['chloe', 'dan']) })
+  state = reducer(state, { type: 'addMatch', match: matchInput('m2', ['alice'], ['chloe']) })
+  state = reducer(state, { type: 'addMatch', match: matchInput('m3', ['bob'], ['dan']) })
+  return deepFreeze(state)
+}
+
+describe('initialStore', () => {
+  it('is empty, version 1, with default settings and nextSeq 1', () => {
+    expect(initialStore).toEqual({
+      version: 1,
+      players: [],
+      matches: [],
+      settings: { lastFormat: '2v2', lastTarget: 10 },
+      nextSeq: 1,
+    })
+  })
+})
+
+describe('players', () => {
+  it('addPlayer appends without mutating the previous state', () => {
+    const before = deepFreeze({ ...initialStore })
+    const after = reducer(before, { type: 'addPlayer', player: player('alice') })
+    expect(after.players.map((p) => p.id)).toEqual(['alice'])
+    expect(before.players).toEqual([])
+    expect(after).not.toBe(before)
+  })
+
+  it('renamePlayer updates name and guest flag of that player only', () => {
+    const state = seeded()
+    const after = reducer(state, { type: 'renamePlayer', id: 'bob', name: 'Bobby', isGuest: true })
+    expect(after.players.find((p) => p.id === 'bob')).toEqual({ ...player('bob', 'Bobby', true) })
+    expect(after.players.find((p) => p.id === 'alice')).toEqual(player('alice', 'Alice'))
+    expect(after.players).toHaveLength(4)
+  })
+
+  it('deletePlayer removes a player who has no match', () => {
+    const state = reducer(seeded(), { type: 'addPlayer', player: player('eve', 'Eve') })
+    const after = reducer(state, { type: 'deletePlayer', id: 'eve' })
+    expect(after.players.some((p) => p.id === 'eve')).toBe(false)
+    expect(after.players).toHaveLength(4)
+  })
+
+  it('deletePlayer throws when the player has matches', () => {
+    const state = seeded()
+    expect(() => reducer(state, { type: 'deletePlayer', id: 'alice' })).toThrow(/alice/)
+    expect(playerHasMatches(state.matches, 'alice')).toBe(true)
+    expect(playerHasMatches(state.matches, 'nobody')).toBe(false)
+  })
+})
+
+describe('addMatch', () => {
+  it('assigns seq = nextSeq, increments nextSeq and appends', () => {
+    const state = seeded()
+    expect(state.matches.map((m) => m.seq)).toEqual([1, 2, 3])
+    expect(state.nextSeq).toBe(4)
+    const after = reducer(state, { type: 'addMatch', match: matchInput('m4', ['alice'], ['dan']) })
+    expect(after.matches.at(-1)).toMatchObject({ id: 'm4', seq: 4 })
+    expect(after.nextSeq).toBe(5)
+    expect(state.matches).toHaveLength(3)
+  })
+
+  it('ignores a seq smuggled into the payload', () => {
+    const state = seeded()
+    const smuggled = { ...matchInput('m4', ['alice'], ['dan']), seq: 99 } as Omit<Match, 'seq'>
+    const after = reducer(state, { type: 'addMatch', match: smuggled })
+    expect(after.matches.at(-1)?.seq).toBe(4)
+  })
+})
+
+describe('updateMatch', () => {
+  it('keeps id, seq, createdAt and playedAt, takes the new fields and updatedAt', () => {
+    const state = seeded()
+    const stored = state.matches[1]
+    const edited: Match = {
+      ...stored,
+      seq: 42,
+      createdAt: '2030-01-01T00:00:00.000Z',
+      playedAt: '2030-01-01T00:00:00.000Z',
+      updatedAt: '2025-10-07T09:00:00.000Z',
+      teamA: ['bob'],
+      teamB: ['dan'],
+      target: 5,
+      scoreA: 3,
+      scoreB: 5,
+    }
+    const after = reducer(state, { type: 'updateMatch', match: edited })
+    expect(after.matches[1]).toEqual({
+      id: 'm2',
+      seq: 2,
+      createdAt: stored.createdAt,
+      playedAt: stored.playedAt,
+      updatedAt: '2025-10-07T09:00:00.000Z',
+      teamA: ['bob'],
+      teamB: ['dan'],
+      target: 5,
+      scoreA: 3,
+      scoreB: 5,
+    })
+    expect(after.matches.map((m) => m.id)).toEqual(['m1', 'm2', 'm3'])
+    expect(after.nextSeq).toBe(4)
+  })
+
+  it('is a no-op for an unknown id', () => {
+    const state = seeded()
+    const after = reducer(state, { type: 'updateMatch', match: { ...state.matches[0], id: 'ghost' } })
+    expect(after).toBe(state)
+  })
+})
+
+describe('deleteMatch / restoreMatch', () => {
+  it('deleteMatch removes the match and keeps nextSeq', () => {
+    const state = seeded()
+    const after = reducer(state, { type: 'deleteMatch', id: 'm2' })
+    expect(after.matches.map((m) => m.id)).toEqual(['m1', 'm3'])
+    expect(after.nextSeq).toBe(4)
+  })
+
+  it('restoreMatch re-inserts at the exact index so the replay is byte-identical', () => {
+    const state = seeded()
+    const index = state.matches.findIndex((m) => m.id === 'm2')
+    const removed = state.matches[index]
+    const deleted = reducer(state, { type: 'deleteMatch', id: 'm2' })
+    const restored = reducer(deleted, { type: 'restoreMatch', match: removed, index })
+    expect(JSON.stringify(restored)).toBe(JSON.stringify(state))
+  })
+
+  it('restoreMatch clamps the index and refuses a duplicate id', () => {
+    const state = seeded()
+    const removed = state.matches[2]
+    const deleted = reducer(state, { type: 'deleteMatch', id: 'm3' })
+    const atEnd = reducer(deleted, { type: 'restoreMatch', match: removed, index: 99 })
+    expect(atEnd.matches.map((m) => m.id)).toEqual(['m1', 'm2', 'm3'])
+    const atStart = reducer(deleted, { type: 'restoreMatch', match: removed, index: -5 })
+    expect(atStart.matches.map((m) => m.id)).toEqual(['m3', 'm1', 'm2'])
+    expect(reducer(state, { type: 'restoreMatch', match: removed, index: 0 })).toBe(state)
+  })
+
+  it('restoreMatch bumps nextSeq when the restored seq is ahead of it', () => {
+    const state = seeded()
+    const foreign: Match = { ...matchInput('m9', ['alice'], ['bob']), seq: 10 }
+    const after = reducer(state, { type: 'restoreMatch', match: foreign, index: 1 })
+    expect(after.nextSeq).toBe(11)
+  })
+})
+
+describe('importAll', () => {
+  it('replaces players, matches and settings and sets nextSeq = max(seq) + 1', () => {
+    const state = seeded()
+    const matches: Match[] = [
+      { ...matchInput('x1', ['p1'], ['p2']), seq: 7 },
+      { ...matchInput('x2', ['p2'], ['p1']), seq: 3 },
+    ]
+    const after = reducer(state, {
+      type: 'importAll',
+      players: [player('p1'), player('p2')],
+      matches,
+      settings: { lastFormat: '1v1', lastTarget: 5, lastExportAt: '2025-10-01T00:00:00.000Z' },
+    })
+    expect(after.players.map((p) => p.id)).toEqual(['p1', 'p2'])
+    expect(after.matches.map((m) => [m.id, m.seq])).toEqual([
+      ['x1', 7],
+      ['x2', 3],
+    ])
+    expect(after.settings).toEqual({ lastFormat: '1v1', lastTarget: 5, lastExportAt: '2025-10-01T00:00:00.000Z' })
+    expect(after.nextSeq).toBe(8)
+    expect(after.version).toBe(1)
+  })
+
+  it('backfills seq in array order for matches lacking one', () => {
+    const noSeq = [matchInput('a', ['p1'], ['p2']), matchInput('b', ['p2'], ['p1']), matchInput('c', ['p1'], ['p2'])]
+    const after = reducer(initialStore, {
+      type: 'importAll',
+      players: [player('p1'), player('p2')],
+      matches: noSeq as Match[],
+      settings: { lastFormat: '2v2', lastTarget: 10 },
+    })
+    expect(after.matches.map((m) => m.seq)).toEqual([1, 2, 3])
+    expect(after.nextSeq).toBe(4)
+  })
+
+  it('backfills after the highest existing seq when only some matches have one', () => {
+    const mixed = [
+      matchInput('a', ['p1'], ['p2']),
+      { ...matchInput('b', ['p2'], ['p1']), seq: 5 },
+      matchInput('c', ['p1'], ['p2']),
+    ] as Match[]
+    expect(backfillSeq(mixed).map((m) => m.seq)).toEqual([6, 5, 7])
+    expect(nextSeqOf(backfillSeq(mixed))).toBe(8)
+    expect(nextSeqOf([])).toBe(1)
+  })
+
+  it('returns the same array when every match already has a seq', () => {
+    const state = seeded()
+    expect(backfillSeq(state.matches)).toBe(state.matches)
+  })
+})
+
+describe('clearAll / setSetting', () => {
+  it('clearAll returns a fresh copy of the initial store (a new identity, so it gets persisted)', () => {
+    const cleared = reducer(seeded(), { type: 'clearAll' })
+    expect(cleared).toEqual(initialStore)
+    expect(cleared).not.toBe(initialStore)
+  })
+
+  it('setSetting merges the patch', () => {
+    const state = seeded()
+    const patch = { lastFormat: '1v1', lastExportAt: '2025-10-10T00:00:00.000Z' } as const
+    const after = reducer(state, { type: 'setSetting', patch })
+    expect(after.settings).toEqual({ lastFormat: '1v1', lastTarget: 10, lastExportAt: '2025-10-10T00:00:00.000Z' })
+    expect(state.settings).toEqual({ lastFormat: '2v2', lastTarget: 10 })
+  })
+})

@@ -1,0 +1,5178 @@
+{
+ "generatedBy": "make-vectors.ts",
+ "engine": "BabyElo v2 (rating.ts)",
+ "config": {
+  "K": 16,
+  "scale": 400,
+  "formatFactor5": 0.7,
+  "formatFactor10": 1,
+  "marginUnit": 10,
+  "shareMin": 0.45,
+  "shareMax": 0.55,
+  "rookieK0": 3,
+  "rookieSpan": 20,
+  "rankedAfter": 10,
+  "inactiveDays": 30,
+  "startRating": 1000
+ },
+ "scenarios": [
+  {
+   "name": "owner_example_win",
+   "description": "C1 canonical: 1400+800 beat 1100+1100 10-8. Weak gains more than Strong.",
+   "input": {
+    "state": {
+     "strong": {
+      "rating": 1400,
+      "matches": 20,
+      "wins": 10,
+      "losses": 10,
+      "lastPlayedAt": 1791720000000
+     },
+     "weak": {
+      "rating": 800,
+      "matches": 20,
+      "wins": 10,
+      "losses": 10,
+      "lastPlayedAt": 1791720000000
+     },
+     "c1": {
+      "rating": 1100,
+      "matches": 20,
+      "wins": 10,
+      "losses": 10,
+      "lastPlayedAt": 1791720000000
+     },
+     "c2": {
+      "rating": 1100,
+      "matches": 20,
+      "wins": 10,
+      "losses": 10,
+      "lastPlayedAt": 1791720000000
+     }
+    },
+    "match": {
+     "id": "m1",
+     "seq": 1,
+     "playedAt": 1791806400000,
+     "createdAt": 1791806400000,
+     "target": 10,
+     "teamA": [
+      "strong",
+      "weak"
+     ],
+     "teamB": [
+      "c1",
+      "c2"
+     ],
+     "scoreA": 10,
+     "scoreB": 8
+    }
+   },
+   "expected": {
+    "newState": {
+     "strong": {
+      "rating": 1408.64,
+      "matches": 21,
+      "wins": 11,
+      "losses": 10,
+      "lastPlayedAt": 1791806400000
+     },
+     "weak": {
+      "rating": 810.56,
+      "matches": 21,
+      "wins": 11,
+      "losses": 10,
+      "lastPlayedAt": 1791806400000
+     },
+     "c1": {
+      "rating": 1090.4,
+      "matches": 21,
+      "wins": 10,
+      "losses": 11,
+      "lastPlayedAt": 1791806400000
+     },
+     "c2": {
+      "rating": 1090.4,
+      "matches": 21,
+      "wins": 10,
+      "losses": 11,
+      "lastPlayedAt": 1791806400000
+     }
+    },
+    "deltas": [
+     {
+      "playerId": "strong",
+      "team": "A",
+      "won": true,
+      "target": 10,
+      "scoreFor": 10,
+      "scoreAgainst": 8,
+      "expected": 0.5,
+      "margin": 1.2,
+      "teamSize": 2,
+      "share": 0.45,
+      "rookieK": 1,
+      "matchesBefore": 20,
+      "ratingBefore": 1400,
+      "ratingAfter": 1408.64,
+      "delta": 8.64,
+      "why": "Victoire 10-8 (en 10) · 50 % de chances · marge ×1,2 · part 45 % → +8,6"
+     },
+     {
+      "playerId": "weak",
+      "team": "A",
+      "won": true,
+      "target": 10,
+      "scoreFor": 10,
+      "scoreAgainst": 8,
+      "expected": 0.5,
+      "margin": 1.2,
+      "teamSize": 2,
+      "share": 0.55,
+      "rookieK": 1,
+      "matchesBefore": 20,
+      "ratingBefore": 800,
+      "ratingAfter": 810.56,
+      "delta": 10.56,
+      "why": "Victoire 10-8 (en 10) · 50 % de chances · marge ×1,2 · part 55 % → +10,6"
+     },
+     {
+      "playerId": "c1",
+      "team": "B",
+      "won": false,
+      "target": 10,
+      "scoreFor": 8,
+      "scoreAgainst": 10,
+      "expected": 0.5,
+      "margin": 1.2,
+      "teamSize": 2,
+      "share": 0.5,
+      "rookieK": 1,
+      "matchesBefore": 20,
+      "ratingBefore": 1100,
+      "ratingAfter": 1090.4,
+      "delta": -9.6,
+      "why": "Défaite 8-10 (en 10) · 50 % de chances · marge ×1,2 · part 50 % → −9,6"
+     },
+     {
+      "playerId": "c2",
+      "team": "B",
+      "won": false,
+      "target": 10,
+      "scoreFor": 8,
+      "scoreAgainst": 10,
+      "expected": 0.5,
+      "margin": 1.2,
+      "teamSize": 2,
+      "share": 0.5,
+      "rookieK": 1,
+      "matchesBefore": 20,
+      "ratingBefore": 1100,
+      "ratingAfter": 1090.4,
+      "delta": -9.6,
+      "why": "Défaite 8-10 (en 10) · 50 % de chances · marge ×1,2 · part 50 % → −9,6"
+     }
+    ]
+   }
+  },
+  {
+   "name": "owner_example_loss",
+   "description": "C1 canonical: 1400+800 lose 8-10 to 1100+1100. Strong loses more than Weak.",
+   "input": {
+    "state": {
+     "strong": {
+      "rating": 1400,
+      "matches": 20,
+      "wins": 10,
+      "losses": 10,
+      "lastPlayedAt": 1791720000000
+     },
+     "weak": {
+      "rating": 800,
+      "matches": 20,
+      "wins": 10,
+      "losses": 10,
+      "lastPlayedAt": 1791720000000
+     },
+     "c1": {
+      "rating": 1100,
+      "matches": 20,
+      "wins": 10,
+      "losses": 10,
+      "lastPlayedAt": 1791720000000
+     },
+     "c2": {
+      "rating": 1100,
+      "matches": 20,
+      "wins": 10,
+      "losses": 10,
+      "lastPlayedAt": 1791720000000
+     }
+    },
+    "match": {
+     "id": "m1",
+     "seq": 1,
+     "playedAt": 1791806400000,
+     "createdAt": 1791806400000,
+     "target": 10,
+     "teamA": [
+      "strong",
+      "weak"
+     ],
+     "teamB": [
+      "c1",
+      "c2"
+     ],
+     "scoreA": 8,
+     "scoreB": 10
+    }
+   },
+   "expected": {
+    "newState": {
+     "strong": {
+      "rating": 1389.44,
+      "matches": 21,
+      "wins": 10,
+      "losses": 11,
+      "lastPlayedAt": 1791806400000
+     },
+     "weak": {
+      "rating": 791.36,
+      "matches": 21,
+      "wins": 10,
+      "losses": 11,
+      "lastPlayedAt": 1791806400000
+     },
+     "c1": {
+      "rating": 1109.6,
+      "matches": 21,
+      "wins": 11,
+      "losses": 10,
+      "lastPlayedAt": 1791806400000
+     },
+     "c2": {
+      "rating": 1109.6,
+      "matches": 21,
+      "wins": 11,
+      "losses": 10,
+      "lastPlayedAt": 1791806400000
+     }
+    },
+    "deltas": [
+     {
+      "playerId": "strong",
+      "team": "A",
+      "won": false,
+      "target": 10,
+      "scoreFor": 8,
+      "scoreAgainst": 10,
+      "expected": 0.5,
+      "margin": 1.2,
+      "teamSize": 2,
+      "share": 0.55,
+      "rookieK": 1,
+      "matchesBefore": 20,
+      "ratingBefore": 1400,
+      "ratingAfter": 1389.44,
+      "delta": -10.56,
+      "why": "Défaite 8-10 (en 10) · 50 % de chances · marge ×1,2 · part 55 % → −10,6"
+     },
+     {
+      "playerId": "weak",
+      "team": "A",
+      "won": false,
+      "target": 10,
+      "scoreFor": 8,
+      "scoreAgainst": 10,
+      "expected": 0.5,
+      "margin": 1.2,
+      "teamSize": 2,
+      "share": 0.45,
+      "rookieK": 1,
+      "matchesBefore": 20,
+      "ratingBefore": 800,
+      "ratingAfter": 791.36,
+      "delta": -8.64,
+      "why": "Défaite 8-10 (en 10) · 50 % de chances · marge ×1,2 · part 45 % → −8,6"
+     },
+     {
+      "playerId": "c1",
+      "team": "B",
+      "won": true,
+      "target": 10,
+      "scoreFor": 10,
+      "scoreAgainst": 8,
+      "expected": 0.5,
+      "margin": 1.2,
+      "teamSize": 2,
+      "share": 0.5,
+      "rookieK": 1,
+      "matchesBefore": 20,
+      "ratingBefore": 1100,
+      "ratingAfter": 1109.6,
+      "delta": 9.6,
+      "why": "Victoire 10-8 (en 10) · 50 % de chances · marge ×1,2 · part 50 % → +9,6"
+     },
+     {
+      "playerId": "c2",
+      "team": "B",
+      "won": true,
+      "target": 10,
+      "scoreFor": 10,
+      "scoreAgainst": 8,
+      "expected": 0.5,
+      "margin": 1.2,
+      "teamSize": 2,
+      "share": 0.5,
+      "rookieK": 1,
+      "matchesBefore": 20,
+      "ratingBefore": 1100,
+      "ratingAfter": 1109.6,
+      "delta": 9.6,
+      "why": "Victoire 10-8 (en 10) · 50 % de chances · marge ×1,2 · part 50 % → +9,6"
+     }
+    ]
+   }
+  },
+  {
+   "name": "one_v_one",
+   "description": "1v1: 1050 beats 950 10-6 (shares are trivially 1).",
+   "input": {
+    "state": {
+     "a": {
+      "rating": 1050,
+      "matches": 20,
+      "wins": 10,
+      "losses": 10,
+      "lastPlayedAt": 1791720000000
+     },
+     "b": {
+      "rating": 950,
+      "matches": 20,
+      "wins": 10,
+      "losses": 10,
+      "lastPlayedAt": 1791720000000
+     }
+    },
+    "match": {
+     "id": "m1",
+     "seq": 1,
+     "playedAt": 1791806400000,
+     "createdAt": 1791806400000,
+     "target": 10,
+     "teamA": [
+      "a"
+     ],
+     "teamB": [
+      "b"
+     ],
+     "scoreA": 10,
+     "scoreB": 6
+    }
+   },
+   "expected": {
+    "newState": {
+     "a": {
+      "rating": 1058.063,
+      "matches": 21,
+      "wins": 11,
+      "losses": 10,
+      "lastPlayedAt": 1791806400000
+     },
+     "b": {
+      "rating": 941.937,
+      "matches": 21,
+      "wins": 10,
+      "losses": 11,
+      "lastPlayedAt": 1791806400000
+     }
+    },
+    "deltas": [
+     {
+      "playerId": "a",
+      "team": "A",
+      "won": true,
+      "target": 10,
+      "scoreFor": 10,
+      "scoreAgainst": 6,
+      "expected": 0.6400649998028851,
+      "margin": 1.4,
+      "teamSize": 1,
+      "share": 1,
+      "rookieK": 1,
+      "matchesBefore": 20,
+      "ratingBefore": 1050,
+      "ratingAfter": 1058.063,
+      "delta": 8.063,
+      "why": "Victoire 10-6 (en 10) · 64 % de chances · marge ×1,4 → +8,1"
+     },
+     {
+      "playerId": "b",
+      "team": "B",
+      "won": false,
+      "target": 10,
+      "scoreFor": 6,
+      "scoreAgainst": 10,
+      "expected": 0.3599350001971149,
+      "margin": 1.4,
+      "teamSize": 1,
+      "share": 1,
+      "rookieK": 1,
+      "matchesBefore": 20,
+      "ratingBefore": 950,
+      "ratingAfter": 941.937,
+      "delta": -8.063,
+      "why": "Défaite 6-10 (en 10) · 36 % de chances · marge ×1,4 → −8,1"
+     }
+    ]
+   }
+  },
+  {
+   "name": "to5_shutout",
+   "description": "Race to 5, 5-0 between four 1000s: G = 1.5, E = 0.5.",
+   "input": {
+    "state": {
+     "a": {
+      "rating": 1000,
+      "matches": 20,
+      "wins": 10,
+      "losses": 10,
+      "lastPlayedAt": 1791720000000
+     },
+     "b": {
+      "rating": 1000,
+      "matches": 20,
+      "wins": 10,
+      "losses": 10,
+      "lastPlayedAt": 1791720000000
+     },
+     "c": {
+      "rating": 1000,
+      "matches": 20,
+      "wins": 10,
+      "losses": 10,
+      "lastPlayedAt": 1791720000000
+     },
+     "d": {
+      "rating": 1000,
+      "matches": 20,
+      "wins": 10,
+      "losses": 10,
+      "lastPlayedAt": 1791720000000
+     }
+    },
+    "match": {
+     "id": "m1",
+     "seq": 1,
+     "playedAt": 1791806400000,
+     "createdAt": 1791806400000,
+     "target": 5,
+     "teamA": [
+      "a",
+      "b"
+     ],
+     "teamB": [
+      "c",
+      "d"
+     ],
+     "scoreA": 5,
+     "scoreB": 0
+    }
+   },
+   "expected": {
+    "newState": {
+     "a": {
+      "rating": 1012,
+      "matches": 21,
+      "wins": 11,
+      "losses": 10,
+      "lastPlayedAt": 1791806400000
+     },
+     "b": {
+      "rating": 1012,
+      "matches": 21,
+      "wins": 11,
+      "losses": 10,
+      "lastPlayedAt": 1791806400000
+     },
+     "c": {
+      "rating": 988,
+      "matches": 21,
+      "wins": 10,
+      "losses": 11,
+      "lastPlayedAt": 1791806400000
+     },
+     "d": {
+      "rating": 988,
+      "matches": 21,
+      "wins": 10,
+      "losses": 11,
+      "lastPlayedAt": 1791806400000
+     }
+    },
+    "deltas": [
+     {
+      "playerId": "a",
+      "team": "A",
+      "won": true,
+      "target": 5,
+      "scoreFor": 5,
+      "scoreAgainst": 0,
+      "expected": 0.5,
+      "margin": 1.5,
+      "teamSize": 2,
+      "share": 0.5,
+      "rookieK": 1,
+      "matchesBefore": 20,
+      "ratingBefore": 1000,
+      "ratingAfter": 1012,
+      "delta": 12,
+      "why": "Victoire 5-0 (en 5) · 50 % de chances · marge ×1,5 · part 50 % → +12,0"
+     },
+     {
+      "playerId": "b",
+      "team": "A",
+      "won": true,
+      "target": 5,
+      "scoreFor": 5,
+      "scoreAgainst": 0,
+      "expected": 0.5,
+      "margin": 1.5,
+      "teamSize": 2,
+      "share": 0.5,
+      "rookieK": 1,
+      "matchesBefore": 20,
+      "ratingBefore": 1000,
+      "ratingAfter": 1012,
+      "delta": 12,
+      "why": "Victoire 5-0 (en 5) · 50 % de chances · marge ×1,5 · part 50 % → +12,0"
+     },
+     {
+      "playerId": "c",
+      "team": "B",
+      "won": false,
+      "target": 5,
+      "scoreFor": 0,
+      "scoreAgainst": 5,
+      "expected": 0.5,
+      "margin": 1.5,
+      "teamSize": 2,
+      "share": 0.5,
+      "rookieK": 1,
+      "matchesBefore": 20,
+      "ratingBefore": 1000,
+      "ratingAfter": 988,
+      "delta": -12,
+      "why": "Défaite 0-5 (en 5) · 50 % de chances · marge ×1,5 · part 50 % → −12,0"
+     },
+     {
+      "playerId": "d",
+      "team": "B",
+      "won": false,
+      "target": 5,
+      "scoreFor": 0,
+      "scoreAgainst": 5,
+      "expected": 0.5,
+      "margin": 1.5,
+      "teamSize": 2,
+      "share": 0.5,
+      "rookieK": 1,
+      "matchesBefore": 20,
+      "ratingBefore": 1000,
+      "ratingAfter": 988,
+      "delta": -12,
+      "why": "Défaite 0-5 (en 5) · 50 % de chances · marge ×1,5 · part 50 % → −12,0"
+     }
+    ]
+   }
+  },
+  {
+   "name": "to10_one_goal",
+   "description": "Race to 10, 10-9 between 1000+1000 and 1000+1000: G = 1.1.",
+   "input": {
+    "state": {
+     "a": {
+      "rating": 1000,
+      "matches": 20,
+      "wins": 10,
+      "losses": 10,
+      "lastPlayedAt": 1791720000000
+     },
+     "b": {
+      "rating": 1000,
+      "matches": 20,
+      "wins": 10,
+      "losses": 10,
+      "lastPlayedAt": 1791720000000
+     },
+     "c": {
+      "rating": 1000,
+      "matches": 20,
+      "wins": 10,
+      "losses": 10,
+      "lastPlayedAt": 1791720000000
+     },
+     "d": {
+      "rating": 1000,
+      "matches": 20,
+      "wins": 10,
+      "losses": 10,
+      "lastPlayedAt": 1791720000000
+     }
+    },
+    "match": {
+     "id": "m1",
+     "seq": 1,
+     "playedAt": 1791806400000,
+     "createdAt": 1791806400000,
+     "target": 10,
+     "teamA": [
+      "a",
+      "b"
+     ],
+     "teamB": [
+      "c",
+      "d"
+     ],
+     "scoreA": 10,
+     "scoreB": 9
+    }
+   },
+   "expected": {
+    "newState": {
+     "a": {
+      "rating": 1008.8,
+      "matches": 21,
+      "wins": 11,
+      "losses": 10,
+      "lastPlayedAt": 1791806400000
+     },
+     "b": {
+      "rating": 1008.8,
+      "matches": 21,
+      "wins": 11,
+      "losses": 10,
+      "lastPlayedAt": 1791806400000
+     },
+     "c": {
+      "rating": 991.2,
+      "matches": 21,
+      "wins": 10,
+      "losses": 11,
+      "lastPlayedAt": 1791806400000
+     },
+     "d": {
+      "rating": 991.2,
+      "matches": 21,
+      "wins": 10,
+      "losses": 11,
+      "lastPlayedAt": 1791806400000
+     }
+    },
+    "deltas": [
+     {
+      "playerId": "a",
+      "team": "A",
+      "won": true,
+      "target": 10,
+      "scoreFor": 10,
+      "scoreAgainst": 9,
+      "expected": 0.5,
+      "margin": 1.1,
+      "teamSize": 2,
+      "share": 0.5,
+      "rookieK": 1,
+      "matchesBefore": 20,
+      "ratingBefore": 1000,
+      "ratingAfter": 1008.8,
+      "delta": 8.8,
+      "why": "Victoire 10-9 (en 10) · 50 % de chances · marge ×1,1 · part 50 % → +8,8"
+     },
+     {
+      "playerId": "b",
+      "team": "A",
+      "won": true,
+      "target": 10,
+      "scoreFor": 10,
+      "scoreAgainst": 9,
+      "expected": 0.5,
+      "margin": 1.1,
+      "teamSize": 2,
+      "share": 0.5,
+      "rookieK": 1,
+      "matchesBefore": 20,
+      "ratingBefore": 1000,
+      "ratingAfter": 1008.8,
+      "delta": 8.8,
+      "why": "Victoire 10-9 (en 10) · 50 % de chances · marge ×1,1 · part 50 % → +8,8"
+     },
+     {
+      "playerId": "c",
+      "team": "B",
+      "won": false,
+      "target": 10,
+      "scoreFor": 9,
+      "scoreAgainst": 10,
+      "expected": 0.5,
+      "margin": 1.1,
+      "teamSize": 2,
+      "share": 0.5,
+      "rookieK": 1,
+      "matchesBefore": 20,
+      "ratingBefore": 1000,
+      "ratingAfter": 991.2,
+      "delta": -8.8,
+      "why": "Défaite 9-10 (en 10) · 50 % de chances · marge ×1,1 · part 50 % → −8,8"
+     },
+     {
+      "playerId": "d",
+      "team": "B",
+      "won": false,
+      "target": 10,
+      "scoreFor": 9,
+      "scoreAgainst": 10,
+      "expected": 0.5,
+      "margin": 1.1,
+      "teamSize": 2,
+      "share": 0.5,
+      "rookieK": 1,
+      "matchesBefore": 20,
+      "ratingBefore": 1000,
+      "ratingAfter": 991.2,
+      "delta": -8.8,
+      "why": "Défaite 9-10 (en 10) · 50 % de chances · marge ×1,1 · part 50 % → −8,8"
+     }
+    ]
+   }
+  },
+  {
+   "name": "upset",
+   "description": "Upset: 900+900 beat 1200+1200 10-7 (E = 0.151, G = 1.3).",
+   "input": {
+    "state": {
+     "a": {
+      "rating": 900,
+      "matches": 20,
+      "wins": 10,
+      "losses": 10,
+      "lastPlayedAt": 1791720000000
+     },
+     "b": {
+      "rating": 900,
+      "matches": 20,
+      "wins": 10,
+      "losses": 10,
+      "lastPlayedAt": 1791720000000
+     },
+     "c": {
+      "rating": 1200,
+      "matches": 20,
+      "wins": 10,
+      "losses": 10,
+      "lastPlayedAt": 1791720000000
+     },
+     "d": {
+      "rating": 1200,
+      "matches": 20,
+      "wins": 10,
+      "losses": 10,
+      "lastPlayedAt": 1791720000000
+     }
+    },
+    "match": {
+     "id": "m1",
+     "seq": 1,
+     "playedAt": 1791806400000,
+     "createdAt": 1791806400000,
+     "target": 10,
+     "teamA": [
+      "a",
+      "b"
+     ],
+     "teamB": [
+      "c",
+      "d"
+     ],
+     "scoreA": 10,
+     "scoreB": 7
+    }
+   },
+   "expected": {
+    "newState": {
+     "a": {
+      "rating": 917.66,
+      "matches": 21,
+      "wins": 11,
+      "losses": 10,
+      "lastPlayedAt": 1791806400000
+     },
+     "b": {
+      "rating": 917.66,
+      "matches": 21,
+      "wins": 11,
+      "losses": 10,
+      "lastPlayedAt": 1791806400000
+     },
+     "c": {
+      "rating": 1182.34,
+      "matches": 21,
+      "wins": 10,
+      "losses": 11,
+      "lastPlayedAt": 1791806400000
+     },
+     "d": {
+      "rating": 1182.34,
+      "matches": 21,
+      "wins": 10,
+      "losses": 11,
+      "lastPlayedAt": 1791806400000
+     }
+    },
+    "deltas": [
+     {
+      "playerId": "a",
+      "team": "A",
+      "won": true,
+      "target": 10,
+      "scoreFor": 10,
+      "scoreAgainst": 7,
+      "expected": 0.15097955721132328,
+      "margin": 1.3,
+      "teamSize": 2,
+      "share": 0.5,
+      "rookieK": 1,
+      "matchesBefore": 20,
+      "ratingBefore": 900,
+      "ratingAfter": 917.66,
+      "delta": 17.66,
+      "why": "Victoire 10-7 (en 10) · 15 % de chances · marge ×1,3 · part 50 % → +17,7"
+     },
+     {
+      "playerId": "b",
+      "team": "A",
+      "won": true,
+      "target": 10,
+      "scoreFor": 10,
+      "scoreAgainst": 7,
+      "expected": 0.15097955721132328,
+      "margin": 1.3,
+      "teamSize": 2,
+      "share": 0.5,
+      "rookieK": 1,
+      "matchesBefore": 20,
+      "ratingBefore": 900,
+      "ratingAfter": 917.66,
+      "delta": 17.66,
+      "why": "Victoire 10-7 (en 10) · 15 % de chances · marge ×1,3 · part 50 % → +17,7"
+     },
+     {
+      "playerId": "c",
+      "team": "B",
+      "won": false,
+      "target": 10,
+      "scoreFor": 7,
+      "scoreAgainst": 10,
+      "expected": 0.8490204427886767,
+      "margin": 1.3,
+      "teamSize": 2,
+      "share": 0.5,
+      "rookieK": 1,
+      "matchesBefore": 20,
+      "ratingBefore": 1200,
+      "ratingAfter": 1182.34,
+      "delta": -17.66,
+      "why": "Défaite 7-10 (en 10) · 85 % de chances · marge ×1,3 · part 50 % → −17,7"
+     },
+     {
+      "playerId": "d",
+      "team": "B",
+      "won": false,
+      "target": 10,
+      "scoreFor": 7,
+      "scoreAgainst": 10,
+      "expected": 0.8490204427886767,
+      "margin": 1.3,
+      "teamSize": 2,
+      "share": 0.5,
+      "rookieK": 1,
+      "matchesBefore": 20,
+      "ratingBefore": 1200,
+      "ratingAfter": 1182.34,
+      "delta": -17.66,
+      "why": "Défaite 7-10 (en 10) · 85 % de chances · marge ×1,3 · part 50 % → −17,7"
+     }
+    ]
+   }
+  },
+  {
+   "name": "to5_favourite_loses",
+   "description": "Race to 5: 1200+1000 (mean 1100) lose 3-5 to 1000+1000; f_5 = 0.7 so E = 0.599 (not 0.640).",
+   "input": {
+    "state": {
+     "a": {
+      "rating": 1200,
+      "matches": 20,
+      "wins": 10,
+      "losses": 10,
+      "lastPlayedAt": 1791720000000
+     },
+     "b": {
+      "rating": 1000,
+      "matches": 20,
+      "wins": 10,
+      "losses": 10,
+      "lastPlayedAt": 1791720000000
+     },
+     "c": {
+      "rating": 1000,
+      "matches": 20,
+      "wins": 10,
+      "losses": 10,
+      "lastPlayedAt": 1791720000000
+     },
+     "d": {
+      "rating": 1000,
+      "matches": 20,
+      "wins": 10,
+      "losses": 10,
+      "lastPlayedAt": 1791720000000
+     }
+    },
+    "match": {
+     "id": "m1",
+     "seq": 1,
+     "playedAt": 1791806400000,
+     "createdAt": 1791806400000,
+     "target": 5,
+     "teamA": [
+      "a",
+      "b"
+     ],
+     "teamB": [
+      "c",
+      "d"
+     ],
+     "scoreA": 3,
+     "scoreB": 5
+    }
+   },
+   "expected": {
+    "newState": {
+     "a": {
+      "rating": 1187.341,
+      "matches": 21,
+      "wins": 10,
+      "losses": 11,
+      "lastPlayedAt": 1791806400000
+     },
+     "b": {
+      "rating": 989.642,
+      "matches": 21,
+      "wins": 10,
+      "losses": 11,
+      "lastPlayedAt": 1791806400000
+     },
+     "c": {
+      "rating": 1011.508,
+      "matches": 21,
+      "wins": 11,
+      "losses": 10,
+      "lastPlayedAt": 1791806400000
+     },
+     "d": {
+      "rating": 1011.508,
+      "matches": 21,
+      "wins": 11,
+      "losses": 10,
+      "lastPlayedAt": 1791806400000
+     }
+    },
+    "deltas": [
+     {
+      "playerId": "a",
+      "team": "A",
+      "won": false,
+      "target": 5,
+      "scoreFor": 3,
+      "scoreAgainst": 5,
+      "expected": 0.5993967967092568,
+      "margin": 1.2,
+      "teamSize": 2,
+      "share": 0.55,
+      "rookieK": 1,
+      "matchesBefore": 20,
+      "ratingBefore": 1200,
+      "ratingAfter": 1187.341,
+      "delta": -12.659,
+      "why": "Défaite 3-5 (en 5) · 60 % de chances · marge ×1,2 · part 55 % → −12,7"
+     },
+     {
+      "playerId": "b",
+      "team": "A",
+      "won": false,
+      "target": 5,
+      "scoreFor": 3,
+      "scoreAgainst": 5,
+      "expected": 0.5993967967092568,
+      "margin": 1.2,
+      "teamSize": 2,
+      "share": 0.45,
+      "rookieK": 1,
+      "matchesBefore": 20,
+      "ratingBefore": 1000,
+      "ratingAfter": 989.642,
+      "delta": -10.358,
+      "why": "Défaite 3-5 (en 5) · 60 % de chances · marge ×1,2 · part 45 % → −10,4"
+     },
+     {
+      "playerId": "c",
+      "team": "B",
+      "won": true,
+      "target": 5,
+      "scoreFor": 5,
+      "scoreAgainst": 3,
+      "expected": 0.40060320329074317,
+      "margin": 1.2,
+      "teamSize": 2,
+      "share": 0.5,
+      "rookieK": 1,
+      "matchesBefore": 20,
+      "ratingBefore": 1000,
+      "ratingAfter": 1011.508,
+      "delta": 11.508,
+      "why": "Victoire 5-3 (en 5) · 40 % de chances · marge ×1,2 · part 50 % → +11,5"
+     },
+     {
+      "playerId": "d",
+      "team": "B",
+      "won": true,
+      "target": 5,
+      "scoreFor": 5,
+      "scoreAgainst": 3,
+      "expected": 0.40060320329074317,
+      "margin": 1.2,
+      "teamSize": 2,
+      "share": 0.5,
+      "rookieK": 1,
+      "matchesBefore": 20,
+      "ratingBefore": 1000,
+      "ratingAfter": 1011.508,
+      "delta": 11.508,
+      "why": "Victoire 5-3 (en 5) · 40 % de chances · marge ×1,2 · part 50 % → +11,5"
+     }
+    ]
+   }
+  },
+  {
+   "name": "rookie_first_matches",
+   "description": "Rookie multiplier x3, x2.9, x2.8 on matches 1-3; partners/opponents move x1.",
+   "input": {
+    "players": [
+     {
+      "id": "rookie",
+      "name": "Nina",
+      "isGuest": false,
+      "createdAt": 1790942400000
+     },
+     {
+      "id": "a",
+      "name": "Alice",
+      "isGuest": false,
+      "createdAt": 1790942400000
+     },
+     {
+      "id": "b",
+      "name": "Bob",
+      "isGuest": false,
+      "createdAt": 1790942400000
+     },
+     {
+      "id": "c",
+      "name": "Chloé",
+      "isGuest": false,
+      "createdAt": 1790942400000
+     },
+     {
+      "id": "d",
+      "name": "David",
+      "isGuest": false,
+      "createdAt": 1790942400000
+     }
+    ],
+    "initialState": {
+     "a": {
+      "rating": 1000,
+      "matches": 20,
+      "wins": 10,
+      "losses": 10,
+      "lastPlayedAt": 1791720000000
+     },
+     "b": {
+      "rating": 1000,
+      "matches": 20,
+      "wins": 10,
+      "losses": 10,
+      "lastPlayedAt": 1791720000000
+     },
+     "c": {
+      "rating": 1000,
+      "matches": 20,
+      "wins": 10,
+      "losses": 10,
+      "lastPlayedAt": 1791720000000
+     },
+     "d": {
+      "rating": 1000,
+      "matches": 20,
+      "wins": 10,
+      "losses": 10,
+      "lastPlayedAt": 1791720000000
+     }
+    },
+    "matches": [
+     {
+      "id": "r1",
+      "seq": 1,
+      "playedAt": 1791806400000,
+      "createdAt": 1791806400000,
+      "target": 10,
+      "teamA": [
+       "rookie",
+       "a"
+      ],
+      "teamB": [
+       "b",
+       "c"
+      ],
+      "scoreA": 10,
+      "scoreB": 6
+     },
+     {
+      "id": "r2",
+      "seq": 2,
+      "playedAt": 1791806400001,
+      "createdAt": 1791806400001,
+      "target": 10,
+      "teamA": [
+       "rookie",
+       "d"
+      ],
+      "teamB": [
+       "a",
+       "b"
+      ],
+      "scoreA": 10,
+      "scoreB": 8
+     },
+     {
+      "id": "r3",
+      "seq": 3,
+      "playedAt": 1791806400002,
+      "createdAt": 1791806400002,
+      "target": 5,
+      "teamA": [
+       "rookie"
+      ],
+      "teamB": [
+       "c"
+      ],
+      "scoreA": 2,
+      "scoreB": 5
+     }
+    ]
+   },
+   "expected": {
+    "steps": [
+     {
+      "matchId": "r1",
+      "deltas": [
+       {
+        "playerId": "rookie",
+        "team": "A",
+        "won": true,
+        "target": 10,
+        "scoreFor": 10,
+        "scoreAgainst": 6,
+        "expected": 0.5,
+        "margin": 1.4,
+        "teamSize": 2,
+        "share": 0.5,
+        "rookieK": 3,
+        "matchesBefore": 0,
+        "ratingBefore": 1000,
+        "ratingAfter": 1033.6,
+        "delta": 33.6,
+        "why": "Victoire 10-6 (en 10) · 50 % de chances · marge ×1,4 · part 50 % · débutant ×3,0 → +33,6"
+       },
+       {
+        "playerId": "a",
+        "team": "A",
+        "won": true,
+        "target": 10,
+        "scoreFor": 10,
+        "scoreAgainst": 6,
+        "expected": 0.5,
+        "margin": 1.4,
+        "teamSize": 2,
+        "share": 0.5,
+        "rookieK": 1,
+        "matchesBefore": 20,
+        "ratingBefore": 1000,
+        "ratingAfter": 1011.2,
+        "delta": 11.2,
+        "why": "Victoire 10-6 (en 10) · 50 % de chances · marge ×1,4 · part 50 % → +11,2"
+       },
+       {
+        "playerId": "b",
+        "team": "B",
+        "won": false,
+        "target": 10,
+        "scoreFor": 6,
+        "scoreAgainst": 10,
+        "expected": 0.5,
+        "margin": 1.4,
+        "teamSize": 2,
+        "share": 0.5,
+        "rookieK": 1,
+        "matchesBefore": 20,
+        "ratingBefore": 1000,
+        "ratingAfter": 988.8,
+        "delta": -11.2,
+        "why": "Défaite 6-10 (en 10) · 50 % de chances · marge ×1,4 · part 50 % → −11,2"
+       },
+       {
+        "playerId": "c",
+        "team": "B",
+        "won": false,
+        "target": 10,
+        "scoreFor": 6,
+        "scoreAgainst": 10,
+        "expected": 0.5,
+        "margin": 1.4,
+        "teamSize": 2,
+        "share": 0.5,
+        "rookieK": 1,
+        "matchesBefore": 20,
+        "ratingBefore": 1000,
+        "ratingAfter": 988.8,
+        "delta": -11.2,
+        "why": "Défaite 6-10 (en 10) · 50 % de chances · marge ×1,4 · part 50 % → −11,2"
+       }
+      ]
+     },
+     {
+      "matchId": "r2",
+      "deltas": [
+       {
+        "playerId": "rookie",
+        "team": "A",
+        "won": true,
+        "target": 10,
+        "scoreFor": 10,
+        "scoreAgainst": 8,
+        "expected": 0.5241583179244865,
+        "margin": 1.2,
+        "teamSize": 2,
+        "share": 0.47467728970215656,
+        "rookieK": 2.9,
+        "matchesBefore": 1,
+        "ratingBefore": 1033.6,
+        "ratingAfter": 1058.753,
+        "delta": 25.153,
+        "why": "Victoire 10-8 (en 10) · 52 % de chances · marge ×1,2 · part 47 % · débutant ×2,9 → +25,2"
+       },
+       {
+        "playerId": "d",
+        "team": "A",
+        "won": true,
+        "target": 10,
+        "scoreFor": 10,
+        "scoreAgainst": 8,
+        "expected": 0.5241583179244865,
+        "margin": 1.2,
+        "teamSize": 2,
+        "share": 0.5253227102978434,
+        "rookieK": 1,
+        "matchesBefore": 20,
+        "ratingBefore": 1000,
+        "ratingAfter": 1009.599,
+        "delta": 9.599,
+        "why": "Victoire 10-8 (en 10) · 52 % de chances · marge ×1,2 · part 53 % → +9,6"
+       },
+       {
+        "playerId": "a",
+        "team": "B",
+        "won": false,
+        "target": 10,
+        "scoreFor": 8,
+        "scoreAgainst": 10,
+        "expected": 0.4758416820755135,
+        "margin": 1.2,
+        "teamSize": 2,
+        "share": 0.5168901698671006,
+        "rookieK": 1,
+        "matchesBefore": 21,
+        "ratingBefore": 1011.2,
+        "ratingAfter": 1001.755,
+        "delta": -9.445,
+        "why": "Défaite 8-10 (en 10) · 48 % de chances · marge ×1,2 · part 52 % → −9,4"
+       },
+       {
+        "playerId": "b",
+        "team": "B",
+        "won": false,
+        "target": 10,
+        "scoreFor": 8,
+        "scoreAgainst": 10,
+        "expected": 0.4758416820755135,
+        "margin": 1.2,
+        "teamSize": 2,
+        "share": 0.48310983013289943,
+        "rookieK": 1,
+        "matchesBefore": 21,
+        "ratingBefore": 988.8,
+        "ratingAfter": 979.972,
+        "delta": -8.828,
+        "why": "Défaite 8-10 (en 10) · 48 % de chances · marge ×1,2 · part 48 % → −8,8"
+       }
+      ]
+     },
+     {
+      "matchId": "r3",
+      "deltas": [
+       {
+        "playerId": "rookie",
+        "team": "A",
+        "won": false,
+        "target": 5,
+        "scoreFor": 2,
+        "scoreAgainst": 5,
+        "expected": 0.5700064054627808,
+        "margin": 1.3,
+        "teamSize": 1,
+        "share": 1,
+        "rookieK": 2.8,
+        "matchesBefore": 2,
+        "ratingBefore": 1058.753,
+        "ratingAfter": 1025.556,
+        "delta": -33.197,
+        "why": "Défaite 2-5 (en 5) · 57 % de chances · marge ×1,3 · débutant ×2,8 → −33,2"
+       },
+       {
+        "playerId": "c",
+        "team": "B",
+        "won": true,
+        "target": 5,
+        "scoreFor": 5,
+        "scoreAgainst": 2,
+        "expected": 0.4299935945372192,
+        "margin": 1.3,
+        "teamSize": 1,
+        "share": 1,
+        "rookieK": 1,
+        "matchesBefore": 21,
+        "ratingBefore": 988.8,
+        "ratingAfter": 1000.656,
+        "delta": 11.856,
+        "why": "Victoire 5-2 (en 5) · 43 % de chances · marge ×1,3 → +11,9"
+       }
+      ]
+     }
+    ],
+    "finalState": {
+     "a": {
+      "rating": 1001.755,
+      "matches": 22,
+      "wins": 11,
+      "losses": 11,
+      "lastPlayedAt": 1791806400001
+     },
+     "b": {
+      "rating": 979.972,
+      "matches": 22,
+      "wins": 10,
+      "losses": 12,
+      "lastPlayedAt": 1791806400001
+     },
+     "c": {
+      "rating": 1000.656,
+      "matches": 22,
+      "wins": 11,
+      "losses": 11,
+      "lastPlayedAt": 1791806400002
+     },
+     "d": {
+      "rating": 1009.599,
+      "matches": 21,
+      "wins": 11,
+      "losses": 10,
+      "lastPlayedAt": 1791806400001
+     },
+     "rookie": {
+      "rating": 1025.556,
+      "matches": 3,
+      "wins": 2,
+      "losses": 1,
+      "lastPlayedAt": 1791806400002
+     }
+    },
+    "rookieK": [
+     {
+      "n": 0,
+      "k": 3
+     },
+     {
+      "n": 1,
+      "k": 2.9
+     },
+     {
+      "n": 2,
+      "k": 2.8
+     },
+     {
+      "n": 10,
+      "k": 2
+     },
+     {
+      "n": 19,
+      "k": 1.1
+     },
+     {
+      "n": 20,
+      "k": 1
+     },
+     {
+      "n": 25,
+      "k": 1
+     }
+    ]
+   }
+  },
+  {
+   "name": "deleted_middle_match",
+   "description": "Same 3 matches, replayed with h2 soft-deleted: h3 is recomputed from the post-h1 ratings.",
+   "input": {
+    "players": [
+     {
+      "id": "a",
+      "name": "Alice",
+      "isGuest": false,
+      "createdAt": 1790942400000
+     },
+     {
+      "id": "b",
+      "name": "Bob",
+      "isGuest": false,
+      "createdAt": 1790942400000
+     },
+     {
+      "id": "c",
+      "name": "Chloé",
+      "isGuest": false,
+      "createdAt": 1790942400000
+     },
+     {
+      "id": "d",
+      "name": "David",
+      "isGuest": false,
+      "createdAt": 1790942400000
+     }
+    ],
+    "matchesFull": [
+     {
+      "id": "h1",
+      "seq": 1,
+      "playedAt": 1791806400000,
+      "createdAt": 1791806400000,
+      "target": 10,
+      "teamA": [
+       "a",
+       "b"
+      ],
+      "teamB": [
+       "c",
+       "d"
+      ],
+      "scoreA": 10,
+      "scoreB": 4
+     },
+     {
+      "id": "h2",
+      "seq": 2,
+      "playedAt": 1791892800000,
+      "createdAt": 1791892800000,
+      "target": 10,
+      "teamA": [
+       "a",
+       "c"
+      ],
+      "teamB": [
+       "b",
+       "d"
+      ],
+      "scoreA": 10,
+      "scoreB": 9
+     },
+     {
+      "id": "h3",
+      "seq": 3,
+      "playedAt": 1791979200000,
+      "createdAt": 1791979200000,
+      "target": 5,
+      "teamA": [
+       "a"
+      ],
+      "teamB": [
+       "d"
+      ],
+      "scoreA": 5,
+      "scoreB": 3
+     }
+    ],
+    "matchesWithDeleted": [
+     {
+      "id": "h1",
+      "seq": 1,
+      "playedAt": 1791806400000,
+      "createdAt": 1791806400000,
+      "target": 10,
+      "teamA": [
+       "a",
+       "b"
+      ],
+      "teamB": [
+       "c",
+       "d"
+      ],
+      "scoreA": 10,
+      "scoreB": 4
+     },
+     {
+      "id": "h2",
+      "seq": 2,
+      "playedAt": 1791892800000,
+      "createdAt": 1791892800000,
+      "target": 10,
+      "teamA": [
+       "a",
+       "c"
+      ],
+      "teamB": [
+       "b",
+       "d"
+      ],
+      "scoreA": 10,
+      "scoreB": 9,
+      "deletedAt": 1792065600000
+     },
+     {
+      "id": "h3",
+      "seq": 3,
+      "playedAt": 1791979200000,
+      "createdAt": 1791979200000,
+      "target": 5,
+      "teamA": [
+       "a"
+      ],
+      "teamB": [
+       "d"
+      ],
+      "scoreA": 5,
+      "scoreB": 3
+     }
+    ]
+   },
+   "expected": {
+    "full": {
+     "players": {
+      "a": {
+       "rating": 1081.733,
+       "matches": 3,
+       "wins": 3,
+       "losses": 0,
+       "lastPlayedAt": 1791979200000
+      },
+      "b": {
+       "rating": 1010.328,
+       "matches": 2,
+       "wins": 1,
+       "losses": 1,
+       "lastPlayedAt": 1791892800000
+      },
+      "c": {
+       "rating": 989.672,
+       "matches": 2,
+       "wins": 1,
+       "losses": 1,
+       "lastPlayedAt": 1791892800000
+      },
+      "d": {
+       "rating": 918.267,
+       "matches": 3,
+       "wins": 0,
+       "losses": 3,
+       "lastPlayedAt": 1791979200000
+      }
+     },
+     "matches": [
+      {
+       "matchId": "h1",
+       "deltas": [
+        [
+         "a",
+         38.4
+        ],
+        [
+         "b",
+         38.4
+        ],
+        [
+         "c",
+         -38.4
+        ],
+        [
+         "d",
+         -38.4
+        ]
+       ]
+      },
+      {
+       "matchId": "h2",
+       "deltas": [
+        [
+         "a",
+         22.968
+        ],
+        [
+         "c",
+         28.072
+        ],
+        [
+         "b",
+         -28.072
+        ],
+        [
+         "d",
+         -22.968
+        ]
+       ]
+      },
+      {
+       "matchId": "h3",
+       "deltas": [
+        [
+         "a",
+         20.365
+        ],
+        [
+         "d",
+         -20.365
+        ]
+       ]
+      }
+     ]
+    },
+    "withDeleted": {
+     "players": {
+      "a": {
+       "rating": 1061.966,
+       "matches": 2,
+       "wins": 2,
+       "losses": 0,
+       "lastPlayedAt": 1791979200000
+      },
+      "b": {
+       "rating": 1038.4,
+       "matches": 1,
+       "wins": 1,
+       "losses": 0,
+       "lastPlayedAt": 1791806400000
+      },
+      "c": {
+       "rating": 961.6,
+       "matches": 1,
+       "wins": 0,
+       "losses": 1,
+       "lastPlayedAt": 1791806400000
+      },
+      "d": {
+       "rating": 938.034,
+       "matches": 2,
+       "wins": 0,
+       "losses": 2,
+       "lastPlayedAt": 1791979200000
+      }
+     },
+     "matches": [
+      {
+       "matchId": "h1",
+       "deltas": [
+        [
+         "a",
+         38.4
+        ],
+        [
+         "b",
+         38.4
+        ],
+        [
+         "c",
+         -38.4
+        ],
+        [
+         "d",
+         -38.4
+        ]
+       ]
+      },
+      {
+       "matchId": "h3",
+       "deltas": [
+        [
+         "a",
+         23.566
+        ],
+        [
+         "d",
+         -23.566
+        ]
+       ]
+      }
+     ]
+    }
+   }
+  },
+  {
+   "name": "edited_match_keeps_position",
+   "description": "e2 edited 5 days later (10-8 becomes 6-10, updatedAt set, createdAt/seq unchanged); order by (playedAt, seq, id) keeps it second; lastEntered() is still e3.",
+   "input": {
+    "players": [
+     {
+      "id": "a",
+      "name": "Alice",
+      "isGuest": false,
+      "createdAt": 1790942400000
+     },
+     {
+      "id": "b",
+      "name": "Bob",
+      "isGuest": false,
+      "createdAt": 1790942400000
+     },
+     {
+      "id": "c",
+      "name": "Chloé",
+      "isGuest": false,
+      "createdAt": 1790942400000
+     },
+     {
+      "id": "d",
+      "name": "David",
+      "isGuest": false,
+      "createdAt": 1790942400000
+     }
+    ],
+    "original": [
+     {
+      "id": "e1",
+      "seq": 1,
+      "playedAt": 1791806400000,
+      "createdAt": 1791806400001,
+      "target": 10,
+      "teamA": [
+       "a",
+       "b"
+      ],
+      "teamB": [
+       "c",
+       "d"
+      ],
+      "scoreA": 10,
+      "scoreB": 2
+     },
+     {
+      "id": "e2",
+      "seq": 2,
+      "playedAt": 1791806400000,
+      "createdAt": 1791806400002,
+      "target": 10,
+      "teamA": [
+       "a",
+       "c"
+      ],
+      "teamB": [
+       "b",
+       "d"
+      ],
+      "scoreA": 10,
+      "scoreB": 8
+     },
+     {
+      "id": "e3",
+      "seq": 3,
+      "playedAt": 1791806400000,
+      "createdAt": 1791806400003,
+      "target": 10,
+      "teamA": [
+       "b",
+       "c"
+      ],
+      "teamB": [
+       "a",
+       "d"
+      ],
+      "scoreA": 10,
+      "scoreB": 5
+     }
+    ],
+    "edited": [
+     {
+      "id": "e1",
+      "seq": 1,
+      "playedAt": 1791806400000,
+      "createdAt": 1791806400001,
+      "target": 10,
+      "teamA": [
+       "a",
+       "b"
+      ],
+      "teamB": [
+       "c",
+       "d"
+      ],
+      "scoreA": 10,
+      "scoreB": 2
+     },
+     {
+      "id": "e2",
+      "seq": 2,
+      "playedAt": 1791806400000,
+      "createdAt": 1791806400002,
+      "target": 10,
+      "teamA": [
+       "a",
+       "c"
+      ],
+      "teamB": [
+       "b",
+       "d"
+      ],
+      "scoreA": 6,
+      "scoreB": 10,
+      "updatedAt": 1792238400000
+     },
+     {
+      "id": "e3",
+      "seq": 3,
+      "playedAt": 1791806400000,
+      "createdAt": 1791806400003,
+      "target": 10,
+      "teamA": [
+       "b",
+       "c"
+      ],
+      "teamB": [
+       "a",
+       "d"
+      ],
+      "scoreA": 10,
+      "scoreB": 5
+     }
+    ]
+   },
+   "expected": {
+    "order": [
+     "e1",
+     "e2",
+     "e3"
+    ],
+    "lastEntered": "e3",
+    "before": {
+     "a": {
+      "rating": 1031.296,
+      "matches": 3,
+      "wins": 2,
+      "losses": 1,
+      "lastPlayedAt": 1791806400000
+     },
+     "b": {
+      "rating": 1044.96,
+      "matches": 3,
+      "wins": 2,
+      "losses": 1,
+      "lastPlayedAt": 1791806400000
+     },
+     "c": {
+      "rating": 1022.24,
+      "matches": 3,
+      "wins": 2,
+      "losses": 1,
+      "lastPlayedAt": 1791806400000
+     },
+     "d": {
+      "rating": 901.504,
+      "matches": 3,
+      "wins": 0,
+      "losses": 3,
+      "lastPlayedAt": 1791806400000
+     }
+    },
+    "after": {
+     "a": {
+      "rating": 973.15,
+      "matches": 3,
+      "wins": 1,
+      "losses": 2,
+      "lastPlayedAt": 1791806400000
+     },
+     "b": {
+      "rating": 1102.672,
+      "matches": 3,
+      "wins": 3,
+      "losses": 0,
+      "lastPlayedAt": 1791806400000
+     },
+     "c": {
+      "rating": 964.528,
+      "matches": 3,
+      "wins": 1,
+      "losses": 2,
+      "lastPlayedAt": 1791806400000
+     },
+     "d": {
+      "rating": 959.65,
+      "matches": 3,
+      "wins": 1,
+      "losses": 2,
+      "lastPlayedAt": 1791806400000
+     }
+    },
+    "afterMatches": [
+     {
+      "matchId": "e1",
+      "deltas": [
+       [
+        "a",
+        43.2
+       ],
+       [
+        "b",
+        43.2
+       ],
+       [
+        "c",
+        -43.2
+       ],
+       [
+        "d",
+        -43.2
+       ]
+      ]
+     },
+     {
+      "matchId": "e2",
+      "deltas": [
+       [
+        "a",
+        -35.728
+       ],
+       [
+        "c",
+        -29.232
+       ],
+       [
+        "b",
+        29.232
+       ],
+       [
+        "d",
+        35.728
+       ]
+      ]
+     },
+     {
+      "matchId": "e3",
+      "deltas": [
+       [
+        "b",
+        30.24
+       ],
+       [
+        "c",
+        36.96
+       ],
+       [
+        "a",
+        -34.322
+       ],
+       [
+        "d",
+        -32.878
+       ]
+      ]
+     }
+    ]
+   }
+  },
+  {
+   "name": "random_100_matches",
+   "description": "20 players (2 guests), 100 seeded random matches; checksum of all final ratings and the leaderboard sections.",
+   "input": {
+    "players": [
+     {
+      "id": "p00",
+      "name": "Joueur 0",
+      "isGuest": false,
+      "createdAt": 1789214400000
+     },
+     {
+      "id": "p01",
+      "name": "Joueur 1",
+      "isGuest": false,
+      "createdAt": 1789214400000
+     },
+     {
+      "id": "p02",
+      "name": "Joueur 2",
+      "isGuest": false,
+      "createdAt": 1789214400000
+     },
+     {
+      "id": "p03",
+      "name": "Joueur 3",
+      "isGuest": false,
+      "createdAt": 1789214400000
+     },
+     {
+      "id": "p04",
+      "name": "Joueur 4",
+      "isGuest": false,
+      "createdAt": 1789214400000
+     },
+     {
+      "id": "p05",
+      "name": "Joueur 5",
+      "isGuest": false,
+      "createdAt": 1789214400000
+     },
+     {
+      "id": "p06",
+      "name": "Joueur 6",
+      "isGuest": false,
+      "createdAt": 1789214400000
+     },
+     {
+      "id": "p07",
+      "name": "Joueur 7",
+      "isGuest": false,
+      "createdAt": 1789214400000
+     },
+     {
+      "id": "p08",
+      "name": "Joueur 8",
+      "isGuest": false,
+      "createdAt": 1789214400000
+     },
+     {
+      "id": "p09",
+      "name": "Joueur 9",
+      "isGuest": false,
+      "createdAt": 1789214400000
+     },
+     {
+      "id": "p10",
+      "name": "Joueur 10",
+      "isGuest": false,
+      "createdAt": 1789214400000
+     },
+     {
+      "id": "p11",
+      "name": "Joueur 11",
+      "isGuest": false,
+      "createdAt": 1789214400000
+     },
+     {
+      "id": "p12",
+      "name": "Joueur 12",
+      "isGuest": false,
+      "createdAt": 1789214400000
+     },
+     {
+      "id": "p13",
+      "name": "Joueur 13",
+      "isGuest": false,
+      "createdAt": 1789214400000
+     },
+     {
+      "id": "p14",
+      "name": "Joueur 14",
+      "isGuest": false,
+      "createdAt": 1789214400000
+     },
+     {
+      "id": "p15",
+      "name": "Joueur 15",
+      "isGuest": false,
+      "createdAt": 1789214400000
+     },
+     {
+      "id": "p16",
+      "name": "Joueur 16",
+      "isGuest": false,
+      "createdAt": 1789214400000
+     },
+     {
+      "id": "p17",
+      "name": "Joueur 17",
+      "isGuest": false,
+      "createdAt": 1789214400000
+     },
+     {
+      "id": "p18",
+      "name": "Joueur 18",
+      "isGuest": true,
+      "createdAt": 1789214400000
+     },
+     {
+      "id": "p19",
+      "name": "Joueur 19",
+      "isGuest": true,
+      "createdAt": 1789214400000
+     }
+    ],
+    "matches": [
+     {
+      "id": "g0",
+      "seq": 1,
+      "playedAt": 1789300800000,
+      "createdAt": 1789300800000,
+      "target": 10,
+      "teamA": [
+       "p16",
+       "p10"
+      ],
+      "teamB": [
+       "p05",
+       "p00"
+      ],
+      "scoreA": 5,
+      "scoreB": 10
+     },
+     {
+      "id": "g1",
+      "seq": 2,
+      "playedAt": 1789322400000,
+      "createdAt": 1789322400000,
+      "target": 10,
+      "teamA": [
+       "p08",
+       "p01"
+      ],
+      "teamB": [
+       "p14",
+       "p00"
+      ],
+      "scoreA": 3,
+      "scoreB": 10
+     },
+     {
+      "id": "g2",
+      "seq": 3,
+      "playedAt": 1789344000000,
+      "createdAt": 1789344000000,
+      "target": 10,
+      "teamA": [
+       "p06",
+       "p10"
+      ],
+      "teamB": [
+       "p16",
+       "p14"
+      ],
+      "scoreA": 8,
+      "scoreB": 10
+     },
+     {
+      "id": "g3",
+      "seq": 4,
+      "playedAt": 1789365600000,
+      "createdAt": 1789365600000,
+      "target": 10,
+      "teamA": [
+       "p00"
+      ],
+      "teamB": [
+       "p18"
+      ],
+      "scoreA": 10,
+      "scoreB": 5
+     },
+     {
+      "id": "g4",
+      "seq": 5,
+      "playedAt": 1789387200000,
+      "createdAt": 1789387200000,
+      "target": 10,
+      "teamA": [
+       "p11",
+       "p00"
+      ],
+      "teamB": [
+       "p05",
+       "p06"
+      ],
+      "scoreA": 10,
+      "scoreB": 8
+     },
+     {
+      "id": "g5",
+      "seq": 6,
+      "playedAt": 1789408800000,
+      "createdAt": 1789408800000,
+      "target": 5,
+      "teamA": [
+       "p19"
+      ],
+      "teamB": [
+       "p01"
+      ],
+      "scoreA": 1,
+      "scoreB": 5
+     },
+     {
+      "id": "g6",
+      "seq": 7,
+      "playedAt": 1789430400000,
+      "createdAt": 1789430400000,
+      "target": 5,
+      "teamA": [
+       "p11",
+       "p13"
+      ],
+      "teamB": [
+       "p00",
+       "p08"
+      ],
+      "scoreA": 5,
+      "scoreB": 3
+     },
+     {
+      "id": "g7",
+      "seq": 8,
+      "playedAt": 1789452000000,
+      "createdAt": 1789452000000,
+      "target": 10,
+      "teamA": [
+       "p09",
+       "p01"
+      ],
+      "teamB": [
+       "p03",
+       "p05"
+      ],
+      "scoreA": 10,
+      "scoreB": 9
+     },
+     {
+      "id": "g8",
+      "seq": 9,
+      "playedAt": 1789473600000,
+      "createdAt": 1789473600000,
+      "target": 5,
+      "teamA": [
+       "p04",
+       "p16"
+      ],
+      "teamB": [
+       "p07",
+       "p00"
+      ],
+      "scoreA": 5,
+      "scoreB": 1
+     },
+     {
+      "id": "g9",
+      "seq": 10,
+      "playedAt": 1789495200000,
+      "createdAt": 1789495200000,
+      "target": 5,
+      "teamA": [
+       "p16"
+      ],
+      "teamB": [
+       "p19"
+      ],
+      "scoreA": 2,
+      "scoreB": 5
+     },
+     {
+      "id": "g10",
+      "seq": 11,
+      "playedAt": 1789516800000,
+      "createdAt": 1789516800000,
+      "target": 10,
+      "teamA": [
+       "p04",
+       "p08"
+      ],
+      "teamB": [
+       "p17",
+       "p10"
+      ],
+      "scoreA": 3,
+      "scoreB": 10
+     },
+     {
+      "id": "g11",
+      "seq": 12,
+      "playedAt": 1789538400000,
+      "createdAt": 1789538400000,
+      "target": 5,
+      "teamA": [
+       "p09",
+       "p00"
+      ],
+      "teamB": [
+       "p19",
+       "p15"
+      ],
+      "scoreA": 5,
+      "scoreB": 0
+     },
+     {
+      "id": "g12",
+      "seq": 13,
+      "playedAt": 1789560000000,
+      "createdAt": 1789560000000,
+      "target": 10,
+      "teamA": [
+       "p10",
+       "p01"
+      ],
+      "teamB": [
+       "p05",
+       "p17"
+      ],
+      "scoreA": 7,
+      "scoreB": 10
+     },
+     {
+      "id": "g13",
+      "seq": 14,
+      "playedAt": 1789581600000,
+      "createdAt": 1789581600000,
+      "target": 5,
+      "teamA": [
+       "p03",
+       "p18"
+      ],
+      "teamB": [
+       "p15",
+       "p17"
+      ],
+      "scoreA": 1,
+      "scoreB": 5
+     },
+     {
+      "id": "g14",
+      "seq": 15,
+      "playedAt": 1789603200000,
+      "createdAt": 1789603200000,
+      "target": 10,
+      "teamA": [
+       "p16",
+       "p09"
+      ],
+      "teamB": [
+       "p01",
+       "p03"
+      ],
+      "scoreA": 10,
+      "scoreB": 5
+     },
+     {
+      "id": "g15",
+      "seq": 16,
+      "playedAt": 1789624800000,
+      "createdAt": 1789624800000,
+      "target": 10,
+      "teamA": [
+       "p07",
+       "p08"
+      ],
+      "teamB": [
+       "p14",
+       "p09"
+      ],
+      "scoreA": 4,
+      "scoreB": 10
+     },
+     {
+      "id": "g16",
+      "seq": 17,
+      "playedAt": 1789646400000,
+      "createdAt": 1789646400000,
+      "target": 5,
+      "teamA": [
+       "p07",
+       "p00"
+      ],
+      "teamB": [
+       "p08",
+       "p15"
+      ],
+      "scoreA": 1,
+      "scoreB": 5
+     },
+     {
+      "id": "g17",
+      "seq": 18,
+      "playedAt": 1789668000000,
+      "createdAt": 1789668000000,
+      "target": 5,
+      "teamA": [
+       "p01"
+      ],
+      "teamB": [
+       "p10"
+      ],
+      "scoreA": 5,
+      "scoreB": 2
+     },
+     {
+      "id": "g18",
+      "seq": 19,
+      "playedAt": 1789689600000,
+      "createdAt": 1789689600000,
+      "target": 10,
+      "teamA": [
+       "p06",
+       "p08"
+      ],
+      "teamB": [
+       "p02",
+       "p03"
+      ],
+      "scoreA": 2,
+      "scoreB": 10
+     },
+     {
+      "id": "g19",
+      "seq": 20,
+      "playedAt": 1789711200000,
+      "createdAt": 1789711200000,
+      "target": 10,
+      "teamA": [
+       "p01"
+      ],
+      "teamB": [
+       "p16"
+      ],
+      "scoreA": 10,
+      "scoreB": 6
+     },
+     {
+      "id": "g20",
+      "seq": 21,
+      "playedAt": 1789732800000,
+      "createdAt": 1789732800000,
+      "target": 10,
+      "teamA": [
+       "p12",
+       "p09"
+      ],
+      "teamB": [
+       "p04",
+       "p16"
+      ],
+      "scoreA": 0,
+      "scoreB": 10
+     },
+     {
+      "id": "g21",
+      "seq": 22,
+      "playedAt": 1789754400000,
+      "createdAt": 1789754400000,
+      "target": 5,
+      "teamA": [
+       "p01",
+       "p19"
+      ],
+      "teamB": [
+       "p06",
+       "p09"
+      ],
+      "scoreA": 4,
+      "scoreB": 5
+     },
+     {
+      "id": "g22",
+      "seq": 23,
+      "playedAt": 1789776000000,
+      "createdAt": 1789776000000,
+      "target": 5,
+      "teamA": [
+       "p12",
+       "p15"
+      ],
+      "teamB": [
+       "p06",
+       "p01"
+      ],
+      "scoreA": 5,
+      "scoreB": 3
+     },
+     {
+      "id": "g23",
+      "seq": 24,
+      "playedAt": 1789797600000,
+      "createdAt": 1789797600000,
+      "target": 10,
+      "teamA": [
+       "p01",
+       "p19"
+      ],
+      "teamB": [
+       "p02",
+       "p15"
+      ],
+      "scoreA": 10,
+      "scoreB": 4
+     },
+     {
+      "id": "g24",
+      "seq": 25,
+      "playedAt": 1789819200000,
+      "createdAt": 1789819200000,
+      "target": 10,
+      "teamA": [
+       "p02",
+       "p08"
+      ],
+      "teamB": [
+       "p11",
+       "p00"
+      ],
+      "scoreA": 10,
+      "scoreB": 4
+     },
+     {
+      "id": "g25",
+      "seq": 26,
+      "playedAt": 1789840800000,
+      "createdAt": 1789840800000,
+      "target": 5,
+      "teamA": [
+       "p01",
+       "p00"
+      ],
+      "teamB": [
+       "p08",
+       "p14"
+      ],
+      "scoreA": 5,
+      "scoreB": 3
+     },
+     {
+      "id": "g26",
+      "seq": 27,
+      "playedAt": 1789862400000,
+      "createdAt": 1789862400000,
+      "target": 10,
+      "teamA": [
+       "p14"
+      ],
+      "teamB": [
+       "p11"
+      ],
+      "scoreA": 10,
+      "scoreB": 1
+     },
+     {
+      "id": "g27",
+      "seq": 28,
+      "playedAt": 1789884000000,
+      "createdAt": 1789884000000,
+      "target": 10,
+      "teamA": [
+       "p17",
+       "p00"
+      ],
+      "teamB": [
+       "p09",
+       "p03"
+      ],
+      "scoreA": 2,
+      "scoreB": 10
+     },
+     {
+      "id": "g28",
+      "seq": 29,
+      "playedAt": 1789905600000,
+      "createdAt": 1789905600000,
+      "target": 10,
+      "teamA": [
+       "p05",
+       "p01"
+      ],
+      "teamB": [
+       "p10",
+       "p13"
+      ],
+      "scoreA": 5,
+      "scoreB": 10
+     },
+     {
+      "id": "g29",
+      "seq": 30,
+      "playedAt": 1789927200000,
+      "createdAt": 1789927200000,
+      "target": 5,
+      "teamA": [
+       "p05",
+       "p09"
+      ],
+      "teamB": [
+       "p03",
+       "p00"
+      ],
+      "scoreA": 4,
+      "scoreB": 5
+     },
+     {
+      "id": "g30",
+      "seq": 31,
+      "playedAt": 1789948800000,
+      "createdAt": 1789948800000,
+      "target": 5,
+      "teamA": [
+       "p17",
+       "p08"
+      ],
+      "teamB": [
+       "p12",
+       "p11"
+      ],
+      "scoreA": 5,
+      "scoreB": 2
+     },
+     {
+      "id": "g31",
+      "seq": 32,
+      "playedAt": 1789970400000,
+      "createdAt": 1789970400000,
+      "target": 10,
+      "teamA": [
+       "p03",
+       "p09"
+      ],
+      "teamB": [
+       "p01",
+       "p05"
+      ],
+      "scoreA": 10,
+      "scoreB": 6
+     },
+     {
+      "id": "g32",
+      "seq": 33,
+      "playedAt": 1789992000000,
+      "createdAt": 1789992000000,
+      "target": 5,
+      "teamA": [
+       "p04",
+       "p05"
+      ],
+      "teamB": [
+       "p13",
+       "p00"
+      ],
+      "scoreA": 1,
+      "scoreB": 5
+     },
+     {
+      "id": "g33",
+      "seq": 34,
+      "playedAt": 1790013600000,
+      "createdAt": 1790013600000,
+      "target": 5,
+      "teamA": [
+       "p17",
+       "p10"
+      ],
+      "teamB": [
+       "p15",
+       "p13"
+      ],
+      "scoreA": 2,
+      "scoreB": 5
+     },
+     {
+      "id": "g34",
+      "seq": 35,
+      "playedAt": 1790035200000,
+      "createdAt": 1790035200000,
+      "target": 10,
+      "teamA": [
+       "p17",
+       "p18"
+      ],
+      "teamB": [
+       "p15",
+       "p13"
+      ],
+      "scoreA": 2,
+      "scoreB": 10
+     },
+     {
+      "id": "g35",
+      "seq": 36,
+      "playedAt": 1790056800000,
+      "createdAt": 1790056800000,
+      "target": 10,
+      "teamA": [
+       "p18",
+       "p01"
+      ],
+      "teamB": [
+       "p00",
+       "p14"
+      ],
+      "scoreA": 0,
+      "scoreB": 10
+     },
+     {
+      "id": "g36",
+      "seq": 37,
+      "playedAt": 1790078400000,
+      "createdAt": 1790078400000,
+      "target": 10,
+      "teamA": [
+       "p08",
+       "p15"
+      ],
+      "teamB": [
+       "p07",
+       "p14"
+      ],
+      "scoreA": 10,
+      "scoreB": 7
+     },
+     {
+      "id": "g37",
+      "seq": 38,
+      "playedAt": 1790100000000,
+      "createdAt": 1790100000000,
+      "target": 5,
+      "teamA": [
+       "p00",
+       "p04"
+      ],
+      "teamB": [
+       "p18",
+       "p19"
+      ],
+      "scoreA": 1,
+      "scoreB": 5
+     },
+     {
+      "id": "g38",
+      "seq": 39,
+      "playedAt": 1790121600000,
+      "createdAt": 1790121600000,
+      "target": 10,
+      "teamA": [
+       "p15",
+       "p13"
+      ],
+      "teamB": [
+       "p11",
+       "p03"
+      ],
+      "scoreA": 4,
+      "scoreB": 10
+     },
+     {
+      "id": "g39",
+      "seq": 40,
+      "playedAt": 1790143200000,
+      "createdAt": 1790143200000,
+      "target": 5,
+      "teamA": [
+       "p10"
+      ],
+      "teamB": [
+       "p07"
+      ],
+      "scoreA": 0,
+      "scoreB": 5
+     },
+     {
+      "id": "g40",
+      "seq": 41,
+      "playedAt": 1790164800000,
+      "createdAt": 1790164800000,
+      "target": 10,
+      "teamA": [
+       "p13"
+      ],
+      "teamB": [
+       "p18"
+      ],
+      "scoreA": 1,
+      "scoreB": 10
+     },
+     {
+      "id": "g41",
+      "seq": 42,
+      "playedAt": 1790186400000,
+      "createdAt": 1790186400000,
+      "target": 10,
+      "teamA": [
+       "p18",
+       "p10"
+      ],
+      "teamB": [
+       "p15",
+       "p13"
+      ],
+      "scoreA": 10,
+      "scoreB": 1
+     },
+     {
+      "id": "g42",
+      "seq": 43,
+      "playedAt": 1790208000000,
+      "createdAt": 1790208000000,
+      "target": 5,
+      "teamA": [
+       "p15",
+       "p19"
+      ],
+      "teamB": [
+       "p17",
+       "p10"
+      ],
+      "scoreA": 2,
+      "scoreB": 5
+     },
+     {
+      "id": "g43",
+      "seq": 44,
+      "playedAt": 1790229600000,
+      "createdAt": 1790229600000,
+      "target": 5,
+      "teamA": [
+       "p18",
+       "p08"
+      ],
+      "teamB": [
+       "p11",
+       "p17"
+      ],
+      "scoreA": 3,
+      "scoreB": 5
+     },
+     {
+      "id": "g44",
+      "seq": 45,
+      "playedAt": 1790251200000,
+      "createdAt": 1790251200000,
+      "target": 10,
+      "teamA": [
+       "p10",
+       "p15"
+      ],
+      "teamB": [
+       "p18",
+       "p03"
+      ],
+      "scoreA": 10,
+      "scoreB": 6
+     },
+     {
+      "id": "g45",
+      "seq": 46,
+      "playedAt": 1790272800000,
+      "createdAt": 1790272800000,
+      "target": 10,
+      "teamA": [
+       "p19",
+       "p09"
+      ],
+      "teamB": [
+       "p07",
+       "p14"
+      ],
+      "scoreA": 10,
+      "scoreB": 0
+     },
+     {
+      "id": "g46",
+      "seq": 47,
+      "playedAt": 1790294400000,
+      "createdAt": 1790294400000,
+      "target": 5,
+      "teamA": [
+       "p17",
+       "p05"
+      ],
+      "teamB": [
+       "p19",
+       "p06"
+      ],
+      "scoreA": 3,
+      "scoreB": 5
+     },
+     {
+      "id": "g47",
+      "seq": 48,
+      "playedAt": 1790316000000,
+      "createdAt": 1790316000000,
+      "target": 10,
+      "teamA": [
+       "p04",
+       "p08"
+      ],
+      "teamB": [
+       "p15",
+       "p16"
+      ],
+      "scoreA": 2,
+      "scoreB": 10
+     },
+     {
+      "id": "g48",
+      "seq": 49,
+      "playedAt": 1790337600000,
+      "createdAt": 1790337600000,
+      "target": 10,
+      "teamA": [
+       "p16",
+       "p10"
+      ],
+      "teamB": [
+       "p08",
+       "p02"
+      ],
+      "scoreA": 1,
+      "scoreB": 10
+     },
+     {
+      "id": "g49",
+      "seq": 50,
+      "playedAt": 1790359200000,
+      "createdAt": 1790359200000,
+      "target": 10,
+      "teamA": [
+       "p09",
+       "p03"
+      ],
+      "teamB": [
+       "p15",
+       "p12"
+      ],
+      "scoreA": 7,
+      "scoreB": 10
+     },
+     {
+      "id": "g50",
+      "seq": 51,
+      "playedAt": 1790380800000,
+      "createdAt": 1790380800000,
+      "target": 5,
+      "teamA": [
+       "p06",
+       "p15"
+      ],
+      "teamB": [
+       "p10",
+       "p05"
+      ],
+      "scoreA": 3,
+      "scoreB": 5
+     },
+     {
+      "id": "g51",
+      "seq": 52,
+      "playedAt": 1790402400000,
+      "createdAt": 1790402400000,
+      "target": 5,
+      "teamA": [
+       "p07",
+       "p08"
+      ],
+      "teamB": [
+       "p18",
+       "p13"
+      ],
+      "scoreA": 5,
+      "scoreB": 4
+     },
+     {
+      "id": "g52",
+      "seq": 53,
+      "playedAt": 1790424000000,
+      "createdAt": 1790424000000,
+      "target": 10,
+      "teamA": [
+       "p00",
+       "p01"
+      ],
+      "teamB": [
+       "p09",
+       "p15"
+      ],
+      "scoreA": 10,
+      "scoreB": 7
+     },
+     {
+      "id": "g53",
+      "seq": 54,
+      "playedAt": 1790445600000,
+      "createdAt": 1790445600000,
+      "target": 10,
+      "teamA": [
+       "p01"
+      ],
+      "teamB": [
+       "p17"
+      ],
+      "scoreA": 8,
+      "scoreB": 10
+     },
+     {
+      "id": "g54",
+      "seq": 55,
+      "playedAt": 1790467200000,
+      "createdAt": 1790467200000,
+      "target": 5,
+      "teamA": [
+       "p16",
+       "p18"
+      ],
+      "teamB": [
+       "p17",
+       "p08"
+      ],
+      "scoreA": 5,
+      "scoreB": 3
+     },
+     {
+      "id": "g55",
+      "seq": 56,
+      "playedAt": 1790488800000,
+      "createdAt": 1790488800000,
+      "target": 5,
+      "teamA": [
+       "p16",
+       "p03"
+      ],
+      "teamB": [
+       "p10",
+       "p14"
+      ],
+      "scoreA": 5,
+      "scoreB": 4
+     },
+     {
+      "id": "g56",
+      "seq": 57,
+      "playedAt": 1790510400000,
+      "createdAt": 1790510400000,
+      "target": 10,
+      "teamA": [
+       "p14",
+       "p00"
+      ],
+      "teamB": [
+       "p02",
+       "p12"
+      ],
+      "scoreA": 10,
+      "scoreB": 8
+     },
+     {
+      "id": "g57",
+      "seq": 58,
+      "playedAt": 1790532000000,
+      "createdAt": 1790532000000,
+      "target": 10,
+      "teamA": [
+       "p07",
+       "p03"
+      ],
+      "teamB": [
+       "p14",
+       "p13"
+      ],
+      "scoreA": 10,
+      "scoreB": 0
+     },
+     {
+      "id": "g58",
+      "seq": 59,
+      "playedAt": 1790553600000,
+      "createdAt": 1790553600000,
+      "target": 5,
+      "teamA": [
+       "p08",
+       "p05"
+      ],
+      "teamB": [
+       "p03",
+       "p02"
+      ],
+      "scoreA": 5,
+      "scoreB": 2
+     },
+     {
+      "id": "g59",
+      "seq": 60,
+      "playedAt": 1790575200000,
+      "createdAt": 1790575200000,
+      "target": 5,
+      "teamA": [
+       "p08",
+       "p05"
+      ],
+      "teamB": [
+       "p13",
+       "p11"
+      ],
+      "scoreA": 0,
+      "scoreB": 5
+     },
+     {
+      "id": "g60",
+      "seq": 61,
+      "playedAt": 1790596800000,
+      "createdAt": 1790596800000,
+      "target": 10,
+      "teamA": [
+       "p16",
+       "p11"
+      ],
+      "teamB": [
+       "p06",
+       "p05"
+      ],
+      "scoreA": 6,
+      "scoreB": 10
+     },
+     {
+      "id": "g61",
+      "seq": 62,
+      "playedAt": 1790618400000,
+      "createdAt": 1790618400000,
+      "target": 10,
+      "teamA": [
+       "p00"
+      ],
+      "teamB": [
+       "p12"
+      ],
+      "scoreA": 8,
+      "scoreB": 10
+     },
+     {
+      "id": "g62",
+      "seq": 63,
+      "playedAt": 1790640000000,
+      "createdAt": 1790640000000,
+      "target": 10,
+      "teamA": [
+       "p12"
+      ],
+      "teamB": [
+       "p08"
+      ],
+      "scoreA": 3,
+      "scoreB": 10
+     },
+     {
+      "id": "g63",
+      "seq": 64,
+      "playedAt": 1790661600000,
+      "createdAt": 1790661600000,
+      "target": 10,
+      "teamA": [
+       "p00",
+       "p09"
+      ],
+      "teamB": [
+       "p04",
+       "p07"
+      ],
+      "scoreA": 10,
+      "scoreB": 2
+     },
+     {
+      "id": "g64",
+      "seq": 65,
+      "playedAt": 1790683200000,
+      "createdAt": 1790683200000,
+      "target": 10,
+      "teamA": [
+       "p13",
+       "p19"
+      ],
+      "teamB": [
+       "p01",
+       "p00"
+      ],
+      "scoreA": 10,
+      "scoreB": 0
+     },
+     {
+      "id": "g65",
+      "seq": 66,
+      "playedAt": 1790704800000,
+      "createdAt": 1790704800000,
+      "target": 5,
+      "teamA": [
+       "p07",
+       "p09"
+      ],
+      "teamB": [
+       "p08",
+       "p17"
+      ],
+      "scoreA": 2,
+      "scoreB": 5
+     },
+     {
+      "id": "g66",
+      "seq": 67,
+      "playedAt": 1790726400000,
+      "createdAt": 1790726400000,
+      "target": 5,
+      "teamA": [
+       "p01",
+       "p11"
+      ],
+      "teamB": [
+       "p13",
+       "p16"
+      ],
+      "scoreA": 2,
+      "scoreB": 5
+     },
+     {
+      "id": "g67",
+      "seq": 68,
+      "playedAt": 1790748000000,
+      "createdAt": 1790748000000,
+      "target": 10,
+      "teamA": [
+       "p11",
+       "p06"
+      ],
+      "teamB": [
+       "p19",
+       "p05"
+      ],
+      "scoreA": 1,
+      "scoreB": 10
+     },
+     {
+      "id": "g68",
+      "seq": 69,
+      "playedAt": 1790769600000,
+      "createdAt": 1790769600000,
+      "target": 10,
+      "teamA": [
+       "p17",
+       "p00"
+      ],
+      "teamB": [
+       "p15",
+       "p06"
+      ],
+      "scoreA": 10,
+      "scoreB": 1
+     },
+     {
+      "id": "g69",
+      "seq": 70,
+      "playedAt": 1790791200000,
+      "createdAt": 1790791200000,
+      "target": 10,
+      "teamA": [
+       "p11",
+       "p18"
+      ],
+      "teamB": [
+       "p00",
+       "p06"
+      ],
+      "scoreA": 1,
+      "scoreB": 10
+     },
+     {
+      "id": "g70",
+      "seq": 71,
+      "playedAt": 1790812800000,
+      "createdAt": 1790812800000,
+      "target": 10,
+      "teamA": [
+       "p17",
+       "p10"
+      ],
+      "teamB": [
+       "p12",
+       "p08"
+      ],
+      "scoreA": 5,
+      "scoreB": 10
+     },
+     {
+      "id": "g71",
+      "seq": 72,
+      "playedAt": 1790834400000,
+      "createdAt": 1790834400000,
+      "target": 10,
+      "teamA": [
+       "p03",
+       "p16"
+      ],
+      "teamB": [
+       "p14",
+       "p17"
+      ],
+      "scoreA": 2,
+      "scoreB": 10
+     },
+     {
+      "id": "g72",
+      "seq": 73,
+      "playedAt": 1790856000000,
+      "createdAt": 1790856000000,
+      "target": 5,
+      "teamA": [
+       "p06"
+      ],
+      "teamB": [
+       "p08"
+      ],
+      "scoreA": 4,
+      "scoreB": 5
+     },
+     {
+      "id": "g73",
+      "seq": 74,
+      "playedAt": 1790877600000,
+      "createdAt": 1790877600000,
+      "target": 5,
+      "teamA": [
+       "p02",
+       "p04"
+      ],
+      "teamB": [
+       "p07",
+       "p06"
+      ],
+      "scoreA": 4,
+      "scoreB": 5
+     },
+     {
+      "id": "g74",
+      "seq": 75,
+      "playedAt": 1790899200000,
+      "createdAt": 1790899200000,
+      "target": 10,
+      "teamA": [
+       "p12",
+       "p05"
+      ],
+      "teamB": [
+       "p00",
+       "p10"
+      ],
+      "scoreA": 10,
+      "scoreB": 5
+     },
+     {
+      "id": "g75",
+      "seq": 76,
+      "playedAt": 1790920800000,
+      "createdAt": 1790920800000,
+      "target": 10,
+      "teamA": [
+       "p08",
+       "p11"
+      ],
+      "teamB": [
+       "p05",
+       "p13"
+      ],
+      "scoreA": 8,
+      "scoreB": 10
+     },
+     {
+      "id": "g76",
+      "seq": 77,
+      "playedAt": 1790942400000,
+      "createdAt": 1790942400000,
+      "target": 10,
+      "teamA": [
+       "p02"
+      ],
+      "teamB": [
+       "p13"
+      ],
+      "scoreA": 4,
+      "scoreB": 10
+     },
+     {
+      "id": "g77",
+      "seq": 78,
+      "playedAt": 1790964000000,
+      "createdAt": 1790964000000,
+      "target": 10,
+      "teamA": [
+       "p00",
+       "p01"
+      ],
+      "teamB": [
+       "p11",
+       "p09"
+      ],
+      "scoreA": 1,
+      "scoreB": 10
+     },
+     {
+      "id": "g78",
+      "seq": 79,
+      "playedAt": 1790985600000,
+      "createdAt": 1790985600000,
+      "target": 10,
+      "teamA": [
+       "p08",
+       "p11"
+      ],
+      "teamB": [
+       "p00",
+       "p09"
+      ],
+      "scoreA": 2,
+      "scoreB": 10
+     },
+     {
+      "id": "g79",
+      "seq": 80,
+      "playedAt": 1791007200000,
+      "createdAt": 1791007200000,
+      "target": 5,
+      "teamA": [
+       "p13",
+       "p07"
+      ],
+      "teamB": [
+       "p11",
+       "p09"
+      ],
+      "scoreA": 5,
+      "scoreB": 0
+     },
+     {
+      "id": "g80",
+      "seq": 81,
+      "playedAt": 1791028800000,
+      "createdAt": 1791028800000,
+      "target": 10,
+      "teamA": [
+       "p05",
+       "p09"
+      ],
+      "teamB": [
+       "p08",
+       "p16"
+      ],
+      "scoreA": 10,
+      "scoreB": 7
+     },
+     {
+      "id": "g81",
+      "seq": 82,
+      "playedAt": 1791050400000,
+      "createdAt": 1791050400000,
+      "target": 10,
+      "teamA": [
+       "p05",
+       "p04"
+      ],
+      "teamB": [
+       "p14",
+       "p15"
+      ],
+      "scoreA": 9,
+      "scoreB": 10
+     },
+     {
+      "id": "g82",
+      "seq": 83,
+      "playedAt": 1791072000000,
+      "createdAt": 1791072000000,
+      "target": 5,
+      "teamA": [
+       "p02",
+       "p09"
+      ],
+      "teamB": [
+       "p07",
+       "p01"
+      ],
+      "scoreA": 5,
+      "scoreB": 3
+     },
+     {
+      "id": "g83",
+      "seq": 84,
+      "playedAt": 1791093600000,
+      "createdAt": 1791093600000,
+      "target": 10,
+      "teamA": [
+       "p00",
+       "p05"
+      ],
+      "teamB": [
+       "p11",
+       "p09"
+      ],
+      "scoreA": 0,
+      "scoreB": 10
+     },
+     {
+      "id": "g84",
+      "seq": 85,
+      "playedAt": 1791115200000,
+      "createdAt": 1791115200000,
+      "target": 5,
+      "teamA": [
+       "p14",
+       "p12"
+      ],
+      "teamB": [
+       "p15",
+       "p00"
+      ],
+      "scoreA": 4,
+      "scoreB": 5
+     },
+     {
+      "id": "g85",
+      "seq": 86,
+      "playedAt": 1791136800000,
+      "createdAt": 1791136800000,
+      "target": 10,
+      "teamA": [
+       "p14",
+       "p01"
+      ],
+      "teamB": [
+       "p15",
+       "p11"
+      ],
+      "scoreA": 10,
+      "scoreB": 2
+     },
+     {
+      "id": "g86",
+      "seq": 87,
+      "playedAt": 1791158400000,
+      "createdAt": 1791158400000,
+      "target": 10,
+      "teamA": [
+       "p05",
+       "p11"
+      ],
+      "teamB": [
+       "p16",
+       "p04"
+      ],
+      "scoreA": 3,
+      "scoreB": 10
+     },
+     {
+      "id": "g87",
+      "seq": 88,
+      "playedAt": 1791180000000,
+      "createdAt": 1791180000000,
+      "target": 10,
+      "teamA": [
+       "p11",
+       "p07"
+      ],
+      "teamB": [
+       "p04",
+       "p05"
+      ],
+      "scoreA": 4,
+      "scoreB": 10
+     },
+     {
+      "id": "g88",
+      "seq": 89,
+      "playedAt": 1791201600000,
+      "createdAt": 1791201600000,
+      "target": 10,
+      "teamA": [
+       "p12",
+       "p13"
+      ],
+      "teamB": [
+       "p06",
+       "p14"
+      ],
+      "scoreA": 10,
+      "scoreB": 2
+     },
+     {
+      "id": "g89",
+      "seq": 90,
+      "playedAt": 1791223200000,
+      "createdAt": 1791223200000,
+      "target": 5,
+      "teamA": [
+       "p07",
+       "p11"
+      ],
+      "teamB": [
+       "p01",
+       "p16"
+      ],
+      "scoreA": 1,
+      "scoreB": 5
+     },
+     {
+      "id": "g90",
+      "seq": 91,
+      "playedAt": 1791244800000,
+      "createdAt": 1791244800000,
+      "target": 5,
+      "teamA": [
+       "p17",
+       "p00"
+      ],
+      "teamB": [
+       "p08",
+       "p15"
+      ],
+      "scoreA": 2,
+      "scoreB": 5
+     },
+     {
+      "id": "g91",
+      "seq": 92,
+      "playedAt": 1791266400000,
+      "createdAt": 1791266400000,
+      "target": 10,
+      "teamA": [
+       "p17",
+       "p13"
+      ],
+      "teamB": [
+       "p08",
+       "p10"
+      ],
+      "scoreA": 4,
+      "scoreB": 10
+     },
+     {
+      "id": "g92",
+      "seq": 93,
+      "playedAt": 1791288000000,
+      "createdAt": 1791288000000,
+      "target": 5,
+      "teamA": [
+       "p10",
+       "p04"
+      ],
+      "teamB": [
+       "p15",
+       "p02"
+      ],
+      "scoreA": 4,
+      "scoreB": 5
+     },
+     {
+      "id": "g93",
+      "seq": 94,
+      "playedAt": 1791309600000,
+      "createdAt": 1791309600000,
+      "target": 5,
+      "teamA": [
+       "p08",
+       "p06"
+      ],
+      "teamB": [
+       "p02",
+       "p05"
+      ],
+      "scoreA": 5,
+      "scoreB": 0
+     },
+     {
+      "id": "g94",
+      "seq": 95,
+      "playedAt": 1791331200000,
+      "createdAt": 1791331200000,
+      "target": 10,
+      "teamA": [
+       "p06",
+       "p12"
+      ],
+      "teamB": [
+       "p04",
+       "p18"
+      ],
+      "scoreA": 10,
+      "scoreB": 0
+     },
+     {
+      "id": "g95",
+      "seq": 96,
+      "playedAt": 1791352800000,
+      "createdAt": 1791352800000,
+      "target": 10,
+      "teamA": [
+       "p01"
+      ],
+      "teamB": [
+       "p06"
+      ],
+      "scoreA": 10,
+      "scoreB": 7
+     },
+     {
+      "id": "g96",
+      "seq": 97,
+      "playedAt": 1791374400000,
+      "createdAt": 1791374400000,
+      "target": 5,
+      "teamA": [
+       "p00",
+       "p19"
+      ],
+      "teamB": [
+       "p11",
+       "p13"
+      ],
+      "scoreA": 5,
+      "scoreB": 2
+     },
+     {
+      "id": "g97",
+      "seq": 98,
+      "playedAt": 1791396000000,
+      "createdAt": 1791396000000,
+      "target": 5,
+      "teamA": [
+       "p13",
+       "p04"
+      ],
+      "teamB": [
+       "p03",
+       "p08"
+      ],
+      "scoreA": 5,
+      "scoreB": 3
+     },
+     {
+      "id": "g98",
+      "seq": 99,
+      "playedAt": 1791417600000,
+      "createdAt": 1791417600000,
+      "target": 5,
+      "teamA": [
+       "p17",
+       "p19"
+      ],
+      "teamB": [
+       "p12",
+       "p02"
+      ],
+      "scoreA": 2,
+      "scoreB": 5
+     },
+     {
+      "id": "g99",
+      "seq": 100,
+      "playedAt": 1791439200000,
+      "createdAt": 1791439200000,
+      "target": 10,
+      "teamA": [
+       "p05",
+       "p16"
+      ],
+      "teamB": [
+       "p19",
+       "p13"
+      ],
+      "scoreA": 9,
+      "scoreB": 10
+     }
+    ]
+   },
+   "expected": {
+    "finalPlayers": {
+     "p00": {
+      "rating": 1038.61,
+      "matches": 29,
+      "wins": 17,
+      "losses": 12,
+      "lastPlayedAt": 1791374400000
+     },
+     "p01": {
+      "rating": 953.92,
+      "matches": 23,
+      "wins": 10,
+      "losses": 13,
+      "lastPlayedAt": 1791352800000
+     },
+     "p02": {
+      "rating": 1001.411,
+      "matches": 12,
+      "wins": 6,
+      "losses": 6,
+      "lastPlayedAt": 1791417600000
+     },
+     "p03": {
+      "rating": 1010.238,
+      "matches": 15,
+      "wins": 7,
+      "losses": 8,
+      "lastPlayedAt": 1791396000000
+     },
+     "p04": {
+      "rating": 928.95,
+      "matches": 14,
+      "wins": 5,
+      "losses": 9,
+      "lastPlayedAt": 1791396000000
+     },
+     "p05": {
+      "rating": 972.507,
+      "matches": 23,
+      "wins": 10,
+      "losses": 13,
+      "lastPlayedAt": 1791439200000
+     },
+     "p06": {
+      "rating": 948.978,
+      "matches": 17,
+      "wins": 7,
+      "losses": 10,
+      "lastPlayedAt": 1791352800000
+     },
+     "p07": {
+      "rating": 908.036,
+      "matches": 15,
+      "wins": 5,
+      "losses": 10,
+      "lastPlayedAt": 1791223200000
+     },
+     "p08": {
+      "rating": 1013.602,
+      "matches": 28,
+      "wins": 14,
+      "losses": 14,
+      "lastPlayedAt": 1791396000000
+     },
+     "p09": {
+      "rating": 1124.158,
+      "matches": 20,
+      "wins": 14,
+      "losses": 6,
+      "lastPlayedAt": 1791093600000
+     },
+     "p10": {
+      "rating": 959.645,
+      "matches": 18,
+      "wins": 7,
+      "losses": 11,
+      "lastPlayedAt": 1791288000000
+     },
+     "p11": {
+      "rating": 878.634,
+      "matches": 22,
+      "wins": 7,
+      "losses": 15,
+      "lastPlayedAt": 1791374400000
+     },
+     "p12": {
+      "rating": 1074.975,
+      "matches": 13,
+      "wins": 8,
+      "losses": 5,
+      "lastPlayedAt": 1791417600000
+     },
+     "p13": {
+      "rating": 1071.191,
+      "matches": 21,
+      "wins": 14,
+      "losses": 7,
+      "lastPlayedAt": 1791439200000
+     },
+     "p14": {
+      "rating": 1040.614,
+      "matches": 16,
+      "wins": 9,
+      "losses": 7,
+      "lastPlayedAt": 1791201600000
+     },
+     "p15": {
+      "rating": 1025.838,
+      "matches": 22,
+      "wins": 13,
+      "losses": 9,
+      "lastPlayedAt": 1791288000000
+     },
+     "p16": {
+      "rating": 1027.174,
+      "matches": 18,
+      "wins": 10,
+      "losses": 8,
+      "lastPlayedAt": 1791439200000
+     },
+     "p17": {
+      "rating": 1016.371,
+      "matches": 19,
+      "wins": 10,
+      "losses": 9,
+      "lastPlayedAt": 1791417600000
+     },
+     "p18": {
+      "rating": 922.906,
+      "matches": 13,
+      "wins": 4,
+      "losses": 9,
+      "lastPlayedAt": 1791331200000
+     },
+     "p19": {
+      "rating": 1105.025,
+      "matches": 14,
+      "wins": 9,
+      "losses": 5,
+      "lastPlayedAt": 1791439200000
+     }
+    },
+    "sumOfRatings": 20022.783,
+    "ratingsHash": 1178841472,
+    "leaderboard": {
+     "ranked": [
+      [
+       1,
+       "p09",
+       1124.158,
+       20
+      ],
+      [
+       2,
+       "p19",
+       1105.025,
+       14
+      ],
+      [
+       3,
+       "p12",
+       1074.975,
+       13
+      ],
+      [
+       4,
+       "p13",
+       1071.191,
+       21
+      ],
+      [
+       5,
+       "p14",
+       1040.614,
+       16
+      ],
+      [
+       6,
+       "p00",
+       1038.61,
+       29
+      ],
+      [
+       7,
+       "p16",
+       1027.174,
+       18
+      ],
+      [
+       8,
+       "p15",
+       1025.838,
+       22
+      ],
+      [
+       9,
+       "p17",
+       1016.371,
+       19
+      ],
+      [
+       10,
+       "p08",
+       1013.602,
+       28
+      ],
+      [
+       11,
+       "p03",
+       1010.238,
+       15
+      ],
+      [
+       12,
+       "p02",
+       1001.411,
+       12
+      ],
+      [
+       13,
+       "p05",
+       972.507,
+       23
+      ],
+      [
+       14,
+       "p10",
+       959.645,
+       18
+      ],
+      [
+       15,
+       "p01",
+       953.92,
+       23
+      ],
+      [
+       16,
+       "p06",
+       948.978,
+       17
+      ],
+      [
+       17,
+       "p04",
+       928.95,
+       14
+      ],
+      [
+       18,
+       "p18",
+       922.906,
+       13
+      ],
+      [
+       19,
+       "p07",
+       908.036,
+       15
+      ],
+      [
+       20,
+       "p11",
+       878.634,
+       22
+      ]
+     ],
+     "rookies": [],
+     "inactive": []
+    },
+    "lastMatch": {
+     "matchId": "g99",
+     "deltas": [
+      {
+       "playerId": "p05",
+       "team": "A",
+       "won": false,
+       "target": 10,
+       "scoreFor": 9,
+       "scoreAgainst": 10,
+       "expected": 0.399628425381717,
+       "margin": 1.1,
+       "teamSize": 2,
+       "share": 0.45,
+       "rookieK": 1,
+       "matchesBefore": 22,
+       "ratingBefore": 978.837,
+       "ratingAfter": 972.507,
+       "delta": -6.33
+      },
+      {
+       "playerId": "p16",
+       "team": "A",
+       "won": false,
+       "target": 10,
+       "scoreFor": 9,
+       "scoreAgainst": 10,
+       "expected": 0.399628425381717,
+       "margin": 1.1,
+       "teamSize": 2,
+       "share": 0.55,
+       "rookieK": 1.3,
+       "matchesBefore": 17,
+       "ratingBefore": 1037.232,
+       "ratingAfter": 1027.174,
+       "delta": -10.058
+      },
+      {
+       "playerId": "p19",
+       "team": "B",
+       "won": true,
+       "target": 10,
+       "scoreFor": 10,
+       "scoreAgainst": 9,
+       "expected": 0.6003715746182829,
+       "margin": 1.1,
+       "teamSize": 2,
+       "share": 0.4742004033956132,
+       "rookieK": 1.7,
+       "matchesBefore": 13,
+       "ratingBefore": 1093.685,
+       "ratingAfter": 1105.025,
+       "delta": 11.34
+      },
+      {
+       "playerId": "p13",
+       "team": "B",
+       "won": true,
+       "target": 10,
+       "scoreFor": 10,
+       "scoreAgainst": 9,
+       "expected": 0.6003715746182829,
+       "margin": 1.1,
+       "teamSize": 2,
+       "share": 0.5257995966043868,
+       "rookieK": 1,
+       "matchesBefore": 20,
+       "ratingBefore": 1063.795,
+       "ratingAfter": 1071.191,
+       "delta": 7.396
+      }
+     ]
+    }
+   }
+  },
+  {
+   "name": "invalid_matches_throw",
+   "description": "validateMatch must throw for each case (messages are part of the contract).",
+   "input": [
+    {
+     "label": "draw",
+     "match": {
+      "id": "bad",
+      "seq": 1,
+      "playedAt": 1791806400000,
+      "createdAt": 1791806400000,
+      "target": 10,
+      "teamA": [
+       "a",
+       "b"
+      ],
+      "teamB": [
+       "c",
+       "d"
+      ],
+      "scoreA": 10,
+      "scoreB": 10
+     }
+    },
+    {
+     "label": "nobody at target",
+     "match": {
+      "id": "bad",
+      "seq": 1,
+      "playedAt": 1791806400000,
+      "createdAt": 1791806400000,
+      "target": 10,
+      "teamA": [
+       "a",
+       "b"
+      ],
+      "teamB": [
+       "c",
+       "d"
+      ],
+      "scoreA": 7,
+      "scoreB": 5
+     }
+    },
+    {
+     "label": "loser over target",
+     "match": {
+      "id": "bad",
+      "seq": 1,
+      "playedAt": 1791806400000,
+      "createdAt": 1791806400000,
+      "target": 10,
+      "teamA": [
+       "a",
+       "b"
+      ],
+      "teamB": [
+       "c",
+       "d"
+      ],
+      "scoreA": 10,
+      "scoreB": 11
+     }
+    },
+    {
+     "label": "negative score",
+     "match": {
+      "id": "bad",
+      "seq": 1,
+      "playedAt": 1791806400000,
+      "createdAt": 1791806400000,
+      "target": 10,
+      "teamA": [
+       "a",
+       "b"
+      ],
+      "teamB": [
+       "c",
+       "d"
+      ],
+      "scoreA": 10,
+      "scoreB": -1
+     }
+    },
+    {
+     "label": "non-integer score",
+     "match": {
+      "id": "bad",
+      "seq": 1,
+      "playedAt": 1791806400000,
+      "createdAt": 1791806400000,
+      "target": 10,
+      "teamA": [
+       "a",
+       "b"
+      ],
+      "teamB": [
+       "c",
+       "d"
+      ],
+      "scoreA": 10,
+      "scoreB": 7.5
+     }
+    },
+    {
+     "label": "target 7",
+     "match": {
+      "id": "bad",
+      "seq": 1,
+      "playedAt": 1791806400000,
+      "createdAt": 1791806400000,
+      "target": 7,
+      "teamA": [
+       "a",
+       "b"
+      ],
+      "teamB": [
+       "c",
+       "d"
+      ],
+      "scoreA": 7,
+      "scoreB": 3
+     }
+    },
+    {
+     "label": "to-5 scored to 10",
+     "match": {
+      "id": "bad",
+      "seq": 1,
+      "playedAt": 1791806400000,
+      "createdAt": 1791806400000,
+      "target": 5,
+      "teamA": [
+       "a",
+       "b"
+      ],
+      "teamB": [
+       "c",
+       "d"
+      ],
+      "scoreA": 10,
+      "scoreB": 3
+     }
+    },
+    {
+     "label": "same player twice",
+     "match": {
+      "id": "bad",
+      "seq": 1,
+      "playedAt": 1791806400000,
+      "createdAt": 1791806400000,
+      "target": 10,
+      "teamA": [
+       "a",
+       "a"
+      ],
+      "teamB": [
+       "c",
+       "d"
+      ],
+      "scoreA": 10,
+      "scoreB": 7
+     }
+    },
+    {
+     "label": "player on both teams",
+     "match": {
+      "id": "bad",
+      "seq": 1,
+      "playedAt": 1791806400000,
+      "createdAt": 1791806400000,
+      "target": 10,
+      "teamA": [
+       "a",
+       "b"
+      ],
+      "teamB": [
+       "a",
+       "c"
+      ],
+      "scoreA": 10,
+      "scoreB": 7
+     }
+    },
+    {
+     "label": "three players on a team",
+     "match": {
+      "id": "bad",
+      "seq": 1,
+      "playedAt": 1791806400000,
+      "createdAt": 1791806400000,
+      "target": 10,
+      "teamA": [
+       "a",
+       "b",
+       "e"
+      ],
+      "teamB": [
+       "c",
+       "d"
+      ],
+      "scoreA": 10,
+      "scoreB": 7
+     }
+    },
+    {
+     "label": "empty team",
+     "match": {
+      "id": "bad",
+      "seq": 1,
+      "playedAt": 1791806400000,
+      "createdAt": 1791806400000,
+      "target": 10,
+      "teamA": [],
+      "teamB": [
+       "c",
+       "d"
+      ],
+      "scoreA": 10,
+      "scoreB": 7
+     }
+    },
+    {
+     "label": "unknown player",
+     "match": {
+      "id": "bad",
+      "seq": 1,
+      "playedAt": 1791806400000,
+      "createdAt": 1791806400000,
+      "target": 10,
+      "teamA": [
+       "a",
+       "b"
+      ],
+      "teamB": [
+       "c",
+       "zz"
+      ],
+      "scoreA": 10,
+      "scoreB": 7
+     }
+    },
+    {
+     "label": "NaN playedAt",
+     "match": {
+      "id": "bad",
+      "seq": 1,
+      "playedAt": null,
+      "createdAt": 1791806400000,
+      "target": 10,
+      "teamA": [
+       "a",
+       "b"
+      ],
+      "teamB": [
+       "c",
+       "d"
+      ],
+      "scoreA": 10,
+      "scoreB": 7
+     }
+    },
+    {
+     "label": "1v2 (team sizes differ)",
+     "match": {
+      "id": "bad",
+      "seq": 1,
+      "playedAt": 1791806400000,
+      "createdAt": 1791806400000,
+      "target": 10,
+      "teamA": [
+       "a"
+      ],
+      "teamB": [
+       "c",
+       "d"
+      ],
+      "scoreA": 10,
+      "scoreB": 7
+     }
+    },
+    {
+     "label": "NaN createdAt",
+     "match": {
+      "id": "bad",
+      "seq": 1,
+      "playedAt": 1791806400000,
+      "createdAt": null,
+      "target": 10,
+      "teamA": [
+       "a",
+       "b"
+      ],
+      "teamB": [
+       "c",
+       "d"
+      ],
+      "scoreA": 10,
+      "scoreB": 7
+     }
+    },
+    {
+     "label": "empty id",
+     "match": {
+      "id": "",
+      "seq": 1,
+      "playedAt": 1791806400000,
+      "createdAt": 1791806400000,
+      "target": 10,
+      "teamA": [
+       "a",
+       "b"
+      ],
+      "teamB": [
+       "c",
+       "d"
+      ],
+      "scoreA": 10,
+      "scoreB": 7
+     }
+    }
+   ],
+   "expected": [
+    {
+     "label": "draw",
+     "throws": true,
+     "error": "Invalid match bad: exactly one team must have the target score"
+    },
+    {
+     "label": "nobody at target",
+     "throws": true,
+     "error": "Invalid match bad: exactly one team must have the target score"
+    },
+    {
+     "label": "loser over target",
+     "throws": true,
+     "error": "Invalid match bad: the losing score must be between 0 and target - 1"
+    },
+    {
+     "label": "negative score",
+     "throws": true,
+     "error": "Invalid match bad: the losing score must be between 0 and target - 1"
+    },
+    {
+     "label": "non-integer score",
+     "throws": true,
+     "error": "Invalid match bad: scores must be integers"
+    },
+    {
+     "label": "target 7",
+     "throws": true,
+     "error": "Invalid match bad: target must be 5 or 10"
+    },
+    {
+     "label": "to-5 scored to 10",
+     "throws": true,
+     "error": "Invalid match bad: exactly one team must have the target score"
+    },
+    {
+     "label": "same player twice",
+     "throws": true,
+     "error": "Invalid match bad: a player cannot appear twice"
+    },
+    {
+     "label": "player on both teams",
+     "throws": true,
+     "error": "Invalid match bad: a player cannot appear twice"
+    },
+    {
+     "label": "three players on a team",
+     "throws": true,
+     "error": "Invalid match bad: each team has 1 or 2 players"
+    },
+    {
+     "label": "empty team",
+     "throws": true,
+     "error": "Invalid match bad: each team has 1 or 2 players"
+    },
+    {
+     "label": "unknown player",
+     "throws": true,
+     "error": "Invalid match bad: unknown player zz"
+    },
+    {
+     "label": "NaN playedAt",
+     "throws": true,
+     "error": "Invalid match bad: playedAt must be a finite timestamp"
+    },
+    {
+     "label": "1v2 (team sizes differ)",
+     "throws": true,
+     "error": "Invalid match bad: both teams must have the same number of players"
+    },
+    {
+     "label": "NaN createdAt",
+     "throws": true,
+     "error": "Invalid match bad: createdAt must be a finite timestamp"
+    },
+    {
+     "label": "empty id",
+     "throws": true,
+     "error": "Invalid match : id must be a non-empty string"
+    }
+   ]
+  },
+  {
+   "name": "leaderboard_sections",
+   "description": "Tie-break rating desc, matches desc, name asc, id asc; sections inactive (>= 30 days, or never played and created >= 30 days ago) > rookies (< 10 matches) > ranked.",
+   "input": {
+    "players": [
+     {
+      "id": "u1",
+      "name": "Zoé",
+      "createdAt": 1783166400000
+     },
+     {
+      "id": "u2",
+      "name": "Yann",
+      "createdAt": 1783166400000
+     },
+     {
+      "id": "u3",
+      "name": "Alice",
+      "createdAt": 1783166400000
+     },
+     {
+      "id": "u4",
+      "name": "Alice",
+      "createdAt": 1783166400000
+     },
+     {
+      "id": "u5",
+      "name": "Rookie4",
+      "createdAt": 1783166400000
+     },
+     {
+      "id": "u6",
+      "name": "Gone",
+      "createdAt": 1783166400000
+     },
+     {
+      "id": "u7",
+      "name": "NeverPlayedOld",
+      "createdAt": 1788350400000
+     },
+     {
+      "id": "u8",
+      "name": "NeverPlayedNew",
+      "createdAt": 1791633600000
+     },
+     {
+      "id": "u9",
+      "name": "RookieGone",
+      "createdAt": 1783166400000,
+      "isGuest": true
+     }
+    ],
+    "state": {
+     "u1": {
+      "rating": 1050,
+      "matches": 12,
+      "wins": 6,
+      "losses": 6,
+      "lastPlayedAt": 1791720000000
+     },
+     "u2": {
+      "rating": 1050,
+      "matches": 15,
+      "wins": 7,
+      "losses": 8,
+      "lastPlayedAt": 1791720000000
+     },
+     "u3": {
+      "rating": 1050,
+      "matches": 15,
+      "wins": 7,
+      "losses": 8,
+      "lastPlayedAt": 1791720000000
+     },
+     "u4": {
+      "rating": 1050,
+      "matches": 15,
+      "wins": 7,
+      "losses": 8,
+      "lastPlayedAt": 1791720000000
+     },
+     "u5": {
+      "rating": 1100,
+      "matches": 4,
+      "wins": 2,
+      "losses": 2,
+      "lastPlayedAt": 1791720000000
+     },
+     "u6": {
+      "rating": 1200,
+      "matches": 30,
+      "wins": 15,
+      "losses": 15,
+      "lastPlayedAt": 1789128000000
+     },
+     "u9": {
+      "rating": 1300,
+      "matches": 3,
+      "wins": 1,
+      "losses": 2,
+      "lastPlayedAt": 1787918400000
+     }
+    },
+    "now": 1791806400000
+   },
+   "expected": {
+    "ranked": [
+     [
+      1,
+      "u3",
+      "Alice",
+      1050,
+      15
+     ],
+     [
+      2,
+      "u4",
+      "Alice",
+      1050,
+      15
+     ],
+     [
+      3,
+      "u2",
+      "Yann",
+      1050,
+      15
+     ],
+     [
+      4,
+      "u1",
+      "Zoé",
+      1050,
+      12
+     ]
+    ],
+    "rookies": [
+     [
+      "u5",
+      1100,
+      4
+     ],
+     [
+      "u8",
+      1000,
+      0
+     ]
+    ],
+    "inactive": [
+     [
+      "u9",
+      1300,
+      3
+     ],
+     [
+      "u6",
+      1200,
+      30
+     ],
+     [
+      "u7",
+      1000,
+      0
+     ]
+    ]
+   }
+  },
+  {
+   "name": "undo_seq_and_restore",
+   "description": "nextSeq ignores deletion; restore keeps the slot; lastEntered = greatest createdAt; deletedAt must be a number to count; duplicate seq throws.",
+   "input": {
+    "players": [
+     {
+      "id": "a",
+      "name": "Alice",
+      "isGuest": false,
+      "createdAt": 1790942400000
+     },
+     {
+      "id": "b",
+      "name": "Bob",
+      "isGuest": false,
+      "createdAt": 1790942400000
+     },
+     {
+      "id": "c",
+      "name": "Chloé",
+      "isGuest": false,
+      "createdAt": 1790942400000
+     },
+     {
+      "id": "d",
+      "name": "David",
+      "isGuest": false,
+      "createdAt": 1790942400000
+     }
+    ],
+    "m1": {
+     "id": "m1",
+     "seq": 1,
+     "playedAt": 1791806400000,
+     "createdAt": 1791806400001,
+     "target": 10,
+     "teamA": [
+      "a",
+      "b"
+     ],
+     "teamB": [
+      "c",
+      "d"
+     ],
+     "scoreA": 10,
+     "scoreB": 2
+    },
+    "m2Deleted": {
+     "id": "m2",
+     "seq": 2,
+     "playedAt": 1791806400000,
+     "createdAt": 1791806400002,
+     "target": 10,
+     "teamA": [
+      "a",
+      "c"
+     ],
+     "teamB": [
+      "b",
+      "d"
+     ],
+     "scoreA": 10,
+     "scoreB": 8,
+     "deletedAt": 1791806400010
+    },
+    "m3": {
+     "id": "aaa-new",
+     "seq": 3,
+     "playedAt": 1791806400000,
+     "createdAt": 1791806400020,
+     "target": 10,
+     "teamA": [
+      "b",
+      "c"
+     ],
+     "teamB": [
+      "a",
+      "d"
+     ],
+     "scoreA": 10,
+     "scoreB": 5
+    },
+    "restored": [
+     {
+      "id": "m1",
+      "seq": 1,
+      "playedAt": 1791806400000,
+      "createdAt": 1791806400001,
+      "target": 10,
+      "teamA": [
+       "a",
+       "b"
+      ],
+      "teamB": [
+       "c",
+       "d"
+      ],
+      "scoreA": 10,
+      "scoreB": 2
+     },
+     {
+      "id": "m2",
+      "seq": 2,
+      "playedAt": 1791806400000,
+      "createdAt": 1791806400002,
+      "target": 10,
+      "teamA": [
+       "a",
+       "c"
+      ],
+      "teamB": [
+       "b",
+       "d"
+      ],
+      "scoreA": 10,
+      "scoreB": 8,
+      "deletedAt": null
+     },
+     {
+      "id": "aaa-new",
+      "seq": 3,
+      "playedAt": 1791806400000,
+      "createdAt": 1791806400020,
+      "target": 10,
+      "teamA": [
+       "b",
+       "c"
+      ],
+      "teamB": [
+       "a",
+       "d"
+      ],
+      "scoreA": 10,
+      "scoreB": 5
+     }
+    ],
+    "withSeqClash": [
+     {
+      "id": "m1",
+      "seq": 1,
+      "playedAt": 1791806400000,
+      "createdAt": 1791806400001,
+      "target": 10,
+      "teamA": [
+       "a",
+       "b"
+      ],
+      "teamB": [
+       "c",
+       "d"
+      ],
+      "scoreA": 10,
+      "scoreB": 2
+     },
+     {
+      "id": "m2",
+      "seq": 2,
+      "playedAt": 1791806400000,
+      "createdAt": 1791806400002,
+      "target": 10,
+      "teamA": [
+       "a",
+       "c"
+      ],
+      "teamB": [
+       "b",
+       "d"
+      ],
+      "scoreA": 10,
+      "scoreB": 8,
+      "deletedAt": null
+     },
+     {
+      "id": "aaa-new",
+      "seq": 2,
+      "playedAt": 1791806400000,
+      "createdAt": 1791806400020,
+      "target": 10,
+      "teamA": [
+       "b",
+       "c"
+      ],
+      "teamB": [
+       "a",
+       "d"
+      ],
+      "scoreA": 10,
+      "scoreB": 5
+     }
+    ]
+   },
+   "expected": {
+    "seqForNew": 3,
+    "orderWhileDeleted": [
+     "m1",
+     "aaa-new"
+    ],
+    "orderRestored": [
+     "m1",
+     "m2",
+     "aaa-new"
+    ],
+    "lastEnteredWhileDeleted": "aaa-new",
+    "lastEnteredRestored": "aaa-new",
+    "falseIsNotDeleted": 1,
+    "duplicateSeqError": "duplicate match seq",
+    "finalPlayers": {
+     "a": {
+      "rating": 1031.296,
+      "matches": 3,
+      "wins": 2,
+      "losses": 1,
+      "lastPlayedAt": 1791806400000
+     },
+     "b": {
+      "rating": 1044.96,
+      "matches": 3,
+      "wins": 2,
+      "losses": 1,
+      "lastPlayedAt": 1791806400000
+     },
+     "c": {
+      "rating": 1022.24,
+      "matches": 3,
+      "wins": 2,
+      "losses": 1,
+      "lastPlayedAt": 1791806400000
+     },
+     "d": {
+      "rating": 901.504,
+      "matches": 3,
+      "wins": 0,
+      "losses": 3,
+      "lastPlayedAt": 1791806400000
+     }
+    }
+   }
+  },
+  {
+   "name": "name_tiebreak_accents",
+   "description": "Five players tied on rating and matches: order by accent-stripped lower-cased name, then raw name (Émile before émile), then id.",
+   "input": {
+    "players": [
+     {
+      "id": "n1",
+      "name": "Zoé",
+      "createdAt": 1783166400000
+     },
+     {
+      "id": "n2",
+      "name": "alice",
+      "createdAt": 1783166400000
+     },
+     {
+      "id": "n3",
+      "name": "Émile",
+      "createdAt": 1783166400000
+     },
+     {
+      "id": "n4",
+      "name": "Bob",
+      "createdAt": 1783166400000
+     },
+     {
+      "id": "n5",
+      "name": "émile",
+      "createdAt": 1783166400000
+     }
+    ],
+    "state": {
+     "n1": {
+      "rating": 1000,
+      "matches": 10,
+      "wins": 5,
+      "losses": 5,
+      "lastPlayedAt": 1791720000000
+     },
+     "n2": {
+      "rating": 1000,
+      "matches": 10,
+      "wins": 5,
+      "losses": 5,
+      "lastPlayedAt": 1791720000000
+     },
+     "n3": {
+      "rating": 1000,
+      "matches": 10,
+      "wins": 5,
+      "losses": 5,
+      "lastPlayedAt": 1791720000000
+     },
+     "n4": {
+      "rating": 1000,
+      "matches": 10,
+      "wins": 5,
+      "losses": 5,
+      "lastPlayedAt": 1791720000000
+     },
+     "n5": {
+      "rating": 1000,
+      "matches": 10,
+      "wins": 5,
+      "losses": 5,
+      "lastPlayedAt": 1791720000000
+     }
+    },
+    "now": 1791806400000
+   },
+   "expected": {
+    "ranked": [
+     [
+      1,
+      "n2",
+      "alice"
+     ],
+     [
+      2,
+      "n4",
+      "Bob"
+     ],
+     [
+      3,
+      "n3",
+      "Émile"
+     ],
+     [
+      4,
+      "n5",
+      "émile"
+     ],
+     [
+      5,
+      "n1",
+      "Zoé"
+     ]
+    ]
+   }
+  },
+  {
+   "name": "reference_tables",
+   "description": "expectedScore and marginMultiplier tables for the \"Comment ça marche\" screen.",
+   "input": null,
+   "expected": {
+    "expected": [
+     {
+      "gap": 50,
+      "to10": 0.571,
+      "to5": 0.55
+     },
+     {
+      "gap": 100,
+      "to10": 0.64,
+      "to5": 0.599
+     },
+     {
+      "gap": 200,
+      "to10": 0.76,
+      "to5": 0.691
+     },
+     {
+      "gap": 300,
+      "to10": 0.849,
+      "to5": 0.77
+     },
+     {
+      "gap": 400,
+      "to10": 0.909,
+      "to5": 0.834
+     },
+     {
+      "gap": 600,
+      "to10": 0.969,
+      "to5": 0.918
+     }
+    ],
+    "margin10": [
+     {
+      "score": "10-0",
+      "G": 2
+     },
+     {
+      "score": "10-1",
+      "G": 1.9
+     },
+     {
+      "score": "10-2",
+      "G": 1.8
+     },
+     {
+      "score": "10-3",
+      "G": 1.7
+     },
+     {
+      "score": "10-4",
+      "G": 1.6
+     },
+     {
+      "score": "10-5",
+      "G": 1.5
+     },
+     {
+      "score": "10-6",
+      "G": 1.4
+     },
+     {
+      "score": "10-7",
+      "G": 1.3
+     },
+     {
+      "score": "10-8",
+      "G": 1.2
+     },
+     {
+      "score": "10-9",
+      "G": 1.1
+     }
+    ],
+    "margin5": [
+     {
+      "score": "5-0",
+      "G": 1.5
+     },
+     {
+      "score": "5-1",
+      "G": 1.4
+     },
+     {
+      "score": "5-2",
+      "G": 1.3
+     },
+     {
+      "score": "5-3",
+      "G": 1.2
+     },
+     {
+      "score": "5-4",
+      "G": 1.1
+     }
+    ]
+   }
+  }
+ ]
+}

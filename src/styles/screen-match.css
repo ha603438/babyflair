@@ -1,0 +1,260 @@
+/*
+ * screen-match.css — layout of the match entry flow (spec §3.2, §4: steps A players → B score → C done) and of
+ * « Modifier le match » (§3.5). The widgets themselves (segmented, chip, slot, scoregrid, preview, btn, inline form)
+ * are styled in entry.css / shell.css; this file only places them. Import from src/index.css after entry.css.
+ */
+
+/* ---------- screen root ---------- */
+/* Fills <main> (the app's only scroll container) so the chip grid can be bottom-anchored and the save strip
+   pushed to the bottom; still grows with the content when it is taller. */
+.match-screen {
+  display: flex;
+  flex-direction: column;
+  min-height: 100%;
+}
+
+/* Step A: the slot block stays put and the chip grid scrolls on its own when it is taller than the rest. */
+.match-screen--players {
+  height: 100%;
+}
+
+.match-top {
+  flex: none;
+  padding-top: var(--s4);
+}
+
+/* ---------- step A: slot block ---------- */
+/* .entry-slots (entry.css) is the two-column grid; .is-shaking is toggled here for 200 ms (§4, §8). */
+.match-team {
+  display: flex;
+  flex-direction: column;
+  gap: var(--s2);
+  min-width: 0;
+}
+
+.match-team__slots {
+  display: flex;
+  flex-direction: column;
+  gap: var(--s2);
+}
+
+/* Helper caption: 13 px --text-2 on a 24 px line; « Continuer » sits at the right once the roster is full. */
+.match-caption {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: var(--s2);
+  min-height: 24px;
+  margin-top: var(--s2);
+}
+
+.match-caption__text {
+  font-size: var(--fs-caption);
+  font-weight: 500;
+  line-height: 24px;
+  color: var(--text-2);
+}
+
+/* « + Nouveau joueur » form: under the slots, above the grid, so the keyboard never covers it (§4, §10). */
+.match-form {
+  margin-top: var(--s2);
+}
+
+/* ---------- step A: chip grid ---------- */
+/* Grows to the remaining height and scrolls on its own; margin-top: auto on the inner column anchors the grid to
+   the bottom while keeping the top reachable (justify-content: flex-end would clip the overflow). */
+.match-chips {
+  flex: 1 1 auto;
+  display: flex;
+  flex-direction: column;
+  min-height: 112px; /* two rows of chips stay visible even with the keyboard up */
+  overflow-y: auto;
+  overscroll-behavior: contain;
+  -webkit-overflow-scrolling: touch;
+}
+
+.match-chips__inner {
+  margin-top: auto;
+  padding-top: var(--s4);
+  padding-bottom: var(--s4);
+}
+
+/* ---------- step B: score panel ---------- */
+.match-panel {
+  display: flex;
+  flex-direction: column;
+  gap: var(--s3);
+  padding-top: var(--s2);
+}
+
+/* Step A → B: 220 ms translateY(24px → 0) + opacity (§8). Reduced motion is handled globally in base.css. */
+.match-panel--enter {
+  animation: match-panel-in var(--t-base) var(--ease) both;
+}
+
+@keyframes match-panel-in {
+  from {
+    opacity: 0;
+    transform: translateY(24px);
+  }
+
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+
+/* Roster bar (40 px): « Alice & Bob » vs « Chloé & Dan » + « Modifier »; each team name is a 44 px tap target. */
+.match-roster {
+  display: flex;
+  align-items: center;
+  gap: var(--s2);
+  min-height: 40px;
+}
+
+.match-roster__team {
+  flex: 0 1 auto;
+  min-width: 0;
+  min-height: 44px;
+  padding-inline: var(--s1);
+  border-radius: var(--r-sm);
+  font-size: var(--fs-label);
+  font-weight: 600;
+  line-height: 1.25;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+  user-select: none;
+  -webkit-user-select: none;
+  -webkit-touch-callout: none;
+  transition: background-color var(--t-fast) var(--ease);
+}
+
+.match-roster__team:active {
+  background: var(--surface-2);
+}
+
+.match-roster__team--1 {
+  color: var(--team-1);
+}
+
+.match-roster__team--2 {
+  color: var(--team-2);
+}
+
+.match-roster__vs {
+  flex: none;
+  font-size: var(--fs-caption);
+  font-weight: 500;
+  color: var(--text-3);
+}
+
+.match-roster__edit {
+  flex: none;
+  margin-left: auto;
+}
+
+/* ≥ 760 px tall (iPhone 14/15 standalone, tablets): the 2 × 2 slot block stays visible instead of the bar (§4). */
+.match-panel__slots {
+  display: none;
+}
+
+@media (min-height: 760px) {
+  .match-panel__slots {
+    display: block;
+  }
+
+  .match-roster {
+    display: none;
+  }
+}
+
+/* Panel header (44 px): « Score » 17 / 600 left, [En 5 | En 10] right. */
+.match-panel__header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: var(--s3);
+  min-height: 44px;
+}
+
+.match-panel__title {
+  font-size: var(--fs-h2);
+  font-weight: 600;
+  line-height: 1.25;
+}
+
+/* Sticky CTA strip: --surface behind the 56 px button, 8 px above the tab bar. margin-top: auto pushes it to the
+   bottom when the panel is short; position: sticky keeps it reachable when the panel scrolls (SE, En 10). */
+.match-save {
+  position: sticky;
+  bottom: 0;
+  z-index: 1;
+  flex: none;
+  margin-top: auto;
+  padding: var(--s2) 0;
+  background: var(--surface);
+}
+
+/* ---------- step C: result view ---------- */
+.match-result {
+  flex: 1 1 auto;
+  display: flex;
+  flex-direction: column;
+  gap: var(--s4);
+  padding-top: var(--s5);
+  padding-bottom: var(--s4);
+}
+
+/* 28 px check in --accent + « Match enregistré » 22 / 700, centred above the MatchSummary (its date line is the caption). */
+.match-result__title {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: var(--s2);
+}
+
+.match-result__check {
+  color: var(--accent);
+}
+
+.match-result__heading {
+  font-size: var(--fs-h1);
+  font-weight: 700;
+  line-height: 1.25;
+}
+
+.match-result__caption {
+  font-size: var(--fs-caption);
+  color: var(--text-2);
+  text-align: center;
+}
+
+.match-result__actions {
+  display: flex;
+  flex-direction: column;
+  gap: var(--s2);
+  margin-top: var(--s2);
+}
+
+/* Destructive action at the very bottom of the screen (§10 thumb reach). */
+.match-result__cancel {
+  margin-top: auto;
+  padding-top: var(--s6);
+}
+
+/* ---------- edit screen ---------- */
+/* The pushed header carries no segmented control, so the local [1v1 | 2v2] sits above the slots. */
+.match-edit__format {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: var(--s3);
+  min-height: 44px;
+  margin-bottom: var(--s3);
+}
+
+.match-edit__format-label {
+  font-size: var(--fs-label);
+  font-weight: 600;
+}

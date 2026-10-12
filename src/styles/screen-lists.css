@@ -1,0 +1,226 @@
+/*
+ * screen-lists.css — Classement, Joueurs and Joueur screens (spec §3.1, §3.6, §3.7).
+ * Rows, badges, cards, hints, empty states and the sparkline come from lists.css; buttons, icon buttons and the
+ * inline form from shell.css; .content / .stack-16 / .t-* from base.css. Import after lists.css in index.css.
+ */
+
+/* ---------- shared column ---------- */
+/* Lists are full-bleed inside the centred column (rows carry their own 16 px gutters and inset dividers);
+   padded blocks (cards, hints, captions) reuse .content inside it. */
+.lists-screen {
+  width: 100%;
+  max-width: var(--content-max);
+  margin-inline: auto;
+  padding-bottom: var(--s6);
+}
+
+.lists-block {
+  padding-top: var(--s4);
+}
+
+/* Row groups: only the landscape safe-area insets, the rows already have their 16 px padding. */
+.rows {
+  padding-inline: var(--safe-left) var(--safe-right);
+}
+
+/* « Aucun joueur pour l'instant… », « Aucun match pour l'instant. » */
+.lists-empty {
+  padding-block: var(--s4);
+  font-size: var(--fs-label);
+  line-height: 1.4;
+  color: var(--text-2);
+}
+
+/* Centred text link (« Voir tout l'historique »), 44 px target. */
+.lists-link {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  min-height: 44px;
+  padding-inline: var(--s4);
+  color: var(--accent);
+  font-size: var(--fs-label);
+  font-weight: 600;
+  user-select: none;
+  -webkit-user-select: none;
+}
+
+/* ---------- Classement (§3.1) ---------- */
+/* Context strip: 36 px, 13 px --text-2, whole strip tappable → Historique. */
+.ctx-strip {
+  display: flex;
+  align-items: center;
+  min-height: 36px;
+  padding-inline: max(var(--s4), var(--safe-left)) max(var(--s4), var(--safe-right));
+  font-size: var(--fs-caption);
+  line-height: 1.4;
+  color: var(--text-2);
+  font-variant-numeric: tabular-nums;
+  user-select: none;
+  -webkit-user-select: none;
+  -webkit-touch-callout: none;
+  transition: background-color var(--t-fast);
+}
+
+.ctx-strip:active {
+  background: var(--surface-2);
+}
+
+/* Observation card text. */
+.obs-text {
+  font-size: var(--fs-label);
+  line-height: 1.4;
+  color: var(--text-2);
+}
+
+/* ---------- Joueurs (§3.6) ---------- */
+.sub-count {
+  padding: var(--s2) max(var(--s4), var(--safe-left)) 0 max(var(--s4), var(--safe-right));
+  font-size: var(--fs-caption);
+  line-height: 1.4;
+  color: var(--text-2);
+  font-variant-numeric: tabular-nums;
+}
+
+/* « + Ajouter un joueur » row: 48 px, --accent, 15 / 600; expands into the inline form in place. */
+.add-row {
+  display: flex;
+  align-items: center;
+  width: 100%;
+  min-height: 48px;
+  color: var(--accent);
+  font-size: var(--fs-label);
+  font-weight: 600;
+  line-height: 1.25;
+  text-align: left;
+  user-select: none;
+  -webkit-user-select: none;
+  -webkit-touch-callout: none;
+  transition: opacity var(--t-fast);
+}
+
+.add-row:active {
+  opacity: .7;
+}
+
+/* ---------- Joueur (§3.7) ---------- */
+/* Hero card: rating + caption + badges on the left; pencil (top) and 7-day trend on the right. */
+.hero {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) auto;
+  column-gap: var(--s3);
+  align-items: start;
+}
+
+.hero-main {
+  min-width: 0;
+}
+
+.hero-caption {
+  margin-top: var(--s1);
+  font-size: var(--fs-label);
+  line-height: 1.4;
+  color: var(--text-2);
+}
+
+.hero-badges {
+  display: flex;
+  gap: var(--s2);
+  margin-top: var(--s2);
+}
+
+.hero-side {
+  display: flex;
+  flex-direction: column;
+  align-items: flex-end;
+  gap: var(--s2);
+}
+
+/* The 44 px pencil hugs the card corner: pull it into the card's 16 px padding by 8 px. */
+.hero-side .icon-btn {
+  margin: calc(-1 * var(--s2)) calc(-1 * var(--s2)) 0 0;
+}
+
+.spark-caption {
+  margin-top: var(--s2);
+  font-size: var(--fs-caption);
+  line-height: 1.4;
+  color: var(--text-2);
+}
+
+/* Four stat tiles, 2 × 2 on very narrow phones. */
+.tiles {
+  display: grid;
+  grid-template-columns: repeat(4, minmax(0, 1fr));
+  gap: var(--s2);
+}
+
+@media (max-width: 359px) {
+  .tiles {
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+  }
+}
+
+.tile {
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+  min-width: 0;
+}
+
+.tile-label {
+  font-size: var(--fs-caption);
+  line-height: 1.4;
+  color: var(--text-2);
+}
+
+.tile-value {
+  white-space: nowrap;
+}
+
+.streak {
+  margin-top: var(--s3);
+  font-size: var(--fs-caption);
+  line-height: 1.4;
+  color: var(--text-2);
+}
+
+.partner-label {
+  font-size: var(--fs-caption);
+  line-height: 1.4;
+  color: var(--text-2);
+}
+
+.partner-value {
+  margin-top: 2px;
+  font-size: var(--fs-label);
+  font-weight: 600;
+  line-height: 1.4;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+/* The partner card is a link to the partner's page. */
+.partner--link {
+  display: block;
+  user-select: none;
+  -webkit-user-select: none;
+  -webkit-touch-callout: none;
+  transition: background-color var(--t-fast);
+}
+
+.partner--link:active {
+  background: var(--surface-2);
+}
+
+.danger-zone {
+  padding-top: var(--s6);
+}
+
+.danger-caption {
+  font-size: var(--fs-caption);
+  line-height: 1.4;
+  color: var(--text-2);
+  text-align: center;
+}

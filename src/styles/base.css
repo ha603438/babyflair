@@ -1,0 +1,261 @@
+/*
+ * BabyFlair base — global resets, the layout root, the type scale and a handful of utilities.
+ * Spec references: §2 (layout root), §6 (global rules), §7 (typography & spacing), §10 (safe areas, touch).
+ * Everything component-specific lives in shell.css / entry.css / lists.css.
+ */
+
+/* ---------- safe-area custom properties (§10) ---------- */
+/* Fallback 0px keeps the calc() valid in browsers without env(). Toast and sticky strips add --safe-bottom. */
+:root {
+  --safe-top: env(safe-area-inset-top, 0px);
+  --safe-bottom: env(safe-area-inset-bottom, 0px);
+  --safe-left: env(safe-area-inset-left, 0px);
+  --safe-right: env(safe-area-inset-right, 0px);
+}
+
+/* ---------- resets ---------- */
+*,
+*::before,
+*::after {
+  box-sizing: border-box;
+}
+
+html {
+  -webkit-text-size-adjust: 100%;
+  text-size-adjust: 100%;
+  line-height: 1.4;
+}
+
+/* §6 verbatim */
+html,
+body {
+  background: var(--bg);
+  color: var(--text);
+  font-family: var(--font);
+}
+
+body {
+  margin: 0;
+  overscroll-behavior: none; /* no rubber-band in standalone; only <main> scrolls */
+  -webkit-tap-highlight-color: transparent;
+  font-size: var(--fs-body);
+}
+
+/* Interactive elements inherit type and colour and carry no UA chrome; components add their own surfaces. */
+button,
+input,
+select,
+textarea {
+  font: inherit;
+  color: inherit;
+  margin: 0;
+}
+
+button {
+  background: none;
+  border: 0;
+  padding: 0;
+  cursor: pointer;
+}
+
+button:disabled {
+  cursor: default;
+}
+
+a {
+  color: inherit;
+  text-decoration: none;
+}
+
+h1,
+h2,
+h3,
+h4,
+p,
+figure {
+  margin: 0;
+}
+
+ul,
+ol {
+  margin: 0;
+  padding: 0;
+  list-style: none;
+}
+
+svg {
+  display: block;
+}
+
+/* §6 verbatim: kills the 300 ms tap delay / double-tap zoom on every tap target */
+button,
+a,
+[role="button"] {
+  touch-action: manipulation;
+}
+
+/* §6 verbatim: every numeric element is tabular */
+.num,
+.delta,
+.score,
+.rating,
+time {
+  font-variant-numeric: tabular-nums;
+}
+
+/* §6 verbatim: keyboard focus ring via --focus */
+:focus-visible {
+  outline: none;
+  box-shadow: var(--focus);
+}
+
+/* Native <dialog> (ConfirmDialog): token-driven backdrop, no UA border. The component sets size/padding/radius. */
+dialog {
+  border: 0;
+  padding: 0;
+  color: inherit;
+  background: var(--surface);
+}
+
+dialog::backdrop {
+  background: var(--backdrop);
+}
+
+/* ---------- layout root (§2, §10) ---------- */
+/* Header and tab bar are grid rows, never position: fixed, so they never jump with the iOS toolbar. */
+.app {
+  display: grid;
+  grid-template-rows: auto 1fr auto;
+  height: 100vh; /* fallback */
+  height: 100dvh;
+  width: 100%;
+}
+
+/* The only scroll container of the app. min-height: 0 lets the 1fr row shrink below its content. */
+.app > main {
+  min-height: 0;
+  overflow-y: auto;
+  overscroll-behavior: contain;
+  -webkit-overflow-scrolling: touch;
+}
+
+/* Safe areas: header takes the top inset, tab bar the bottom one; both are opaque --surface (§2, §10).
+   Side insets only matter in landscape; they add no gutter in portrait. */
+.app > header {
+  padding-top: var(--safe-top);
+  padding-inline: var(--safe-left) var(--safe-right);
+  background: var(--surface);
+}
+
+.app > nav,
+.app > footer {
+  padding-bottom: var(--safe-bottom);
+  padding-inline: var(--safe-left) var(--safe-right);
+  background: var(--surface);
+}
+
+/* Opt-in equivalents for shell elements that are not a direct <header>/<nav> child of .app. */
+.safe-top { padding-top: var(--safe-top); }
+.safe-bottom { padding-bottom: var(--safe-bottom); }
+
+/* ---------- card (§6 verbatim) ---------- */
+.card {
+  background: var(--surface);
+  border-radius: var(--r-lg);
+  box-shadow: var(--shadow-1);
+  border: 1px solid transparent;
+}
+
+@media (prefers-color-scheme: dark) {
+  .card {
+    border-color: var(--border);
+  }
+}
+
+/* ---------- typography scale (§7) ---------- */
+/* Headings and numerals: line-height 1.25. Body-like sizes: 1.4. Weights are the spec defaults; override locally. */
+.t-display { font-size: var(--fs-display); font-weight: 800; line-height: 1.25; font-variant-numeric: tabular-nums; } /* score hero, rating on Joueur */
+.t-h1 { font-size: var(--fs-h1); font-weight: 700; line-height: 1.25; } /* tab titles, « Match enregistré » */
+.t-h2 { font-size: var(--fs-h2); font-weight: 600; line-height: 1.25; } /* pushed titles, section titles, row names, primary CTA */
+.t-body { font-size: var(--fs-body); font-weight: 400; line-height: 1.4; } /* body text, inputs (never below 16 px) */
+.t-label { font-size: var(--fs-label); font-weight: 600; line-height: 1.4; } /* secondary/text buttons, block labels, preview values */
+.t-caption { font-size: var(--fs-caption); font-weight: 500; line-height: 1.4; } /* second lines, helpers, why lines */
+.t-micro { font-size: var(--fs-micro); font-weight: 500; line-height: 1.4; } /* section captions, rating movement lines */
+.t-tab { font-size: var(--fs-tab); font-weight: 600; line-height: 1.4; } /* tab labels, pills */
+.t-num { font-size: 20px; font-weight: 700; line-height: 1.25; font-variant-numeric: tabular-nums; } /* rating in RankRow, score cells */
+
+/* Uppercase treatment shared by section captions, column captions and pills (« uppercase .04em »). */
+.t-upper {
+  text-transform: uppercase;
+  letter-spacing: .04em;
+}
+
+/* ---------- utilities ---------- */
+
+/* Content column: max 720 px centred, 16 px gutters that grow to the side insets in landscape (§2, §7, §10). */
+.content {
+  width: 100%;
+  max-width: var(--content-max);
+  margin-inline: auto;
+  padding-inline: max(var(--s4), var(--safe-left)) max(var(--s4), var(--safe-right));
+}
+
+/* Vertical stack with the 16 px card gap used on Joueur and the settings groups. */
+.stack-16 {
+  display: flex;
+  flex-direction: column;
+  gap: var(--s4);
+}
+
+/* 1 px --border divider under a row, inset 16 px on both sides (ListRow). Drawn as a pseudo-element so the row
+   itself stays full-width tappable. Hidden on the last row of its container. */
+.row-divider {
+  position: relative;
+}
+
+.row-divider::after {
+  content: "";
+  position: absolute;
+  left: var(--s4);
+  right: var(--s4);
+  bottom: 0;
+  height: 1px;
+  background: var(--border);
+  pointer-events: none;
+}
+
+.row-divider:last-child::after {
+  display: none;
+}
+
+/* Colour helpers. .muted is the neutral delta/caption colour (--text-3); .text-2 is the second-line colour. */
+.pos { color: var(--pos); }
+.neg { color: var(--neg); }
+.warn { color: var(--warn); }
+.muted { color: var(--text-3); }
+.text-2 { color: var(--text-2); }
+
+/* Chips, slots, score cells and rows: no text selection or iOS callout on tap (§10). Not for the rules page. */
+.no-select {
+  user-select: none;
+  -webkit-user-select: none;
+  -webkit-touch-callout: none;
+}
+
+/* Visually hidden, still read by screen readers (aria text for deltas, hidden file input labels). */
+.sr-only {
+  position: absolute;
+  width: 1px;
+  height: 1px;
+  padding: 0;
+  margin: -1px;
+  overflow: hidden;
+  clip: rect(0, 0, 0, 0);
+  white-space: nowrap;
+  border: 0;
+}
+
+/* ---------- reduced motion (§6 verbatim) ---------- */
+@media (prefers-reduced-motion: reduce) {
+  *, *::before, *::after { transition-duration: 1ms !important; animation: none !important; transform: none !important; }
+}

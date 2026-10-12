@@ -1,0 +1,116 @@
+/*
+ * screen-history.css — Historique (§3.3), Détail du match (§3.4), Réglages (§3.8), Comment ça marche (§3.9).
+ * Tokens from tokens.css; rows, section headers, cards, dialogs and buttons from lists.css / shell.css.
+ */
+
+/* ---------- flush column ---------- */
+/* The content column without its 16 px gutters: ListRows and the MatchSummary hero carry their own padding, so the
+   dividers stay inset 16 px from the screen edge (§3.1, §5). Side insets only matter in landscape. */
+.hist-col,
+.md-col,
+.settings-col {
+  width: 100%;
+  max-width: var(--content-max);
+  margin-inline: auto;
+  padding-inline: var(--safe-left) var(--safe-right);
+  padding-bottom: var(--s6);
+}
+
+/* ---------- Historique (§3.3) ---------- */
+/* Sticky day header: 32 px, 13 / 600 uppercase --text-3 on --bg so the rows scroll under it inside <main>. */
+.hist-day {
+  position: sticky;
+  top: 0;
+  z-index: 1;
+  display: flex;
+  align-items: center;
+  height: 32px;
+  padding-inline: var(--s4);
+  background: var(--bg);
+  font-size: var(--fs-caption);
+  font-weight: 600;
+  line-height: 1;
+  letter-spacing: .04em;
+  text-transform: uppercase;
+  color: var(--text-3);
+}
+
+.hist-footer {
+  padding: var(--s4) var(--s4) 0;
+  font-size: var(--fs-caption);
+  line-height: 1.4;
+  text-align: center;
+  color: var(--text-3);
+  font-variant-numeric: tabular-nums;
+}
+
+/* ---------- Détail du match (§3.4) ---------- */
+.md-col {
+  padding-top: var(--s4);
+}
+
+/* Two 48 px buttons in a row, gap 8, 16 px gutters: secondary « Modifier », text-danger « Supprimer ». */
+.md-actions {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: var(--s2);
+  margin-top: var(--s4);
+  padding-inline: var(--s4);
+}
+
+/* ---------- Réglages (§3.8) ---------- */
+/* One wrapper per group so the last row of a group drops its divider before the next caption. */
+.settings-group {
+  display: flex;
+  flex-direction: column;
+}
+
+/* iOS install HintCard revealed under the « Installer sur l'écran d'accueil » row. */
+.settings-hint {
+  padding: var(--s2) var(--s4) var(--s3);
+}
+
+.settings-footer {
+  padding: var(--s6) var(--s4) 0;
+  font-size: var(--fs-caption);
+  line-height: 1.4;
+  text-align: center;
+  color: var(--text-3);
+  font-variant-numeric: tabular-nums;
+}
+
+/* ---------- Comment ça marche (§3.9) ---------- */
+/* Body 15 / 1.5, max-width 560, headings 17 / 600. Text stays selectable (§10: no-select is not for this page). */
+.rules {
+  max-width: 560px;
+  margin-inline: auto;
+  padding: var(--s4) 0 var(--s7);
+  font-size: var(--fs-label);
+  font-weight: 400;
+  line-height: 1.5;
+  color: var(--text);
+}
+
+.rules-section + .rules-section {
+  margin-top: var(--s6);
+}
+
+.rules-h {
+  margin-bottom: var(--s2);
+  font-size: var(--fs-h2);
+  font-weight: 600;
+  line-height: 1.25;
+}
+
+/* The worked why line, in the engine's own format, in a --surface-2 box. */
+.rules-box {
+  margin-top: var(--s3);
+  padding: var(--s3) var(--s4);
+  border-radius: var(--r-md);
+  background: var(--surface-2);
+  font-size: var(--fs-caption);
+  font-weight: 500;
+  line-height: 1.4;
+  color: var(--text-2);
+  font-variant-numeric: tabular-nums;
+}

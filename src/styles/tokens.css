@@ -1,0 +1,97 @@
+/* BabyFlair design tokens — spec §6, values verbatim. Dark mode follows prefers-color-scheme only (no in-app toggle). */
+
+:root {
+  color-scheme: light dark;
+
+  /* surfaces & text */
+  --bg: #f6f7f5;
+  --surface: #ffffff;
+  --surface-2: #eef1ee;
+  --border: #d9ded9;
+  --text: #16211b;
+  --text-2: #5b6660;
+  --text-3: #8a948e;
+
+  /* brand accent (manifest green) */
+  --accent: #1f7a4d;
+  --accent-strong: #176340;
+  --accent-soft: #dff2e7;
+  --on-accent: #ffffff;
+
+  /* teams (never red/green) */
+  --team-1: #2563eb;
+  --team-1-soft: #dbe7fd;
+  --team-2: #c2410c;
+  --team-2-soft: #fde4d6;
+
+  /* semantic */
+  --pos: #15803d;
+  --neg: #dc2626;
+  --warn: #b45309;
+
+  /* medals */
+  --gold: #f5d76e;
+  --silver: #d7dde3;
+  --bronze: #e5b48a;
+  --on-medal: #2b2200;
+
+  /* overlays */
+  --toast-bg: #16211b;
+  --toast-text: #ffffff;
+  --toast-action: #7ed3a6;
+  --backdrop: rgba(16, 24, 20, .4);
+  --shadow-1: 0 1px 2px rgba(16, 24, 20, .06), 0 1px 3px rgba(16, 24, 20, .08);
+  --focus: 0 0 0 2px var(--bg), 0 0 0 4px var(--accent);
+
+  /* spacing */
+  --s1: 4px; --s2: 8px; --s3: 12px; --s4: 16px; --s5: 20px; --s6: 24px; --s7: 32px; --s8: 40px;
+
+  /* radius */
+  --r-sm: 8px; --r-md: 12px; --r-lg: 16px; --r-pill: 999px;
+
+  /* type */
+  --font: -apple-system, BlinkMacSystemFont, "SF Pro Text", "Segoe UI", Roboto, "Helvetica Neue", Arial, sans-serif;
+  --fs-display: 40px; --fs-h1: 22px; --fs-h2: 17px; --fs-body: 16px; --fs-label: 15px;
+  --fs-caption: 13px; --fs-micro: 12px; --fs-tab: 11px;
+
+  /* motion */
+  --t-fast: 150ms; --t-base: 220ms; --t-flash: 600ms;
+  --ease: cubic-bezier(.2, .8, .2, 1);
+
+  /* layout */
+  --tabbar-h: 50px;
+  --header-h: 44px;
+  --content-max: 720px;
+}
+
+@media (prefers-color-scheme: dark) {
+  :root {
+    --bg: #121613;
+    --surface: #1b211d;
+    --surface-2: #242c27;
+    --border: #303a33;
+    --text: #eef2ef;
+    --text-2: #a8b2ab;
+    --text-3: #76817a;
+
+    --accent: #3fb47a;
+    --accent-strong: #5cc78f;
+    --accent-soft: #1b3326;
+    --on-accent: #0c1a12;
+
+    --team-1: #60a5fa;
+    --team-1-soft: #1e2f4d;
+    --team-2: #fb923c;
+    --team-2-soft: #4a2a14;
+
+    --pos: #4ade80;
+    --neg: #f87171;
+    --warn: #fbbf24;
+
+    --toast-bg: #eef2ef;
+    --toast-text: #121613;
+    --toast-action: #176340;
+    --backdrop: rgba(0, 0, 0, .55);
+    --shadow-1: none; /* cards use 1px var(--border) instead */
+  }
+}

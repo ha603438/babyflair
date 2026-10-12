@@ -1,0 +1,515 @@
+/*
+ * entry.css — match-entry components (spec §4 step A / step B, §5, §8).
+ * Sections: SegmentedControl · Chip / AddChip · Slot · ScoreGrid · PreviewTable · layout helpers (optional).
+ * Tokens come from tokens.css; resets and the type scale from base.css. Nothing here is position: fixed.
+ */
+
+/* ======================================================================
+   SegmentedControl — 44 px pill track, N equal segments (1v1 | 2v2, En 5 | En 10)
+   ====================================================================== */
+.segmented {
+  display: grid;
+  grid-auto-flow: column;
+  grid-auto-columns: minmax(0, 1fr);
+  gap: 2px;
+  min-width: 150px;
+  height: 44px;
+  padding: 3px;
+  border-radius: var(--r-pill);
+  background: var(--surface-2);
+}
+
+.segmented__option {
+  min-width: 0;
+  height: 100%;
+  padding: 0 var(--s3);
+  border-radius: var(--r-pill);
+  font-size: var(--fs-label);
+  font-weight: 600;
+  line-height: 1;
+  white-space: nowrap;
+  color: var(--text-2);
+  user-select: none;
+  -webkit-user-select: none;
+  transition:
+    background-color var(--t-fast) var(--ease),
+    color var(--t-fast) var(--ease);
+}
+
+.segmented__option.is-active {
+  background: var(--surface);
+  color: var(--text);
+  box-shadow: var(--shadow-1);
+}
+
+@media (prefers-color-scheme: dark) {
+  .segmented__option.is-active {
+    background: var(--accent-soft);
+    color: var(--accent);
+    box-shadow: none;
+  }
+}
+
+/* ======================================================================
+   Chip / AddChip — 48 px grid cells of step A
+   ====================================================================== */
+.chip {
+  position: relative;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: var(--s1);
+  width: 100%;
+  min-height: 48px;
+  padding: 0 var(--s3);
+  border: 1px solid var(--border);
+  border-radius: var(--r-md);
+  background: var(--surface);
+  color: var(--text);
+  font-size: var(--fs-body);
+  font-weight: 600;
+  line-height: 1.25;
+  text-align: center;
+  user-select: none;
+  -webkit-user-select: none;
+  -webkit-touch-callout: none;
+  transition:
+    transform var(--t-fast) var(--ease),
+    background-color var(--t-fast) var(--ease);
+}
+
+.chip:active {
+  transform: scale(0.97);
+}
+
+.chip__name {
+  min-width: 0;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+/* Guest tag: inline 10 px « invité » */
+.chip__tag {
+  flex: none;
+  font-size: 10px;
+  font-weight: 600;
+  line-height: 1;
+  letter-spacing: 0.04em;
+  text-transform: uppercase;
+  color: var(--text-3);
+}
+
+/* Selected: team-colour soft background, 2 px team border, 20 px badge top-right. The 1 px → 2 px border is
+   absorbed by a 1 px smaller padding so the text does not shift. */
+.chip--team1,
+.chip--team2 {
+  border-width: 2px;
+  padding: 0 27px 0 11px;
+}
+
+.chip--team1 {
+  background: var(--team-1-soft);
+  border-color: var(--team-1);
+}
+
+.chip--team2 {
+  background: var(--team-2-soft);
+  border-color: var(--team-2);
+}
+
+.chip__badge {
+  position: absolute;
+  top: 4px;
+  right: 4px;
+  width: 20px;
+  height: 20px;
+  border-radius: 50%;
+  font-size: 12px;
+  font-weight: 700;
+  line-height: 20px;
+  text-align: center;
+  color: var(--surface); /* white on the light team colours, dark on the light-mode-in-dark team colours */
+}
+
+.chip--team1 .chip__badge {
+  background: var(--team-1);
+}
+
+.chip--team2 .chip__badge {
+  background: var(--team-2);
+}
+
+/* Inactive > 30 days: dimmed, still tappable */
+.chip.is-inactive {
+  opacity: 0.6;
+}
+
+/* AddChip: dashed, accent text « + Nouveau joueur » */
+.chip--add {
+  border: 1.5px dashed var(--border);
+  background: transparent;
+  color: var(--accent);
+}
+
+/* ======================================================================
+   Slot — 56 px roster position (empty / active / filled)
+   ====================================================================== */
+.slot {
+  position: relative;
+  display: flex;
+  align-items: stretch;
+  min-height: 56px;
+  border: 1.5px dashed var(--border);
+  border-radius: var(--r-md);
+  background: transparent;
+  user-select: none;
+  -webkit-user-select: none;
+  -webkit-touch-callout: none;
+}
+
+.slot.is-filled {
+  border: 1px solid var(--border);
+  background: var(--surface);
+}
+
+/* 4 px team bar on the left; drawn as a border so the rounded corner stays clean */
+.slot--team1.is-filled {
+  border-left: 4px solid var(--team-1);
+}
+
+.slot--team2.is-filled {
+  border-left: 4px solid var(--team-2);
+}
+
+.slot.is-active {
+  border-style: solid;
+  border-color: var(--accent);
+  border-width: 2px;
+}
+
+.slot--team1.is-active.is-filled {
+  border-left: 4px solid var(--team-1);
+}
+
+.slot--team2.is-active.is-filled {
+  border-left: 4px solid var(--team-2);
+}
+
+/* Border pulse only while the active slot is still empty (§8: stops once filled) */
+.slot.is-active.is-empty {
+  animation: slot-pulse 1.2s ease-in-out infinite;
+}
+
+@keyframes slot-pulse {
+  0%,
+  100% {
+    border-color: var(--accent);
+  }
+
+  50% {
+    border-color: var(--accent-soft);
+  }
+}
+
+/* Keyboard focus ring on the slot box rather than on the inner buttons */
+.slot:has(:focus-visible) {
+  box-shadow: var(--focus);
+}
+
+.slot__main:focus-visible,
+.slot__clear:focus-visible {
+  box-shadow: none;
+}
+
+.slot__main {
+  flex: 1;
+  min-width: 0;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: 0 var(--s3);
+  color: var(--text-2);
+  text-align: left;
+}
+
+.slot.is-filled .slot__main {
+  justify-content: flex-start;
+  padding-left: var(--s3);
+  padding-right: var(--s1);
+  color: var(--text);
+  font-size: var(--fs-h2);
+  font-weight: 600;
+  line-height: 1.25;
+}
+
+.slot__name {
+  min-width: 0;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.slot__placeholder {
+  font-size: var(--fs-label);
+  font-weight: 400;
+  line-height: 1.25;
+  color: var(--text-2);
+}
+
+.slot__plus {
+  color: var(--text-2);
+}
+
+/* « × » 28 × 28, with an invisible 44 × 44 hit area (§7 minimum) */
+.slot__clear {
+  position: relative;
+  flex: none;
+  align-self: center;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: 28px;
+  height: 28px;
+  margin-right: var(--s2);
+  border-radius: 50%;
+  color: var(--text-2);
+  transition: background-color var(--t-fast) var(--ease);
+}
+
+.slot__clear::after {
+  content: "";
+  position: absolute;
+  inset: -8px;
+}
+
+.slot__clear:active {
+  background: var(--surface-2);
+}
+
+/* ======================================================================
+   ScoreGrid — two blocks (one per team), label 24 px + 5-column cells of 48 px
+   ====================================================================== */
+.scoregrid {
+  display: flex;
+  flex-direction: column;
+  gap: var(--s3);
+}
+
+.scoregrid__block {
+  transition: opacity var(--t-fast) var(--ease);
+}
+
+/* The non-winning block once a value exists */
+.scoregrid__block.is-dimmed {
+  opacity: 0.5;
+}
+
+.scoregrid__label {
+  height: 24px;
+  margin: 0;
+  font-size: var(--fs-label);
+  font-weight: 600;
+  line-height: 24px;
+  color: var(--text);
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+.scoregrid__block--team1 .scoregrid__team {
+  color: var(--team-1);
+}
+
+.scoregrid__block--team2 .scoregrid__team {
+  color: var(--team-2);
+}
+
+.scoregrid__check {
+  color: var(--accent);
+}
+
+.scoregrid__cells {
+  display: grid;
+  grid-template-columns: repeat(5, minmax(0, 1fr));
+  gap: var(--s2);
+}
+
+.scoregrid__cell {
+  height: 48px;
+  border-radius: var(--r-md);
+  background: var(--surface-2);
+  color: var(--text);
+  font-size: 20px;
+  font-weight: 700;
+  font-variant-numeric: tabular-nums;
+  line-height: 1;
+  user-select: none;
+  -webkit-user-select: none;
+  -webkit-touch-callout: none;
+  transition:
+    transform var(--t-fast) var(--ease),
+    background-color var(--t-fast) var(--ease),
+    color var(--t-fast) var(--ease);
+}
+
+.scoregrid__cell:active {
+  transform: scale(0.97);
+}
+
+.scoregrid__cell.is-selected {
+  background: var(--accent);
+  color: var(--on-accent);
+}
+
+/* ======================================================================
+   PreviewTable — chance line + 4 × 3 what-if table, or one exact line
+   ====================================================================== */
+.preview {
+  font-variant-numeric: tabular-nums;
+}
+
+.preview__chance {
+  margin: 0 0 var(--s2);
+  font-size: var(--fs-caption);
+  font-weight: 500;
+  line-height: 1.4;
+  color: var(--text-2);
+}
+
+.preview__table {
+  width: 100%;
+  border-collapse: collapse;
+  table-layout: fixed;
+}
+
+.preview__col-value {
+  width: 31%;
+}
+
+.preview__table th,
+.preview__table td {
+  padding: 2px 0;
+  text-align: right;
+  vertical-align: baseline;
+}
+
+.preview__table th:first-child,
+.preview__table td:first-child {
+  text-align: left;
+}
+
+.preview__table thead th {
+  font-size: var(--fs-micro);
+  font-weight: 500;
+  line-height: 1.4;
+  color: var(--text-3);
+}
+
+.preview__table tbody th {
+  font-size: var(--fs-label);
+  font-weight: 500;
+  line-height: 1.25;
+  color: var(--text);
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.preview__table tbody td {
+  font-size: var(--fs-label);
+  font-weight: 600;
+  line-height: 1.25;
+}
+
+.preview__exact {
+  margin: 0;
+  font-size: var(--fs-label);
+  font-weight: 700;
+  line-height: 1.4;
+}
+
+.preview__item {
+  white-space: nowrap;
+}
+
+.preview__sep {
+  font-weight: 500;
+  color: var(--text-3);
+}
+
+.preview__delta--pos {
+  color: var(--pos);
+}
+
+.preview__delta--neg {
+  color: var(--neg);
+}
+
+.preview__delta--zero {
+  color: var(--text-3);
+}
+
+/* ======================================================================
+   Layout helpers for the match screen (optional, namespaced `entry-`).
+   The screen toggles `.is-shaking` on the slot block for 200 ms on an impossible chip tap (§4, §8).
+   ====================================================================== */
+.entry-slots {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: var(--s2);
+}
+
+.entry-slots__caption {
+  font-size: var(--fs-micro);
+  font-weight: 600;
+  line-height: 1.4;
+  letter-spacing: 0.04em;
+  text-transform: uppercase;
+}
+
+.entry-slots__caption--team1 {
+  color: var(--team-1);
+}
+
+.entry-slots__caption--team2 {
+  color: var(--team-2);
+}
+
+.entry-chips {
+  display: grid;
+  grid-template-columns: repeat(3, minmax(0, 1fr));
+  gap: var(--s2);
+}
+
+@media (min-width: 768px) {
+  .entry-chips {
+    grid-template-columns: repeat(5, minmax(0, 1fr));
+  }
+}
+
+.is-shaking {
+  animation: entry-shake 200ms var(--ease);
+}
+
+@keyframes entry-shake {
+  0%,
+  100% {
+    transform: translateX(0);
+  }
+
+  25% {
+    transform: translateX(-4px);
+  }
+
+  75% {
+    transform: translateX(4px);
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .slot.is-active.is-empty,
+  .is-shaking {
+    animation: none;
+  }
+}
