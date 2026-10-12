@@ -9,7 +9,7 @@
     "lint": "oxlint",
     "preview": "vite preview",
     "test": "vitest run",
-    "generate-icons": "pwa-assets-generator --preset minimal-2023 public/icon.svg"
+    "generate-icons": "pwa-assets-generator --preset minimal-2023 public/logo.png"
   },
   "dependencies": {
     "react": "^19.2.8",

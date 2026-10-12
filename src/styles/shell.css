@@ -399,3 +399,7 @@
   align-items: center;
   margin-top: var(--s1);
 }
+
+/* Brand mark next to « BabyFlair » in the compact (Match) header. */
+.header-brand { display: inline-flex; align-items: center; gap: 8px; }
+.header-brand-mark { width: 26px; height: 26px; border-radius: 7px; display: block; }

@@ -13,20 +13,20 @@
   --text-3: #8a948e;
 
   /* brand accent (manifest green) */
-  --accent: #1f7a4d;
-  --accent-strong: #176340;
-  --accent-soft: #dff2e7;
+  --accent: #1d4ed8;
+  --accent-strong: #1e40af;
+  --accent-soft: #dbe7fd;
   --on-accent: #ffffff;
 
   /* teams (never red/green) */
   --team-1: #2563eb;
   --team-1-soft: #dbe7fd;
-  --team-2: #c2410c;
-  --team-2-soft: #fde4d6;
+  --team-2: #dc2626;
+  --team-2-soft: #fde2e2;
 
   /* semantic */
   --pos: #15803d;
-  --neg: #dc2626;
+  --neg: #e11d48;
   --warn: #b45309;
 
   /* medals */
@@ -38,7 +38,7 @@
   /* overlays */
   --toast-bg: #16211b;
   --toast-text: #ffffff;
-  --toast-action: #7ed3a6;
+  --toast-action: #93c5fd;
   --backdrop: rgba(16, 24, 20, .4);
   --shadow-1: 0 1px 2px rgba(16, 24, 20, .06), 0 1px 3px rgba(16, 24, 20, .08);
   --focus: 0 0 0 2px var(--bg), 0 0 0 4px var(--accent);
@@ -66,31 +66,31 @@
 
 @media (prefers-color-scheme: dark) {
   :root {
-    --bg: #121613;
-    --surface: #1b211d;
-    --surface-2: #242c27;
-    --border: #303a33;
-    --text: #eef2ef;
-    --text-2: #a8b2ab;
-    --text-3: #76817a;
+    --bg: #0b0f17;
+    --surface: #141a24;
+    --surface-2: #1c2430;
+    --border: #2a3442;
+    --text: #eef2f7;
+    --text-2: #a7b1c2;
+    --text-3: #76818f;
 
-    --accent: #3fb47a;
-    --accent-strong: #5cc78f;
-    --accent-soft: #1b3326;
-    --on-accent: #0c1a12;
+    --accent: #3b82f6;
+    --accent-strong: #60a5fa;
+    --accent-soft: #172554;
+    --on-accent: #ffffff;
 
     --team-1: #60a5fa;
     --team-1-soft: #1e2f4d;
-    --team-2: #fb923c;
-    --team-2-soft: #4a2a14;
+    --team-2: #f87171;
+    --team-2-soft: #4a1d1d;
 
     --pos: #4ade80;
-    --neg: #f87171;
+    --neg: #fb7185;
     --warn: #fbbf24;
 
-    --toast-bg: #eef2ef;
-    --toast-text: #121613;
-    --toast-action: #176340;
+    --toast-bg: #eef2f7;
+    --toast-text: #0b0f17;
+    --toast-action: #1d4ed8;
     --backdrop: rgba(0, 0, 0, .55);
     --shadow-1: none; /* cards use 1px var(--border) instead */
   }

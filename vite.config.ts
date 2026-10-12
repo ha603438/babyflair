@@ -11,14 +11,14 @@ export default defineConfig({
     react(),
     VitePWA({
       registerType: 'autoUpdate',
-      includeAssets: ['icon.svg', 'apple-touch-icon-180x180.png', 'favicon.ico'],
+      includeAssets: ['logo.png', 'logo-mark.png', 'apple-touch-icon-180x180.png', 'favicon.ico'],
       manifest: {
         name: 'BabyFlair',
         short_name: 'BabyFlair',
         description: 'Classement baby-foot du bureau',
         lang: 'fr',
-        theme_color: '#1f7a4d',
-        background_color: '#f6f7f5',
+        theme_color: '#1d4ed8',
+        background_color: '#05070c',
         display: 'standalone',
         start_url: '/babyflair/',
         scope: '/babyflair/',

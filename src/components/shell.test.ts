@@ -101,7 +101,9 @@ describe('Header', () => {
   it('compact: brand span instead of h1', () => {
     const html = render(Header, { title: 'BabyFlair', compact: true, right: 'S' })
     expect(html).toContain('class="header header-compact"')
-    expect(html).toContain('<span class="header-brand">BabyFlair</span>')
+    expect(html).toContain('class="header-brand"')
+    expect(html).toContain('class="header-brand-mark"')
+    expect(html).toContain('BabyFlair')
     expect(html).not.toContain('<h1')
   })
 })

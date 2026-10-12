@@ -28,7 +28,14 @@ export function Header({ title, back: isBack = false, right, compact = false }: 
             <ChevronLeft />
           </IconButton>
         )}
-        {compact ? <span className="header-brand">{title}</span> : <h1 className="header-title">{title}</h1>}
+        {compact ? (
+          <span className="header-brand">
+            <img className="header-brand-mark" src={`${import.meta.env.BASE_URL}logo-mark.png`} alt="" width="26" height="26" />
+            {title}
+          </span>
+        ) : (
+          <h1 className="header-title">{title}</h1>
+        )}
         <div className="header-right">{right}</div>
       </div>
     </header>

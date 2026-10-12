@@ -53,6 +53,7 @@ export function CodeGate() {
   return (
     <div className="gate safe-top safe-bottom">
       <form className="gate-card" onSubmit={(event) => void submit(event)} noValidate>
+        <img className="gate-logo" src={`${import.meta.env.BASE_URL}logo.png`} alt="" width="240" height="240" />
         <h1 className="gate-title">BabyFlair</h1>
         <p className="gate-body">{GATE_BODY}</p>
         <input
