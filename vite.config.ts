@@ -12,6 +12,10 @@ export default defineConfig({
     react(),
     VitePWA({
       registerType: 'autoUpdate',
+      // Custom worker (src/sw.ts): precache + navigation fallback as before, plus the Web Push handlers.
+      strategies: 'injectManifest',
+      srcDir: 'src',
+      filename: 'sw.ts',
       includeAssets: ['logo.png', 'logo-mark.png', 'apple-touch-icon-180x180.png', 'favicon-48.png'],
       manifest: {
         name: 'BabyFlair',
@@ -30,8 +34,7 @@ export default defineConfig({
           { src: 'maskable-icon-512x512.png', sizes: '512x512', type: 'image/png', purpose: 'maskable' },
         ],
       },
-      workbox: {
-        navigateFallback: '/babyflair/index.html',
+      injectManifest: {
         globPatterns: ['**/*.{js,css,html,svg,png,ico,webmanifest}'],
       },
     }),

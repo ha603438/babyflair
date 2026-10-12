@@ -37,7 +37,15 @@ const MATCH: Match = {
 }
 
 function storeOf(players: Player[], matches: Match[]): Store {
-  return { version: 1, players, matches, settings: { lastFormat: '2v2', lastTarget: 10 }, nextSeq: matches.length + 1 }
+  return {
+    version: 1,
+    players,
+    matches,
+    settings: { lastFormat: '2v2', lastTarget: 10 },
+    nextSeq: matches.length + 1,
+    calls: [],
+    callPlayers: [],
+  }
 }
 
 // React's server output escapes « ' » / « & » and separates adjacent text expressions with `<!-- -->`; copy

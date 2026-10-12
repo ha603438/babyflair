@@ -1,5 +1,8 @@
 import { useEffect, useRef, useState } from 'react'
 import type { ReactNode, RefObject } from 'react'
+import { Button } from '../../components/Button'
+import { CALL_COPY } from '../../calls/calls'
+import { PUSH_COPY } from '../../calls/push'
 import { Card } from '../../components/Card'
 import { EmptyState } from '../../components/EmptyState'
 import type { EmptyStateAction } from '../../components/EmptyState'
@@ -21,7 +24,13 @@ import { sideRecord } from '../../stats'
 // Classement screen body (spec §3.1): context strip, one HintCard, observation card, ranked list, rookie and
 // inactive sections, empty states and the post-match highlight. Engine data arrives through `replay`.
 
-export type ClassementViewProps = { app: ScreenContext; replay: ReplayData; installEnv: InstallEnv }
+export type ClassementViewProps = {
+  app: ScreenContext
+  replay: ReplayData
+  installEnv: InstallEnv
+  /** « Proposer un baby » (shared mode); absent → no button. */
+  onPropose?: () => void
+}
 
 const INSTALL_TITLE = "Installe BabyFlair sur l'écran d'accueil"
 const INSTALL_BODY_IOS =
@@ -55,12 +64,28 @@ function ContextStrip({ app, replay }: { app: ScreenContext; replay: ReplayData 
   )
 }
 
+/** Under the context strip (also with 0 matches): opens « Qui es-tu ? », or the open call when there is one. */
+function ProposeButton({ onPropose, playerCount }: { onPropose: (() => void) | undefined; playerCount: number }) {
+  if (onPropose === undefined || playerCount === 0) return null
+  return (
+    <div className="content lists-block call-propose">
+      <Button variant="secondary" size="md" onClick={onPropose}>
+        {CALL_COPY.propose}
+      </Button>
+    </div>
+  )
+}
+
 // ---------------------------------------------------------------------------
 // Hint card (one at a time; decision in hints.ts)
 // ---------------------------------------------------------------------------
 
 function dismissInstall(dispatch: Dispatch): void {
   dispatch({ type: 'setSetting', patch: { installHintDismissedAt: new Date().toISOString() } })
+}
+
+function dismissNotifications(dispatch: Dispatch): void {
+  dispatch({ type: 'setSetting', patch: { notifHintDismissedAt: new Date().toISOString() } })
 }
 
 function dismissExport(dispatch: Dispatch): void {
@@ -82,6 +107,16 @@ function hintCard(hint: Hint, dispatch: Dispatch): ReactNode {
         body={INSTALL_BODY_CHROMIUM}
         primary={{ label: 'Installer', onClick: install }}
         onDismiss={() => dismissInstall(dispatch)}
+      />
+    )
+  }
+  if (hint.kind === 'notifications') {
+    return (
+      <HintCard
+        title={PUSH_COPY.hintTitle}
+        body={PUSH_COPY.hintBody}
+        primary={{ label: PUSH_COPY.enable, onClick: () => navigate({ name: 'reglages' }) }}
+        onDismiss={() => dismissNotifications(dispatch)}
       />
     )
   }
@@ -244,13 +279,14 @@ function useHighlight(nav: ScreenContext['nav'], rootRef: RefObject<HTMLDivEleme
   return highlight
 }
 
-export function ClassementView({ app, replay, installEnv }: ClassementViewProps) {
+export function ClassementView({ app, replay, installEnv, onPropose }: ClassementViewProps) {
   const rootRef = useRef<HTMLDivElement>(null)
   const highlight = useHighlight(app.nav, rootRef)
   const hint = pickHint(installEnv, app.store.matches, app.store.settings, replay.now)
   return (
     <div ref={rootRef} className="lists-screen classement">
       <ContextStrip app={app} replay={replay} />
+      <ProposeButton onPropose={onPropose} playerCount={app.store.players.length} />
       <HintSlot hint={hint} dispatch={app.dispatch} />
       <Body app={app} replay={replay} highlight={highlight} />
     </div>

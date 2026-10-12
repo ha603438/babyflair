@@ -13,7 +13,7 @@ export type BeforeInstallPromptEvent = Event & {
 type NavigatorWithStandalone = Navigator & { standalone?: boolean }
 
 // Server / test snapshot: "standalone" with no user agent, so no install hint is ever rendered without a browser.
-const SERVER_ENV: InstallEnv = { userAgent: '', standalone: true, promptAvailable: false }
+const SERVER_ENV: InstallEnv = { userAgent: '', standalone: true, promptAvailable: false, pushSupported: false }
 
 let deferredPrompt: BeforeInstallPromptEvent | null = null
 let installed = false
@@ -31,9 +31,18 @@ function isStandalone(): boolean {
   return window.matchMedia('(display-mode: standalone)').matches
 }
 
+function isPushSupported(): boolean {
+  return 'PushManager' in window && 'Notification' in window && 'serviceWorker' in navigator
+}
+
 function readEnv(): InstallEnv {
   if (!hasWindow() || typeof navigator === 'undefined') return SERVER_ENV
-  return { userAgent: navigator.userAgent, standalone: isStandalone(), promptAvailable: deferredPrompt !== null }
+  return {
+    userAgent: navigator.userAgent,
+    standalone: isStandalone(),
+    promptAvailable: deferredPrompt !== null,
+    pushSupported: isPushSupported(),
+  }
 }
 
 function invalidate(): void {

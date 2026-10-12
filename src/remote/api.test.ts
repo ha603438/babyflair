@@ -1,7 +1,18 @@
 import { describe, expect, it } from 'vitest'
 import type { Match, Player } from '../types'
 import type { FetchLike, MatchRow, PlayerRow } from './api'
-import { createApi, matchFromRow, matchToRow, playerFromRow, playerToRow, RemoteError } from './api'
+import {
+  callFromRow,
+  callsFromRows,
+  callToRow,
+  createApi,
+  matchFromRow,
+  matchToRow,
+  playerFromRow,
+  playerToRow,
+  RemoteError,
+} from './api'
+import type { CallRow } from './api'
 import { remoteConfigFrom } from './config'
 
 const config = { url: 'https://x.supabase.co', anonKey: 'anon-key' }
@@ -104,6 +115,7 @@ describe('createApi', () => {
     await api.deletePlayer('p1')
     expect(calls[0].url).toBe('https://x.supabase.co/rest/v1/players?select=*&order=created_at.asc')
     expect(calls[1].url).toBe('https://x.supabase.co/rest/v1/matches?select=*&order=seq.asc')
+    expect(calls[2].url).toMatch(/^https:\/\/x\.supabase\.co\/rest\/v1\/calls\?select=\*,call_players\(\*\)&closed_at=is\.null&expires_at=gt\./)
     for (const call of calls) {
       expect(call.headers.apikey).toBe('anon-key')
       expect(call.headers.Authorization).toBe('Bearer anon-key')
@@ -111,17 +123,87 @@ describe('createApi', () => {
       expect(call.headers['Content-Type']).toBe('application/json')
     }
     expect(calls[0].headers.Prefer).toBeUndefined()
-    expect(calls[2].method).toBe('DELETE')
-    expect(calls[2].headers.Prefer).toBe('return=representation')
+    expect(calls[3].method).toBe('DELETE')
+    expect(calls[3].headers.Prefer).toBe('return=representation')
   })
 
   it('fetchAll maps rows to app types', async () => {
     const { fetch } = fakeFetch((call) => {
       if (call.url.includes('/players')) return { status: 200, body: [playerRow] }
-      return { status: 200, body: [matchRow] }
+      if (call.url.includes('/matches')) return { status: 200, body: [matchRow] }
+      return { status: 200, body: [] }
     })
     const api = createApi({ fetch, config, officeCode: 'secret' })
-    expect(await api.fetchAll()).toEqual({ players: [player], matches: [match] })
+    expect(await api.fetchAll()).toEqual({ players: [player], matches: [match], calls: [], callPlayers: [] })
+  })
+
+  it('fetchAll / fetchCalls flatten the embedded call_players of the open calls', async () => {
+    const row: CallRow = {
+      id: 'c1',
+      created_at: '2025-10-06T12:00:00+00:00',
+      expires_at: '2025-10-06T12:45:00+00:00',
+      created_by: 'p1',
+      closed_at: null,
+      call_players: [{ call_id: 'c1', player_id: 'p1', joined_at: '2025-10-06T12:00:00+00:00' }],
+    }
+    const { fetch, calls } = fakeFetch((call) => {
+      if (call.url.includes('/calls')) return { status: 200, body: [row] }
+      return { status: 200, body: [] }
+    })
+    const api = createApi({ fetch, config, officeCode: 'secret' })
+    const expected = {
+      calls: [{ id: 'c1', createdAt: '2025-10-06T12:00:00.000Z', expiresAt: '2025-10-06T12:45:00.000Z', createdBy: 'p1' }],
+      callPlayers: [{ callId: 'c1', playerId: 'p1', joinedAt: '2025-10-06T12:00:00.000Z' }],
+    }
+    expect(await api.fetchCalls(new Date('2025-10-06T12:10:00.000Z'))).toEqual(expected)
+    expect(calls[0].url).toContain('expires_at=gt.2025-10-06T12%3A10%3A00.000Z')
+    expect(await api.fetchAll()).toMatchObject(expected)
+  })
+
+  it('call writes: insert, join, close', async () => {
+    const { fetch, calls } = fakeFetch(() => ({ status: 201, body: [{}] }))
+    const api = createApi({ fetch, config, officeCode: 'secret' })
+    const call = { id: 'c1', createdAt: 'a', expiresAt: 'b', createdBy: 'p1', closedAt: 'z' }
+    await api.insertCall(call)
+    await api.insertCallPlayer({ callId: 'c1', playerId: 'p2', joinedAt: 'j' })
+    await api.closeCall('c1', 'z')
+    expect(calls.map((c) => [c.method, c.url.replace(config.url, ''), c.body])).toEqual([
+      ['POST', '/rest/v1/calls', { id: 'c1', created_at: 'a', expires_at: 'b', created_by: 'p1', closed_at: 'z' }],
+      ['POST', '/rest/v1/call_players', { call_id: 'c1', player_id: 'p2', joined_at: 'j' }],
+      ['PATCH', '/rest/v1/calls?id=eq.c1', { closed_at: 'z' }],
+    ])
+    expect(callFromRow(callToRow(call))).toEqual(call)
+    expect(callsFromRows([{ ...callToRow(call), call_players: undefined }]).callPlayers).toEqual([])
+  })
+
+  it('push subscriptions: upsert without asking the row back, delete by endpoint', async () => {
+    const { fetch, calls } = fakeFetch(() => ({ status: 201 }))
+    const api = createApi({ fetch, config, officeCode: 'secret' })
+    await api.upsertPushSubscription({ endpoint: 'https://push/a?b=1', p256dh: 'P', auth: 'A', playerId: null })
+    await api.deletePushSubscription('https://push/a?b=1')
+    expect(calls[0].method).toBe('POST')
+    expect(calls[0].url).toBe('https://x.supabase.co/rest/v1/push_subscriptions')
+    expect(calls[0].headers.Prefer).toBe('resolution=merge-duplicates,return=minimal')
+    expect(calls[0].body).toEqual({ endpoint: 'https://push/a?b=1', p256dh: 'P', auth: 'A', player_id: null })
+    expect(calls[1].method).toBe('DELETE')
+    expect(calls[1].url).toBe('https://x.supabase.co/rest/v1/push_subscriptions?endpoint=eq.https%3A%2F%2Fpush%2Fa%3Fb%3D1')
+  })
+
+  it('notifyCall posts to the edge function with the same headers and reads the counts', async () => {
+    const { fetch, calls } = fakeFetch(() => ({ status: 200, body: { sent: 3, removed: 1 } }))
+    const api = createApi({ fetch, config, officeCode: 'secret' })
+    expect(await api.notifyCall('c1')).toEqual({ sent: 3, removed: 1 })
+    expect(calls[0].url).toBe('https://x.supabase.co/functions/v1/notify-call')
+    expect(calls[0].method).toBe('POST')
+    expect(calls[0].body).toEqual({ call_id: 'c1' })
+    expect(calls[0].headers.apikey).toBe('anon-key')
+    expect(calls[0].headers.Authorization).toBe('Bearer anon-key')
+    expect(calls[0].headers['x-office-code']).toBe('secret')
+    expect(calls[0].headers.Prefer).toBeUndefined()
+    const refused = createApi({ fetch: fakeFetch(() => ({ status: 403, body: {} })).fetch, config, officeCode: 'x' })
+    expect(await kindOf(refused.notifyCall('c1'))).toBe('unauthorized')
+    const odd = createApi({ fetch: fakeFetch(() => ({ status: 200, body: {} })).fetch, config, officeCode: 'x' })
+    expect(await odd.notifyCall('c1')).toEqual({ sent: 0, removed: 0 })
   })
 
   it('insertMatch posts without seq and returns the server match with its seq', async () => {

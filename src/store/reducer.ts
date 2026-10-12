@@ -1,4 +1,4 @@
-import type { Match, MatchId, Player, PlayerId, Settings, Store } from '../types'
+import type { Call, CallPlayer, Match, MatchId, Player, PlayerId, Settings, Store } from '../types'
 
 export type Action =
   | { type: 'addPlayer'; player: Player }
@@ -10,9 +10,13 @@ export type Action =
   | { type: 'restoreMatch'; match: Match; index: number }
   | { type: 'importAll'; players: Player[]; matches: Match[]; settings: Settings }
   /** Mode partagé: the server's data replaces the local cache; settings stay as they are. */
-  | { type: 'replaceData'; players: Player[]; matches: Match[] }
+  | { type: 'replaceData'; players: Player[]; matches: Match[]; calls?: Call[]; callPlayers?: CallPlayer[] }
   | { type: 'clearAll' }
   | { type: 'setSetting'; patch: Partial<Settings> }
+  /** Appels à jouer: optimistic local versions of the server writes (src/calls/). */
+  | { type: 'addCall'; call: Call; organizer: CallPlayer }
+  | { type: 'joinCall'; callPlayer: CallPlayer }
+  | { type: 'closeCall'; id: string; closedAt: string }
 
 export const DEFAULT_SETTINGS: Settings = { lastFormat: '2v2', lastTarget: 5 }
 
@@ -22,6 +26,8 @@ export const initialStore: Store = {
   matches: [],
   settings: DEFAULT_SETTINGS,
   nextSeq: 1,
+  calls: [],
+  callPlayers: [],
 }
 
 export function playerHasMatches(matches: Match[], id: PlayerId): boolean {
@@ -118,9 +124,28 @@ function importAll(state: Store, players: Player[], incoming: Match[], settings:
   }
 }
 
-function replaceData(state: Store, players: Player[], incoming: Match[]): Store {
+function replaceData(state: Store, players: Player[], incoming: Match[], calls: Call[], callPlayers: CallPlayer[]): Store {
   const matches = backfillSeq(incoming)
-  return { ...state, players: players.slice(), matches, nextSeq: nextSeqOf(matches) }
+  return { ...state, players: players.slice(), matches, nextSeq: nextSeqOf(matches), calls: calls.slice(), callPlayers: callPlayers.slice() }
+}
+
+function addCall(state: Store, call: Call, organizer: CallPlayer): Store {
+  if (state.calls.some((existing) => existing.id === call.id)) return state
+  return { ...state, calls: [...state.calls, call], callPlayers: [...state.callPlayers, organizer] }
+}
+
+function joinCall(state: Store, callPlayer: CallPlayer): Store {
+  const already = state.callPlayers.some((cp) => cp.callId === callPlayer.callId && cp.playerId === callPlayer.playerId)
+  if (already) return state
+  return { ...state, callPlayers: [...state.callPlayers, callPlayer] }
+}
+
+function closeCall(state: Store, id: string, closedAt: string): Store {
+  const calls = state.calls.map((call) => {
+    if (call.id !== id || call.closedAt !== undefined) return call
+    return { ...call, closedAt }
+  })
+  return { ...state, calls }
 }
 
 export function reducer(state: Store, action: Action): Store {
@@ -142,12 +167,18 @@ export function reducer(state: Store, action: Action): Store {
     case 'importAll':
       return importAll(state, action.players, action.matches, action.settings)
     case 'replaceData':
-      return replaceData(state, action.players, action.matches)
+      return replaceData(state, action.players, action.matches, action.calls ?? [], action.callPlayers ?? [])
     case 'clearAll':
       // A fresh object: the persistence effect skips a store identical to the one it loaded, and loadStore
       // returns the shared initialStore when nothing was stored yet.
       return { ...initialStore }
     case 'setSetting':
       return { ...state, settings: { ...state.settings, ...action.patch } }
+    case 'addCall':
+      return addCall(state, action.call, action.organizer)
+    case 'joinCall':
+      return joinCall(state, action.callPlayer)
+    case 'closeCall':
+      return closeCall(state, action.id, action.closedAt)
   }
 }

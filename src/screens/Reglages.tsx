@@ -2,6 +2,9 @@
 // Mode partagé: « Code du bureau » row, « Déconnecter cet appareil » instead of « Tout effacer », sync footer.
 import { useRef, useState } from 'react'
 import type { ChangeEvent } from 'react'
+import { PUSH_COPY, unsupportedCopy } from '../calls/push'
+import { usePush } from '../calls/usePush'
+import { Button } from '../components/Button'
 import { ConfirmDialog } from '../components/ConfirmDialog'
 import { HintCard } from '../components/HintCard'
 import { SectionHeader } from '../components/SectionHeader'
@@ -53,8 +56,20 @@ function browserEnv(): StandaloneEnv {
   return window
 }
 
+function PushAction({ push }: { push: ReturnType<typeof usePush> }) {
+  if (push.support !== 'ok') return null
+  const label = push.enabled ? PUSH_COPY.disable : PUSH_COPY.enable
+  const onClick = push.enabled ? push.disable : push.enable
+  return (
+    <Button variant="secondary" inline disabled={push.busy} onClick={() => void onClick()}>
+      {label}
+    </Button>
+  )
+}
+
 export function Reglages() {
   const { store, dispatch, toast, sync } = useAppState()
+  const push = usePush()
   const shared = sync.mode === 'shared'
   const clearCopy = CLEAR_COPY[sync.mode]
   const [pending, setPending] = useState<Pending>(null)
@@ -147,6 +162,11 @@ export function Reglages() {
           />
         )}
         {!isStandalone(browserEnv()) && <SettingRow title="Installer sur l'écran d'accueil" onClick={install} />}
+        <SettingRow
+          title={PUSH_COPY.title}
+          caption={unsupportedCopy(push.support) ?? PUSH_COPY.caption}
+          trailing={<PushAction push={push} />}
+        />
         {iosHint && (
           <div className="settings-hint">
             <HintCard title={IOS_HINT_TITLE} body={IOS_HINT_BODY} onDismiss={() => setIosHint(false)} />

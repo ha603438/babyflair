@@ -110,7 +110,7 @@ function sampleStore(): Store {
     match({ id: 'm2', seq: 2, teamA: [A], teamB: [C], scoreA: 3, scoreB: 5, target: 5, playedAt: daysAgo(1) }),
   ]
   const settings: Settings = { lastFormat: '1v1', lastTarget: 5, lastExportAt: daysAgo(12) }
-  return { version: 1, players, matches, settings, nextSeq: 3 }
+  return { version: 1, players, matches, settings, nextSeq: 3, calls: [], callPlayers: [] }
 }
 
 // ---------------------------------------------------------------------------

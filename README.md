@@ -48,6 +48,23 @@ les 20 s) ; chaque saisie est appliquée localement puis envoyée au serveur, qu
 sur le téléphone. « Tout effacer » devient « Déconnecter cet appareil » et ne touche pas au serveur ; l'import remplace
 les données du serveur. Sans les deux variables, rien ne change : l'app reste 100 % locale.
 
+## Notifications
+
+« Proposer un baby » envoie un Web Push à tous les téléphones qui ont activé Réglages › Notifications (mode partagé
+uniquement). Mise en place :
+
+1. Exécuter `docs/supabase/notifications.sql` (tables `calls`, `call_players`, `push_subscriptions`).
+2. Générer une paire de clés VAPID (`npx web-push generate-vapid-keys`) et déployer la fonction
+   `supabase/functions/notify-call` avec les secrets `VAPID_PUBLIC_KEY`, `VAPID_PRIVATE_KEY` et `VAPID_SUBJECT`
+   (`mailto:…`) : `supabase secrets set VAPID_PUBLIC_KEY=… VAPID_PRIVATE_KEY=… VAPID_SUBJECT=mailto:…` puis
+   `supabase functions deploy notify-call`. L'app l'appelle sur `${VITE_SUPABASE_URL}/functions/v1/notify-call`.
+3. Variable de dépôt `VITE_VAPID_PUBLIC_KEY` (la clé publique, même valeur que le secret) ; en local, dans
+   `.env.development.local`.
+
+Contrainte iOS : Safari ne livre les notifications qu'aux apps installées sur l'écran d'accueil (iOS 16.4+) ; l'app
+affiche « Installe d'abord l'app sur l'écran d'accueil » tant que ce n'est pas le cas. Un appel expire au bout de
+45 minutes ; les appels expirés sont simplement ignorés par l'app (pas de nettoyage côté serveur).
+
 ## Structure
 
 ```

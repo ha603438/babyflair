@@ -38,6 +38,9 @@ describe('parseHash', () => {
     ['#/match/', { name: 'match' }],
     ['#/match/m1/modifier', { name: 'match-edit', id: 'm1' }],
     ['match/m1/modifier', { name: 'match-edit', id: 'm1' }],
+    ['#/appel/c1', { name: 'appel', id: 'c1' }],
+    ['#/appel', CLASSEMENT],
+    ['#/appel/c1/extra', CLASSEMENT],
     ['#/historique', { name: 'historique' }],
     ['#/historique/', { name: 'historique' }],
     ['#/historique/m1', { name: 'match-detail', id: 'm1' }],
@@ -96,6 +99,7 @@ describe('hrefOf', () => {
     [{ name: 'joueur', id: 'p1' }, '#/joueurs/p1'],
     [{ name: 'reglages' }, '#/reglages'],
     [{ name: 'comment-ca-marche' }, '#/comment-ca-marche'],
+    [{ name: 'appel', id: 'c 1' }, '#/appel/c%201'],
   ] satisfies Array<[Route, string]>)('builds %j', (route, expected) => {
     expect(hrefOf(route)).toBe(expected)
   })

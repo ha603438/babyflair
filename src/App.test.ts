@@ -45,6 +45,13 @@ describe('App shell', () => {
     expect(html).toContain('aria-label="Comment ça marche"')
   })
 
+  it('renders Classement with the call dialog on a notification link (#/appel/:id)', () => {
+    const html = renderAt('#/appel/c1')
+    expect(html).toContain('>Classement<')
+    // Local mode knows no call: the dialog reads « Appel terminé ».
+    expect(html).toContain('Appel terminé')
+  })
+
   it('falls back to Classement on an unknown hash', () => {
     expect(renderAt('#/nope')).toContain('>Classement<')
   })

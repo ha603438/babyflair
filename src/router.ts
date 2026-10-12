@@ -12,6 +12,8 @@ export type Route =
   | { name: 'reglages' }
   | { name: 'comment-ca-marche' }
   | { name: 'nouveautes' }
+  /** Notification click target: Classement with the call's modal open (src/calls/CallWatcher.tsx). */
+  | { name: 'appel'; id: string }
 
 const HOME: Route = { name: 'classement' }
 
@@ -48,6 +50,11 @@ function parseJoueurs(segments: string[], params: URLSearchParams): Route {
   return { name: 'joueurs' }
 }
 
+function parseAppel(segments: string[]): Route {
+  if (segments.length === 2) return { name: 'appel', id: segments[1] }
+  return HOME
+}
+
 function parseSimple(segments: string[], name: 'reglages' | 'comment-ca-marche' | 'nouveautes'): Route {
   if (segments.length === 1) return { name }
   return HOME
@@ -75,6 +82,8 @@ export function parseHash(hash: string): Route {
       return parseSimple(segments, 'comment-ca-marche')
     case 'nouveautes':
       return parseSimple(segments, 'nouveautes')
+    case 'appel':
+      return parseAppel(segments)
     default:
       return HOME
   }
@@ -103,6 +112,8 @@ export function hrefOf(route: Route): string {
       return '#/comment-ca-marche'
     case 'nouveautes':
       return '#/nouveautes'
+    case 'appel':
+      return `#/appel/${encodeURIComponent(route.id)}`
   }
 }
 

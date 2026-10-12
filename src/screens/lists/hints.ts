@@ -1,10 +1,12 @@
+import { shouldOfferPush } from '../../calls/push'
 import { matchesSinceExport } from '../../stats'
 import type { Match, Settings } from '../../types'
 
 export { matchesSinceExport }
 
 // Pure decision logic for the single HintCard of the Classement screen (spec §3.1, §9, §10).
-// Priority: install hint (iOS Safari not standalone, or a captured Chromium `beforeinstallprompt`) → export nudge.
+// Priority: install hint (iOS Safari not standalone, or a captured Chromium `beforeinstallprompt`) → notifications
+// (installed, push available, not enabled) → export nudge.
 
 const DAY_MS = 24 * 60 * 60 * 1000
 
@@ -22,9 +24,15 @@ export type InstallEnv = {
   standalone: boolean
   /** A Chromium `beforeinstallprompt` event is captured and not used yet. */
   promptAvailable: boolean
+  /** `PushManager`, `Notification` and `serviceWorker` all exist (Web Push possible). */
+  pushSupported: boolean
 }
 
-export type Hint = { kind: 'install-ios' } | { kind: 'install-chromium' } | { kind: 'export'; count: number }
+export type Hint =
+  | { kind: 'install-ios' }
+  | { kind: 'install-chromium' }
+  | { kind: 'notifications' }
+  | { kind: 'export'; count: number }
 
 export function isIosUserAgent(userAgent: string): boolean {
   return /iPhone|iPad|iPod/.test(userAgent)
@@ -52,6 +60,13 @@ export function installHint(env: InstallEnv, settings: Settings, now: Date): Hin
   return null
 }
 
+export function notificationsHint(env: InstallEnv, settings: Settings, now: Date): Hint | null {
+  if (isSnoozed(settings.notifHintDismissedAt, now)) return null
+  const pushEnv = { userAgent: env.userAgent, standalone: env.standalone, pushManager: env.pushSupported }
+  if (!shouldOfferPush(pushEnv, settings.pushEnabled)) return null
+  return { kind: 'notifications' }
+}
+
 export function exportHint(matches: Match[], settings: Settings, now: Date): Hint | null {
   if (isSnoozed(settings.exportHintDismissedAt, now)) return null
   const count = matchesSinceExport(matches, settings.lastExportAt)
@@ -64,5 +79,5 @@ export function exportHint(matches: Match[], settings: Settings, now: Date): Hin
 
 /** The one hint to show on Classement, or null. */
 export function pickHint(env: InstallEnv, matches: Match[], settings: Settings, now: Date): Hint | null {
-  return installHint(env, settings, now) ?? exportHint(matches, settings, now)
+  return installHint(env, settings, now) ?? notificationsHint(env, settings, now) ?? exportHint(matches, settings, now)
 }

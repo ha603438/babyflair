@@ -6,6 +6,16 @@ export type ChangelogEntry = { id: string; date: string; title: string; items: s
 
 export const CHANGELOG: ChangelogEntry[] = [
   {
+    id: '2026-10-12-4',
+    date: '2026-10-12',
+    title: 'Proposer un baby',
+    items: [
+      '« Proposer un baby » sur le classement : une notification part sur tous les téléphones abonnés.',
+      'Chacun répond « Je suis chaud » ; à 4, « Former les équipes » compose des équipes équilibrées et ouvre le match.',
+      'Réglages › Notifications pour recevoir les appels (sur iOS, app installée sur l’écran d’accueil).',
+    ],
+  },
+  {
     id: '2026-10-12-3',
     date: '2026-10-12',
     title: 'Mises à jour et nouveautés',

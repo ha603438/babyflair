@@ -30,6 +30,8 @@ const stored: Store = {
   matches: [],
   settings: { lastFormat: '1v1', lastTarget: 5 },
   nextSeq: 1,
+  calls: [],
+  callPlayers: [],
 }
 
 describe('AppStateProvider', () => {

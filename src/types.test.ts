@@ -20,7 +20,7 @@ const match: Match = {
 
 const settings: Settings = { lastFormat: '2v2', lastTarget: 10 }
 
-const store: Store = { version: 1, players: [player], matches: [match], settings, nextSeq: 2 }
+const store: Store = { version: 1, players: [player], matches: [match], settings, nextSeq: 2, calls: [], callPlayers: [] }
 
 const exportFile: ExportFile = {
   app: 'babyflair',

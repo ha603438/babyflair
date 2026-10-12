@@ -39,6 +39,13 @@ function recordingApi(overrides: Partial<RemoteApi> = {}): { api: RemoteApi; cal
   const api: RemoteApi = {
     probeCode: record('probeCode'),
     fetchAll: record('fetchAll'),
+    fetchCalls: record('fetchCalls'),
+    insertCall: record('insertCall'),
+    insertCallPlayer: record('insertCallPlayer'),
+    closeCall: record('closeCall'),
+    upsertPushSubscription: record('upsertPushSubscription'),
+    deletePushSubscription: record('deletePushSubscription'),
+    notifyCall: record('notifyCall'),
     insertPlayer: record('insertPlayer'),
     updatePlayer: record('updatePlayer'),
     deletePlayer: record('deletePlayer'),
@@ -95,27 +102,38 @@ describe('remoteCallFor', () => {
     expect(calls).toEqual([`replaceAll([${JSON.stringify(player)}],[${JSON.stringify({ ...noSeq, seq: 1 })}])`])
   })
 
-  it('settings, clearAll and replaceData stay local', () => {
+  it('settings, clearAll, replaceData and addCall stay local', () => {
     const { api, calls } = recordingApi()
+    const call = { id: 'c1', createdAt: 'p', expiresAt: 'p', createdBy: 'p1' }
+    const organizer = { callId: 'c1', playerId: 'p1', joinedAt: 'p' }
     expect(remoteCallFor({ type: 'setSetting', patch: { lastTarget: 5 } }, api)).toBeNull()
     expect(remoteCallFor({ type: 'clearAll' }, api)).toBeNull()
     expect(remoteCallFor({ type: 'replaceData', players: [], matches: [] }, api)).toBeNull()
+    expect(remoteCallFor({ type: 'addCall', call, organizer }, api)).toBeNull()
     expect(calls).toEqual([])
+  })
+
+  it('joinCall and closeCall hit the calls endpoints', async () => {
+    const { api, calls } = recordingApi()
+    const callPlayer = { callId: 'c1', playerId: 'p2', joinedAt: 'p' }
+    await remoteCallFor({ type: 'joinCall', callPlayer }, api)
+    await remoteCallFor({ type: 'closeCall', id: 'c1', closedAt: 'q' }, api)
+    expect(calls).toEqual([`insertCallPlayer(${JSON.stringify(callPlayer)})`, 'closeCall("c1","q")'])
   })
 })
 
 describe('fetchVerified', () => {
   it('returns non-empty data without probing', async () => {
     const probeCode = vi.fn(async () => true)
-    const { api } = recordingApi({ fetchAll: async () => ({ players: [player], matches: [] }), probeCode })
-    expect(await fetchVerified(api)).toEqual({ players: [player], matches: [] })
+    const { api } = recordingApi({ fetchAll: async () => ({ players: [player], matches: [], calls: [], callPlayers: [] }), probeCode })
+    expect(await fetchVerified(api)).toEqual({ players: [player], matches: [], calls: [], callPlayers: [] })
     expect(probeCode).not.toHaveBeenCalled()
   })
 
   it('probes an empty result: accepted → empty data, refused → unauthorized', async () => {
-    const empty = async () => ({ players: [], matches: [] })
+    const empty = async () => ({ players: [], matches: [], calls: [], callPlayers: [] })
     const { api: ok } = recordingApi({ fetchAll: empty, probeCode: async () => true })
-    expect(await fetchVerified(ok)).toEqual({ players: [], matches: [] })
+    expect(await fetchVerified(ok)).toEqual({ players: [], matches: [], calls: [], callPlayers: [] })
     const { api: ko } = recordingApi({ fetchAll: empty, probeCode: async () => false })
     await expect(fetchVerified(ko)).rejects.toMatchObject({ kind: 'unauthorized' })
   })

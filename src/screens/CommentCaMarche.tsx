@@ -76,6 +76,14 @@ const SECTIONS: Section[] = [
       "depuis le tout premier match, et un match corrigé garde sa place dans l'historique.",
   },
   {
+    title: 'Proposer un baby',
+    text:
+      'Depuis le classement, « Proposer un baby » envoie une notification à tous les téléphones qui ont activé ' +
+      'les notifications dans Réglages. Chacun dit s’il est chaud ; dès que 4 joueurs sont là, « Former les ' +
+      'équipes » compose les équipes les plus équilibrées selon le classement, tire les postes et les couleurs au ' +
+      'sort, et ouvre le match. Un appel expire au bout de 45 minutes.',
+  },
+  {
     title: 'Tes données',
     text: 'Tout reste sur cet appareil. Exporte régulièrement depuis Réglages pour garder une copie.',
   },

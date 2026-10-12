@@ -58,7 +58,15 @@ function recent(count: number): Match[] {
 }
 
 function storeOf(players: Player[], matches: Match[], lastExportAt?: string): Store {
-  return { version: 1, players, matches, settings: { lastFormat: '2v2', lastTarget: 10, lastExportAt }, nextSeq: 9 }
+  return {
+    version: 1,
+    players,
+    matches,
+    settings: { lastFormat: '2v2', lastTarget: 10, lastExportAt },
+    nextSeq: 9,
+    calls: [],
+    callPlayers: [],
+  }
 }
 
 function arr(length: number): unknown[] {
@@ -417,6 +425,8 @@ describe('mode partagé', () => {
       matches: [],
       settings: { lastFormat: '2v2' as const, lastTarget: 10 as const, officeCode: 'secret' },
       nextSeq: 1,
+      calls: [],
+      callPlayers: [],
     }
     const text = buildExportText(store, new Date('2025-10-06T12:00:00.000Z'))
     expect(text).not.toContain('secret')

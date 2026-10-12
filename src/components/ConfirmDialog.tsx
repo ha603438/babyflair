@@ -1,6 +1,7 @@
-import { useEffect, useId, useRef } from 'react'
-import type { MouseEvent, ReactNode } from 'react'
+import { useId } from 'react'
+import type { ReactNode } from 'react'
 import { Button } from './Button'
+import { useDialog } from './useDialog'
 
 export type ConfirmDialogProps = {
   open: boolean
@@ -28,31 +29,9 @@ export function ConfirmDialog({
   onCancel,
   single = false,
 }: ConfirmDialogProps) {
-  const ref = useRef<HTMLDialogElement>(null)
-  // Mirrors the prop so the native `close` event can tell "closed by the browser" (Escape) from "closed by us".
-  const wantedOpen = useRef(open)
+  const { ref, onClose, onClick } = useDialog(open, onCancel)
   const titleId = useId()
   const bodyId = useId()
-
-  useEffect(() => {
-    wantedOpen.current = open
-    const el = ref.current
-    if (!el) return
-    if (open && !el.open) {
-      el.showModal()
-      return
-    }
-    if (!open && el.open) el.close()
-  }, [open])
-
-  const handleClose = () => {
-    if (wantedOpen.current) onCancel()
-  }
-
-  // The dialog box is the event target only when the click lands outside `.dialog-body` (i.e. on the backdrop).
-  const handleClick = (e: MouseEvent<HTMLDialogElement>) => {
-    if (e.target === ref.current) onCancel()
-  }
 
   return (
     <dialog
@@ -60,8 +39,8 @@ export function ConfirmDialog({
       className="dialog"
       aria-labelledby={titleId}
       aria-describedby={bodyId}
-      onClose={handleClose}
-      onClick={handleClick}
+      onClose={onClose}
+      onClick={onClick}
     >
       <div className="dialog-body">
         <h2 id={titleId} className="dialog-title">

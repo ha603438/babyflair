@@ -35,12 +35,38 @@ export type Settings = {
   officeCode?: string
   /** Id of the newest Nouveautés entry seen on this phone (tab badge). */
   seenChangelogId?: string
+  /** « Qui es-tu ? » : the last name picked on this phone (appels à jouer). Never exported. */
+  myPlayerId?: PlayerId
+  /** This phone holds a push subscription on the server (Réglages › Notifications). */
+  pushEnabled?: boolean
+  notifHintDismissedAt?: string
 }
+
+// Appels à jouer (« Proposer un baby »): shared through the server only; local mode keeps both arrays empty.
+
+export type Call = {
+  id: string
+  createdAt: string
+  /** Ignored client-side once past (no server cron). */
+  expiresAt: string
+  createdBy: PlayerId
+  closedAt?: string
+}
+
+export type CallPlayer = { callId: string; playerId: PlayerId; joinedAt: string }
 
 export type SyncMode = 'local' | 'shared'
 export type SyncStatus = 'idle' | 'syncing' | 'offline' | 'unauthorized'
 
-export type Store = { version: 1; players: Player[]; matches: Match[]; settings: Settings; nextSeq: number }
+export type Store = {
+  version: 1
+  players: Player[]
+  matches: Match[]
+  settings: Settings
+  nextSeq: number
+  calls: Call[]
+  callPlayers: CallPlayer[]
+}
 
 export type ExportFile = {
   app: 'babyflair'

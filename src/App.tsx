@@ -24,6 +24,7 @@ import { CommentCaMarche } from './screens/CommentCaMarche'
 import { Nouveautes } from './screens/Nouveautes'
 import { unseenEntries } from './changelog'
 import { CodeGate } from './screens/CodeGate'
+import { CallWatcher } from './calls/CallWatcher'
 
 const STORAGE_BLOCKED_TEXT = "Impossible d'enregistrer : le stockage du navigateur est bloqué (navigation privée ?)."
 
@@ -54,6 +55,8 @@ function Screen({ route }: { route: Route }): ReactNode {
       return <CommentCaMarche />
     case 'nouveautes':
       return <Nouveautes />
+    case 'appel':
+      return <Classement />
   }
 }
 
@@ -67,6 +70,7 @@ function AppHeader({ route }: { route: Route }) {
 
   switch (route.name) {
     case 'classement':
+    case 'appel':
       return (
         <Header
           onBrandDoubleTap={onBrandDoubleTap}
@@ -158,6 +162,7 @@ function AppShell() {
       </main>
       <TabBar current={route.name} onReselect={onReselect} newsBadge={newsBadge} />
       <Toast toast={toast.current} onDismiss={toast.dismiss} />
+      <CallWatcher route={route} />
     </div>
   )
 }

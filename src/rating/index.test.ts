@@ -610,7 +610,15 @@ describe('useReplay', () => {
   }
 
   it('replays the persisted store under the app state provider', () => {
-    const store: Store = { version: 1, players: PLAYERS, matches: fixtureMatches(), settings: DEFAULT_SETTINGS, nextSeq: 25 }
+    const store: Store = {
+      version: 1,
+      players: PLAYERS,
+      matches: fixtureMatches(),
+      settings: DEFAULT_SETTINGS,
+      nextSeq: 25,
+      calls: [],
+      callPlayers: [],
+    }
     vi.stubGlobal('localStorage', {
       getItem: (key: string) => (key === STORAGE_KEY ? JSON.stringify(store) : null),
       setItem: () => undefined,

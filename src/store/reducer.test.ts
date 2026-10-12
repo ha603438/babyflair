@@ -39,6 +39,8 @@ describe('initialStore', () => {
       matches: [],
       settings: { lastFormat: '2v2', lastTarget: 5 },
       nextSeq: 1,
+      calls: [],
+      callPlayers: [],
     })
   })
 })
@@ -263,5 +265,43 @@ describe('importAll with an office code', () => {
       settings: { lastFormat: '1v1', lastTarget: 5, officeCode: 'other' },
     })
     expect(after.settings).toEqual({ lastFormat: '1v1', lastTarget: 5, officeCode: 'secret' })
+  })
+})
+
+describe('appels à jouer', () => {
+  const call = { id: 'c1', createdAt: 'a', expiresAt: 'b', createdBy: 'alice' }
+  const organizer = { callId: 'c1', playerId: 'alice', joinedAt: 'a' }
+
+  it('addCall appends the call and its organizer once', () => {
+    const state = reducer(seeded(), { type: 'addCall', call, organizer })
+    expect(state.calls).toEqual([call])
+    expect(state.callPlayers).toEqual([organizer])
+    expect(reducer(state, { type: 'addCall', call, organizer })).toBe(state)
+  })
+
+  it('joinCall adds a participant once', () => {
+    const state = reducer(seeded(), { type: 'addCall', call, organizer })
+    const bob = { callId: 'c1', playerId: 'bob', joinedAt: 'c' }
+    const joined = reducer(state, { type: 'joinCall', callPlayer: bob })
+    expect(joined.callPlayers).toEqual([organizer, bob])
+    expect(reducer(joined, { type: 'joinCall', callPlayer: { ...bob, joinedAt: 'd' } })).toBe(joined)
+  })
+
+  it('closeCall stamps closedAt once and leaves other calls alone', () => {
+    const other = { ...call, id: 'c2' }
+    let state = reducer(seeded(), { type: 'addCall', call, organizer })
+    state = reducer(state, { type: 'addCall', call: other, organizer: { ...organizer, callId: 'c2' } })
+    const closed = reducer(state, { type: 'closeCall', id: 'c1', closedAt: 'z' })
+    expect(closed.calls).toEqual([{ ...call, closedAt: 'z' }, other])
+    expect(reducer(closed, { type: 'closeCall', id: 'c1', closedAt: 'later' }).calls[0].closedAt).toBe('z')
+  })
+
+  it('replaceData replaces the calls (empty when the server sends none) and clearAll drops them', () => {
+    const state = reducer(seeded(), { type: 'addCall', call, organizer })
+    const replaced = reducer(state, { type: 'replaceData', players: state.players, matches: state.matches, calls: [call], callPlayers: [] })
+    expect(replaced.calls).toEqual([call])
+    expect(replaced.callPlayers).toEqual([])
+    expect(reducer(state, { type: 'replaceData', players: [], matches: [] }).calls).toEqual([])
+    expect(reducer(state, { type: 'clearAll' }).calls).toEqual([])
   })
 })

@@ -175,3 +175,27 @@ describe('normaliseSettings · officeCode', () => {
     expect(normaliseSettings({ officeCode: 42 }).officeCode).toBeUndefined()
   })
 })
+
+describe('appels à jouer', () => {
+  it('normaliseStore defaults calls to empty arrays and keeps well-formed ones', () => {
+    const base = { version: 1, players: [], matches: [] }
+    expect(normaliseStore(base)).toMatchObject({ calls: [], callPlayers: [] })
+    const data = {
+      ...base,
+      calls: [{ id: 'c1', createdAt: 'a', expiresAt: 'b', createdBy: 'p1', closedAt: 'z' }, { id: 'no-expiry' }, 'junk'],
+      callPlayers: [{ callId: 'c1', playerId: 'p1', joinedAt: 'j' }, { callId: 'c1' }],
+    }
+    expect(normaliseStore(data)).toMatchObject({
+      calls: [{ id: 'c1', createdAt: 'a', expiresAt: 'b', createdBy: 'p1', closedAt: 'z' }],
+      callPlayers: [{ callId: 'c1', playerId: 'p1', joinedAt: 'j' }],
+    })
+  })
+
+  it('normaliseSettings keeps myPlayerId, pushEnabled and the notifications snooze', () => {
+    const settings = normaliseSettings({ myPlayerId: 'p1', pushEnabled: true, notifHintDismissedAt: 'd' })
+    expect(settings).toMatchObject({ myPlayerId: 'p1', pushEnabled: true, notifHintDismissedAt: 'd' })
+    const none = normaliseSettings({ myPlayerId: '', pushEnabled: 'yes' })
+    expect(none.myPlayerId).toBeUndefined()
+    expect(none.pushEnabled).toBeUndefined()
+  })
+})

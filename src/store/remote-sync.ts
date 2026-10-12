@@ -48,6 +48,12 @@ export function remoteCallFor(action: Action, api: RemoteApi): Promise<unknown> 
       return api.restoreMatch(action.match)
     case 'importAll':
       return api.replaceAll(action.players, backfillSeq(action.matches))
+    case 'joinCall':
+      return api.insertCallPlayer(action.callPlayer)
+    case 'closeCall':
+      return api.closeCall(action.id, action.closedAt)
+    // addCall: the organizer flow (inserts, then the notification) is sequenced by src/calls/useCalls.ts itself.
+    case 'addCall':
     case 'replaceData':
     case 'clearAll':
     case 'setSetting':
@@ -61,7 +67,7 @@ export function remoteCallFor(action: Action, api: RemoteApi): Promise<unknown> 
  */
 export async function fetchVerified(api: RemoteApi): Promise<RemoteData> {
   const data = await api.fetchAll()
-  if (data.players.length > 0 || data.matches.length > 0) return data
+  if (data.players.length > 0 || data.matches.length > 0 || data.calls.length > 0) return data
   const ok = await api.probeCode()
   if (!ok) throw new RemoteError('unauthorized', 'office_ok returned false')
   return data

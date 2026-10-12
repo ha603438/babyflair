@@ -1,6 +1,7 @@
 import { describe, expect, it } from 'vitest'
 import type { Match, Settings } from '../../types'
-import { exportHint, installHint, isIosUserAgent, isSnoozed, matchesSinceExport, pickHint } from './hints'
+import { exportHint, installHint, isIosUserAgent, isSnoozed, matchesSinceExport, notificationsHint, pickHint } from './hints'
+import type { InstallEnv } from './hints'
 
 const now = new Date('2026-10-12T10:00:00Z')
 const DAY = 86_400_000
@@ -23,10 +24,11 @@ const matches = (count: number, createdDaysAgo = 1): Match[] =>
 
 const IOS = 'Mozilla/5.0 (iPhone; CPU iPhone OS 17_0 like Mac OS X) AppleWebKit/605.1.15 Mobile/15E148 Safari/604.1'
 const DESKTOP = 'Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7) AppleWebKit/537.36 Chrome/130.0 Safari/537.36'
-const env = (patch: Partial<{ userAgent: string; standalone: boolean; promptAvailable: boolean }> = {}) => ({
+const env = (patch: Partial<InstallEnv> = {}): InstallEnv => ({
   userAgent: DESKTOP,
   standalone: false,
   promptAvailable: false,
+  pushSupported: false,
   ...patch,
 })
 
@@ -45,6 +47,24 @@ describe('isSnoozed', () => {
     expect(isSnoozed(daysAgo(29.9), now)).toBe(true)
     expect(isSnoozed(daysAgo(30), now)).toBe(false)
     expect(isSnoozed('not a date', now)).toBe(false)
+  })
+})
+
+describe('notificationsHint', () => {
+  const installed = env({ standalone: true, pushSupported: true })
+  it('offers notifications once installed with push support and not enabled', () => {
+    expect(notificationsHint(installed, settings(), now)).toEqual({ kind: 'notifications' })
+    expect(notificationsHint(installed, settings({ pushEnabled: true }), now)).toBeNull()
+    expect(notificationsHint(env({ standalone: true }), settings(), now)).toBeNull()
+    expect(notificationsHint(env({ pushSupported: true }), settings(), now)).toBeNull()
+  })
+  it('respects the 30-day snooze and ranks between install and export', () => {
+    expect(notificationsHint(installed, settings({ notifHintDismissedAt: daysAgo(5) }), now)).toBeNull()
+    expect(notificationsHint(installed, settings({ notifHintDismissedAt: daysAgo(40) }), now)).toEqual({
+      kind: 'notifications',
+    })
+    expect(pickHint(installed, matches(40), settings(), now)).toEqual({ kind: 'notifications' })
+    expect(pickHint(env({ userAgent: IOS, pushSupported: true }), matches(40), settings(), now)).toEqual({ kind: 'install-ios' })
   })
 })
 

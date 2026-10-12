@@ -1,4 +1,4 @@
-import type { Match, Player, Settings, Store } from '../types'
+import type { Call, CallPlayer, Match, Player, Settings, Store } from '../types'
 import { backfillSeq, DEFAULT_SETTINGS, initialStore, nextSeqOf } from './reducer'
 
 export const STORAGE_KEY = 'babyflair.v1'
@@ -53,6 +53,27 @@ function normaliseMatch(value: unknown): Match | null {
   }
 }
 
+function normaliseCall(value: unknown): Call | null {
+  if (!isRecord(value)) return null
+  if (typeof value.id !== 'string' || typeof value.expiresAt !== 'string' || typeof value.createdBy !== 'string') return null
+  const createdAt = typeof value.createdAt === 'string' ? value.createdAt : EPOCH
+  const call: Call = { id: value.id, createdAt, expiresAt: value.expiresAt, createdBy: value.createdBy }
+  if (typeof value.closedAt === 'string') call.closedAt = value.closedAt
+  return call
+}
+
+function normaliseCallPlayer(value: unknown): CallPlayer | null {
+  if (!isRecord(value)) return null
+  if (typeof value.callId !== 'string' || typeof value.playerId !== 'string') return null
+  const joinedAt = typeof value.joinedAt === 'string' ? value.joinedAt : EPOCH
+  return { callId: value.callId, playerId: value.playerId, joinedAt }
+}
+
+function arrayOf(value: unknown): unknown[] {
+  if (!Array.isArray(value)) return []
+  return value
+}
+
 export function normaliseSettings(value: unknown): Settings {
   if (!isRecord(value)) return DEFAULT_SETTINGS
   const lastFormat = value.lastFormat === '1v1' || value.lastFormat === '2v2' ? value.lastFormat : '2v2'
@@ -66,6 +87,10 @@ export function normaliseSettings(value: unknown): Settings {
   if (lastExportAt !== undefined) settings.lastExportAt = lastExportAt
   if (typeof value.officeCode === 'string' && value.officeCode.length > 0) settings.officeCode = value.officeCode
   if (typeof value.seenChangelogId === 'string') settings.seenChangelogId = value.seenChangelogId
+  if (typeof value.myPlayerId === 'string' && value.myPlayerId.length > 0) settings.myPlayerId = value.myPlayerId
+  if (value.pushEnabled === true) settings.pushEnabled = true
+  const notifHintDismissedAt = optionalIso(value.notifHintDismissedAt)
+  if (notifHintDismissedAt !== undefined) settings.notifHintDismissedAt = notifHintDismissedAt
   return settings
 }
 
@@ -98,6 +123,9 @@ export function normaliseStore(data: unknown): Store | null {
     matches,
     settings: normaliseSettings(data.settings),
     nextSeq,
+    // Absent in data written before the appels existed; the next sync fills them in shared mode.
+    calls: collect(arrayOf(data.calls), normaliseCall),
+    callPlayers: collect(arrayOf(data.callPlayers), normaliseCallPlayer),
   }
 }
 

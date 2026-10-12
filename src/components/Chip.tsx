@@ -6,6 +6,8 @@ export type ChipProps = {
   player: Player
   state: ChipState
   inactive?: boolean
+  /** Not selectable (already in the call); the chip stays visible so the roster reads at a glance. */
+  disabled?: boolean
   onClick: () => void
 }
 
@@ -38,7 +40,7 @@ function accessibleName(player: Player): string {
 }
 
 /** One player in the bottom-anchored grid of step A. Pressed = placed in a slot (badge « 1 » / « 2 »). */
-export function Chip({ player, state, inactive = false, onClick }: ChipProps) {
+export function Chip({ player, state, inactive = false, disabled = false, onClick }: ChipProps) {
   const badge = badgeOf(state)
   return (
     <button
@@ -46,6 +48,7 @@ export function Chip({ player, state, inactive = false, onClick }: ChipProps) {
       className={classNameOf(state, inactive)}
       aria-pressed={badge !== null}
       aria-label={accessibleName(player)}
+      disabled={disabled}
       onClick={onClick}
     >
       <span className="chip__name">{truncateName(player.name)}</span>

@@ -22,6 +22,8 @@ export type SyncState = {
   lastSyncAt?: string
   /** Fetches the server's data into the local cache (no-op in local mode). */
   refresh: () => Promise<void>
+  /** The PostgREST client of this phone's office code, for flows that sequence several calls (src/calls/). */
+  api: RemoteApi | null
 }
 
 type Dispatch = (action: Action) => void
@@ -65,7 +67,13 @@ export function useRemoteSync(
     setStatus('syncing')
     try {
       const data = await fetchVerified(api)
-      localDispatch({ type: 'replaceData', players: data.players, matches: data.matches })
+      localDispatch({
+        type: 'replaceData',
+        players: data.players,
+        matches: data.matches,
+        calls: data.calls,
+        callPlayers: data.callPlayers,
+      })
       markSynced()
     } catch (error) {
       setStatus(statusAfterError(error))
@@ -112,7 +120,10 @@ export function useRemoteSync(
     [api, localDispatch, runWrite],
   )
 
-  const sync = useMemo<SyncState>(() => ({ mode, status, lastSyncAt, refresh }), [mode, status, lastSyncAt, refresh])
+  const sync = useMemo<SyncState>(
+    () => ({ mode, status, lastSyncAt, refresh, api }),
+    [mode, status, lastSyncAt, refresh, api],
+  )
 
   return { dispatch, sync }
 }
