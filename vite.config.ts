@@ -5,6 +5,8 @@ import { defineConfig } from 'vite'
 
 // https://vite.dev/config/
 export default defineConfig({
+  // Served from https://ha603438.github.io/babyflair/ (GitHub Pages); the hash router keeps every route under it.
+  base: '/babyflair/',
   plugins: [
     react(),
     VitePWA({
@@ -18,7 +20,8 @@ export default defineConfig({
         theme_color: '#1f7a4d',
         background_color: '#f6f7f5',
         display: 'standalone',
-        start_url: '/',
+        start_url: '/babyflair/',
+        scope: '/babyflair/',
         icons: [
           { src: 'pwa-64x64.png', sizes: '64x64', type: 'image/png' },
           { src: 'pwa-192x192.png', sizes: '192x192', type: 'image/png' },
@@ -27,7 +30,7 @@ export default defineConfig({
         ],
       },
       workbox: {
-        navigateFallback: '/index.html',
+        navigateFallback: '/babyflair/index.html',
         globPatterns: ['**/*.{js,css,html,svg,png,ico,webmanifest}'],
       },
     }),
