@@ -1,4 +1,4 @@
-import type { Draft, Format, PlayerId, Score, Settings, Target } from '../types'
+import type { Draft, Format, PlayerId, Score, Settings, Target, Team } from '../types'
 
 export type DraftAction =
   | { type: 'setFormat'; format: Format }
@@ -12,6 +12,7 @@ export type DraftAction =
   | { type: 'reset' }
   | { type: 'prefill'; teamA: PlayerId[]; teamB: PlayerId[]; target: Target }
   | { type: 'swapTeam'; team: 1 | 2 } /* 2v2: swaps arrière and avant of a team */
+  | { type: 'keepWinners'; winner: Team; teamA: PlayerId[]; teamB: PlayerId[]; target: Target } /* winners stay on their side */
 
 /** `activeSlot` value meaning "no slot is active" (every required slot is filled). */
 export const NO_ACTIVE_SLOT = -1
@@ -129,6 +130,17 @@ function swapTeam(draft: Draft, team: 1 | 2): Draft {
   return { ...draft, slots }
 }
 
+/** « Les gagnants restent » : the winning team keeps its slots (and positions), the losing side is emptied. */
+function keepWinners(draft: Draft, winner: Team, teamA: PlayerId[], teamB: PlayerId[], target: Target): Draft {
+  const format: Format = teamA.length > 1 || teamB.length > 1 ? '2v2' : '1v1'
+  const winners = winner === 'A' ? teamA : teamB
+  const first = winner === 'A' ? 0 : 2
+  const slots: (PlayerId | null)[] = [null, null, null, null]
+  slots[first] = slotAt(winners, 0)
+  slots[first + 1] = slotAt(winners, 1)
+  return settle({ format, target, slots, activeSlot: draft.activeSlot, score: null, step: 'players' })
+}
+
 export function draftReducer(draft: Draft, action: DraftAction): Draft {
   switch (action.type) {
     case 'setFormat':
@@ -153,5 +165,7 @@ export function draftReducer(draft: Draft, action: DraftAction): Draft {
       return prefill(draft, action.teamA, action.teamB, action.target)
     case 'swapTeam':
       return swapTeam(draft, action.team)
+    case 'keepWinners':
+      return keepWinners(draft, action.winner, action.teamA, action.teamB, action.target)
   }
 }

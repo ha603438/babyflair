@@ -46,6 +46,7 @@ type ResultViewProps = {
   now: Date
   rankBefore: Map<PlayerId, number> | undefined
   onRematch: () => void
+  onKeepWinners: () => void
   onNewMatch: () => void
   onShowRanking: () => void
   onCancelMatch: () => void
@@ -77,10 +78,13 @@ function ResultView(props: ResultViewProps) {
           />
         )}
         <div className="match-result__actions">
-          <Button variant="primary" size="lg" onClick={props.onRematch}>
+          <Button variant="primary" size="lg" onClick={props.onKeepWinners}>
+            Match suivant : les gagnants restent
+          </Button>
+          <Button variant="secondary" size="md" onClick={props.onRematch}>
             Revanche
           </Button>
-          <Button variant="secondary" size="md" onClick={props.onNewMatch}>
+          <Button variant="text" onClick={props.onNewMatch}>
             Nouveau match
           </Button>
           <Button variant="text" onClick={props.onShowRanking}>
@@ -131,6 +135,11 @@ export function Match() {
     draftDispatch({ type: 'saved', matchId: created.id })
   }
 
+  function onKeepWinners(match: MatchRecord) {
+    const winner = match.scoreA === match.target ? 'A' : 'B'
+    draftDispatch({ type: 'keepWinners', winner, teamA: match.teamA, teamB: match.teamB, target: match.target })
+  }
+
   function onRematch(match: MatchRecord) {
     draftDispatch({ type: 'prefill', teamA: match.teamA, teamB: match.teamB, target: match.target })
   }
@@ -164,6 +173,7 @@ export function Match() {
         now={now}
         rankBefore={ranks}
         onRematch={() => onRematch(savedMatch)}
+        onKeepWinners={() => onKeepWinners(savedMatch)}
         onNewMatch={() => draftDispatch({ type: 'reset' })}
         onShowRanking={() => onShowRanking(savedMatch, ranks)}
         onCancelMatch={() => onCancelMatch(savedMatch)}

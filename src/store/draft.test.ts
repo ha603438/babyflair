@@ -251,3 +251,19 @@ describe('swapTeam', () => {
     expect(draftReducer(solo, { type: 'swapTeam', team: 1 })).toBe(solo)
   })
 })
+
+describe('keepWinners', () => {
+  it('keeps the winning side in place and empties the other, next slot active', () => {
+    const d = initialDraft({ lastFormat: '1v1', lastTarget: 10 })
+    const next = draftReducer(d, { type: 'keepWinners', winner: 'B', teamA: ['a', 'b'], teamB: ['c', 'd'], target: 5 })
+    expect(next.format).toBe('2v2')
+    expect(next.target).toBe(5)
+    expect(next.slots).toEqual([null, null, 'c', 'd'])
+    expect(next.activeSlot).toBe(0)
+    expect(next.step).toBe('players')
+    const solo = draftReducer(d, { type: 'keepWinners', winner: 'A', teamA: ['a'], teamB: ['b'], target: 10 })
+    expect(solo.format).toBe('1v1')
+    expect(solo.slots).toEqual(['a', null, null, null])
+    expect(solo.activeSlot).toBe(2)
+  })
+})
