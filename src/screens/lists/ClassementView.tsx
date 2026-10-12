@@ -1,6 +1,5 @@
 import { useEffect, useRef, useState } from 'react'
 import type { ReactNode, RefObject } from 'react'
-import { Button } from '../../components/Button'
 import { CALL_COPY } from '../../calls/calls'
 import { PUSH_COPY } from '../../calls/push'
 import { PROFILE_COPY } from '../../profile/profile'
@@ -83,10 +82,10 @@ function VisitorBadge({ onChooseProfile }: { onChooseProfile: (() => void) | und
 function ProposeButton({ onPropose, playerCount }: { onPropose: (() => void) | undefined; playerCount: number }) {
   if (onPropose === undefined || playerCount === 0) return null
   return (
-    <div className="content lists-block call-propose">
-      <Button variant="secondary" size="md" onClick={onPropose}>
-        {CALL_COPY.propose}
-      </Button>
+    <div className="content call-propose">
+      <button type="button" className="call-propose__link" onClick={onPropose}>
+        🔔 {CALL_COPY.propose}
+      </button>
     </div>
   )
 }

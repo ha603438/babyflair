@@ -6,6 +6,12 @@ export type ChangelogEntry = { id: string; date: string; title: string; items: s
 
 export const CHANGELOG: ChangelogEntry[] = [
   {
+    id: '2026-10-12-7',
+    date: '2026-10-12',
+    title: 'Nouveau match en un tap',
+    items: ['Bouton « ＋ Match » en haut de chaque onglet.', '« Proposer un baby » devient un lien plus discret sous le classement.'],
+  },
+  {
     id: '2026-10-12-6',
     date: '2026-10-12',
     title: 'Meilleur allié et némésis',

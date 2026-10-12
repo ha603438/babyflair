@@ -425,3 +425,17 @@
   transform: translateY(-50%);
 }
 .header-below { width: 100%; max-width: 320px; margin-top: 8px; }
+
+/* « ＋ Match » shortcut on the left of the tab-root headers, mirror of the right slot. */
+.header-root .header-left {
+  position: absolute;
+  left: max(var(--s4), var(--safe-left));
+  top: 50%;
+  transform: translateY(-50%);
+}
+.header-newmatch {
+  display: inline-flex; align-items: center; gap: 3px; min-height: 34px; padding: 0 10px;
+  border-radius: var(--r-pill); background: var(--accent); color: var(--on-accent);
+  font-size: 13px; font-weight: 700; border: 0; cursor: pointer; touch-action: manipulation;
+}
+.header-newmatch:active { transform: scale(0.97); }

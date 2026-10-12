@@ -7,7 +7,7 @@ import type { TabName } from './components/TabBar'
 import { Toast } from './components/Toast'
 import { IconButton } from './components/Button'
 import { Help, Settings } from './components/icons'
-import { hrefOf, useRoute } from './router'
+import { hrefOf, navigate, useRoute } from './router'
 import { checkForUpdate, UPDATE_TOASTS } from './update'
 import type { Route } from './router'
 import { AppStateProvider, isGateNeeded, useAppState } from './store'
@@ -68,6 +68,20 @@ function Screen({ route }: { route: Route }): ReactNode {
 }
 
 /** Header per route (spec §2 table). Pushed screens get the back chevron; tab roots get at most one icon button. */
+/** « ＋ Match » in the tab-root headers: the shortest way to record a match from anywhere. */
+function NewMatchShortcut() {
+  const { draft, draftDispatch } = useAppState()
+  function open(): void {
+    if (draft.step === 'done') draftDispatch({ type: 'reset' })
+    navigate({ name: 'match' })
+  }
+  return (
+    <button type="button" className="header-newmatch" onClick={open} aria-label="Nouveau match">
+      <span aria-hidden="true">＋</span> Match
+    </button>
+  )
+}
+
 function AppHeader({ route }: { route: Route }) {
   const { store, draft, draftDispatch, toast } = useAppState()
   const showToast = toast.show
@@ -82,6 +96,7 @@ function AppHeader({ route }: { route: Route }) {
         <Header
           onBrandDoubleTap={onBrandDoubleTap}
           title="Classement"
+          left={<NewMatchShortcut />}
           right={
             <IconButton label="Comment ça marche" href={hrefOf({ name: 'comment-ca-marche' })}>
               <Help />
@@ -107,7 +122,7 @@ function AppHeader({ route }: { route: Route }) {
     case 'match-edit':
       return <Header title="Modifier le match" back />
     case 'historique':
-      return <Header title="Historique" onBrandDoubleTap={onBrandDoubleTap} />
+      return <Header title="Historique" onBrandDoubleTap={onBrandDoubleTap} left={<NewMatchShortcut />} />
     case 'match-detail':
       return <Header title="Match" back />
     case 'joueurs':
@@ -115,6 +130,7 @@ function AppHeader({ route }: { route: Route }) {
         <Header
           onBrandDoubleTap={onBrandDoubleTap}
           title="Joueurs"
+          left={<NewMatchShortcut />}
           right={
             <IconButton label="Réglages" href={hrefOf({ name: 'reglages' })}>
               <Settings />
@@ -136,7 +152,7 @@ function AppHeader({ route }: { route: Route }) {
     case 'comment-ca-marche':
       return <Header title="Comment ça marche" back />
     case 'nouveautes':
-      return <Header title="Nouveautés" onBrandDoubleTap={onBrandDoubleTap} />
+      return <Header title="Nouveautés" onBrandDoubleTap={onBrandDoubleTap} left={<NewMatchShortcut />} />
     case 'journal':
       return <Header title={JOURNAL_COPY.title} back />
   }
