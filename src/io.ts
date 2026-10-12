@@ -9,6 +9,13 @@ export { matchesSinceExport }
 import type { Match, Store } from './types'
 
 export const APP_VERSION = '1.0.0'
+
+/** « 12 oct. 11:52 » : la date du build, injectée par Vite ; sert à vérifier qu'un téléphone est à jour. */
+export function buildLabel(buildDate: string = typeof __BUILD_DATE__ === 'string' ? __BUILD_DATE__ : ''): string {
+  const time = Date.parse(buildDate)
+  if (Number.isNaN(time)) return APP_VERSION
+  return new Intl.DateTimeFormat('fr-FR', { day: 'numeric', month: 'short', hour: '2-digit', minute: '2-digit' }).format(time)
+}
 export const EXPORT_MIME = 'application/json'
 
 const EXPORT_NUDGE_MATCHES = 30
@@ -173,7 +180,7 @@ function footerStorage(sync: FooterSync | undefined): string {
 export function settingsFooter(store: Counts, sync?: FooterSync): string {
   const players = plural(store.players.length, 'joueur')
   const matches = plural(store.matches.length, 'match')
-  return `BabyFlair ${APP_VERSION} · ${players} · ${matches} · ${footerStorage(sync)}`
+  return `BabyFlair · version du ${buildLabel()} · ${players} · ${matches} · ${footerStorage(sync)}`
 }
 
 export type StandaloneEnv = {

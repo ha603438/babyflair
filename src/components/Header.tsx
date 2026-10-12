@@ -11,6 +11,8 @@ export type HeaderProps = {
   right?: ReactNode
   /** Match screen: « BabyFlair » 15 px / 600 in --text-2 on the left, `right` on the right (spec §2). */
   compact?: boolean
+  /** Double-tap on the brand mark (every tab root and the Match header): forces an app update. */
+  onBrandDoubleTap?: () => void
 }
 
 function headerClass(isBack: boolean, compact: boolean): string {
@@ -19,7 +21,7 @@ function headerClass(isBack: boolean, compact: boolean): string {
   return 'header header-root'
 }
 
-export function Header({ title, back: isBack = false, right, compact = false }: HeaderProps) {
+export function Header({ title, back: isBack = false, right, compact = false, onBrandDoubleTap }: HeaderProps) {
   return (
     <header className={headerClass(isBack, compact)}>
       <div className="header-inner">
@@ -30,13 +32,13 @@ export function Header({ title, back: isBack = false, right, compact = false }: 
         )}
         {compact ? (
           <span className="header-brand">
-            <img className="header-brand-mark" src={`${import.meta.env.BASE_URL}logo-mark.png`} alt="" width="26" height="26" />
+            <img className="header-brand-mark" src={`${import.meta.env.BASE_URL}logo-mark.png`} alt="" width="26" height="26" onDoubleClick={onBrandDoubleTap} />
             {title}
           </span>
         ) : (
           <h1 className="header-title">
             {!isBack && (
-              <img className="header-brand-mark" src={`${import.meta.env.BASE_URL}logo-mark.png`} alt="" width="28" height="28" />
+              <img className="header-brand-mark" src={`${import.meta.env.BASE_URL}logo-mark.png`} alt="" width="28" height="28" onDoubleClick={onBrandDoubleTap} />
             )}
             {title}
           </h1>

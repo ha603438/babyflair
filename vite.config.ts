@@ -5,13 +5,14 @@ import { defineConfig } from 'vite'
 
 // https://vite.dev/config/
 export default defineConfig({
+  define: { __BUILD_DATE__: JSON.stringify(new Date().toISOString()) },
   // Served from https://ha603438.github.io/babyflair/ (GitHub Pages); the hash router keeps every route under it.
   base: '/babyflair/',
   plugins: [
     react(),
     VitePWA({
       registerType: 'autoUpdate',
-      includeAssets: ['logo.png', 'logo-mark.png', 'apple-touch-icon-180x180.png', 'favicon.ico'],
+      includeAssets: ['logo.png', 'logo-mark.png', 'apple-touch-icon-180x180.png', 'favicon-48.png'],
       manifest: {
         name: 'BabyFlair',
         short_name: 'BabyFlair',

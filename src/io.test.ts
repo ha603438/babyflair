@@ -16,6 +16,7 @@ import {
   matchesSinceExport,
   parseImport,
   settingsFooter,
+  buildLabel,
   shareFilesWith,
 } from './io'
 import type { Match, Player, Store } from './types'
@@ -353,10 +354,12 @@ describe('importSummary', () => {
 // ---------------------------------------------------------------------------
 
 describe('settingsFooter', () => {
-  it('shows the version and both counts', () => {
+  it('shows the build date and both counts', () => {
     expect(APP_VERSION).toBe('1.0.0')
     const text = settingsFooter({ players: arr(12), matches: arr(148) })
-    expect(text).toBe('BabyFlair 1.0.0 · 12 joueurs · 148 matchs · données sur cet appareil uniquement')
+    expect(text).toBe(`BabyFlair · version du ${buildLabel()} · 12 joueurs · 148 matchs · données sur cet appareil uniquement`)
+    expect(buildLabel('2026-10-12T09:52:00Z')).toMatch(/oct./)
+    expect(buildLabel('')).toBe('1.0.0')
   })
 
   it('uses the singular for 1', () => {

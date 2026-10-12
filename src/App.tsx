@@ -8,6 +8,7 @@ import { Toast } from './components/Toast'
 import { IconButton } from './components/Button'
 import { Help, Settings } from './components/icons'
 import { hrefOf, useRoute } from './router'
+import { checkForUpdate, UPDATE_TOASTS } from './update'
 import type { Route } from './router'
 import { AppStateProvider, isGateNeeded, useAppState } from './store'
 import type { Format } from './types'
@@ -54,12 +55,17 @@ function Screen({ route }: { route: Route }): ReactNode {
 
 /** Header per route (spec §2 table). Pushed screens get the back chevron; tab roots get at most one icon button. */
 function AppHeader({ route }: { route: Route }) {
-  const { store, draft, draftDispatch } = useAppState()
+  const { store, draft, draftDispatch, toast } = useAppState()
+  const showToast = toast.show
+  function onBrandDoubleTap(): void {
+    void checkForUpdate().then((outcome) => showToast({ text: UPDATE_TOASTS[outcome] }))
+  }
 
   switch (route.name) {
     case 'classement':
       return (
         <Header
+          onBrandDoubleTap={onBrandDoubleTap}
           title="Classement"
           right={
             <IconButton label="Comment ça marche" href={hrefOf({ name: 'comment-ca-marche' })}>
@@ -71,6 +77,7 @@ function AppHeader({ route }: { route: Route }) {
     case 'match':
       return (
         <Header
+          onBrandDoubleTap={onBrandDoubleTap}
           title="BabyFlair"
           compact
           right={
@@ -86,12 +93,13 @@ function AppHeader({ route }: { route: Route }) {
     case 'match-edit':
       return <Header title="Modifier le match" back />
     case 'historique':
-      return <Header title="Historique" />
+      return <Header title="Historique" onBrandDoubleTap={onBrandDoubleTap} />
     case 'match-detail':
       return <Header title="Match" back />
     case 'joueurs':
       return (
         <Header
+          onBrandDoubleTap={onBrandDoubleTap}
           title="Joueurs"
           right={
             <IconButton label="Réglages" href={hrefOf({ name: 'reglages' })}>
