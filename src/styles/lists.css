@@ -307,6 +307,12 @@
   white-space: nowrap;
 }
 
+/* « comeback » pill (HistoryRow, MatchSummary): the accent colour; « fanny » keeps the neutral pill. */
+.pill--comeback {
+  border-color: var(--accent);
+  color: var(--accent);
+}
+
 .badge--medal {
   width: 28px;
   height: 28px;
@@ -549,6 +555,14 @@
   margin-top: 2px;
   font-size: var(--fs-micro);
   color: var(--text-3);
+}
+
+/* « fanny » / « comeback » pills after the MatchSummary date line. */
+.ms-pills {
+  display: inline-flex;
+  gap: var(--s1);
+  margin-left: var(--s2);
+  vertical-align: middle;
 }
 
 .visitor-badge-row {

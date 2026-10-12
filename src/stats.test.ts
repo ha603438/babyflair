@@ -17,6 +17,11 @@ import {
   sideRecord,
   bestAlly,
   nemesis,
+  fannyComebackRecord,
+  isComeback,
+  isComebackScore,
+  isFanny,
+  withValidComeback,
 } from './stats'
 import type { HistoryPoint, Match, MatchId, Player, PlayerId, PlayerStats, Ranking, Settings, Store, Target } from './types'
 
@@ -593,6 +598,35 @@ describe('validateImport', () => {
     expect(result.matches[0]).toEqual(sampleStore().matches[0])
   })
 
+  it('keeps a comeback on a 5-4 in 5 and round-trips it through an export', () => {
+    const result = validateImport(withMatch(validFile(), 1, { scoreA: 4, comeback: true }))
+    expectOk(result)
+    expect(result.matches[1]).toMatchObject({ scoreA: 4, scoreB: 5, target: 5, comeback: true })
+    const store = sampleStore()
+    store.matches[1] = { ...store.matches[1], scoreA: 4, comeback: true }
+    const again = validateImport(JSON.parse(JSON.stringify(buildExport(store, NOW))))
+    expectOk(again)
+    expect(again.matches).toEqual(store.matches)
+  })
+
+  it('drops a stray comeback on another score to false instead of rejecting the file', () => {
+    const stray = validateImport(withMatch(withMatch(validFile(), 0, { comeback: true }), 1, { comeback: true }))
+    expectOk(stray)
+    expect(stray.matches.map((m) => m.comeback)).toEqual([false, false])
+    const unflagged = validateImport(withMatch(validFile(), 1, { scoreA: 4, comeback: false }))
+    expectOk(unflagged)
+    expect(unflagged.matches[1].comeback).toBe(false)
+  })
+
+  it('ignores a comeback that is not a boolean, and older files without it', () => {
+    const odd = validateImport(withMatch(validFile(), 1, { scoreA: 4, comeback: 'oui' }))
+    expectOk(odd)
+    expect('comeback' in odd.matches[1]).toBe(false)
+    const older = validateImport(validFile())
+    expectOk(older)
+    expect(older.matches.some((m) => 'comeback' in m)).toBe(false)
+  })
+
   it('accepts an empty export', () => {
     const result = validateImport({ app: 'babyflair', version: 1, exportedAt: NOW.toISOString(), players: [], matches: [] })
     expectOk(result)
@@ -645,5 +679,60 @@ describe('best ally and nemesis', () => {
   it('needs at least 3 matches', () => {
     expect(bestAlly('a', matches.slice(0, 2), names)).toBeNull()
     expect(nemesis('a', matches.slice(0, 2), names)).toBeNull()
+  })
+})
+
+describe('fanny and comeback', () => {
+  const flagged = (input: MatchInput): Match => ({ ...match({ target: 5, ...input }), comeback: true })
+
+  it('a fanny is a win where the loser scored 0, in 5 or in 10', () => {
+    expect(isFanny({ target: 5, scoreA: 5, scoreB: 0 })).toBe(true)
+    expect(isFanny({ target: 5, scoreA: 0, scoreB: 5 })).toBe(true)
+    expect(isFanny({ target: 10, scoreA: 10, scoreB: 0 })).toBe(true)
+    expect(isFanny({ target: 10, scoreA: 0, scoreB: 10 })).toBe(true)
+    expect(isFanny({ target: 5, scoreA: 5, scoreB: 1 })).toBe(false)
+    expect(isFanny({ target: 10, scoreA: 10, scoreB: 1 })).toBe(false)
+  })
+
+  it('a comeback score is a 5-4 in a game to 5 only', () => {
+    expect(isComebackScore({ target: 5, scoreA: 5, scoreB: 4 })).toBe(true)
+    expect(isComebackScore({ target: 5, scoreA: 4, scoreB: 5 })).toBe(true)
+    expect(isComebackScore({ target: 5, scoreA: 5, scoreB: 3 })).toBe(false)
+    expect(isComebackScore({ target: 10, scoreA: 10, scoreB: 4 })).toBe(false)
+    expect(isComebackScore({ target: 5, scoreA: 4, scoreB: 4 })).toBe(false)
+  })
+
+  it('isComeback needs the flag and the score; withValidComeback drops a stray flag', () => {
+    const valid = flagged({ id: 'm1', teamA: [A], teamB: [B], scoreA: 4, scoreB: 5 })
+    const stray = flagged({ id: 'm2', teamA: [A], teamB: [B], scoreA: 3, scoreB: 5 })
+    const plain = match({ id: 'm3', teamA: [A], teamB: [B], scoreA: 4, scoreB: 5, target: 5 })
+    expect(isComeback(valid)).toBe(true)
+    expect(isComeback(stray)).toBe(false)
+    expect(isComeback(plain)).toBe(false)
+    expect(withValidComeback(valid)).toBe(valid)
+    expect(withValidComeback(plain)).toBe(plain)
+    expect(withValidComeback(stray)).toEqual({ ...stray, comeback: false })
+  })
+
+  it('tallies fannys and comebacks as winner and as loser', () => {
+    const matches = [
+      match({ id: 'm1', teamA: [A, B], teamB: [C, D], scoreA: 5, scoreB: 0, target: 5 }),
+      match({ id: 'm2', teamA: [A], teamB: [C], scoreA: 0, scoreB: 10 }),
+      flagged({ id: 'm3', teamA: [C], teamB: [A], scoreA: 4, scoreB: 5 }),
+      flagged({ id: 'm4', teamA: [A, D], teamB: [B, C], scoreA: 4, scoreB: 5 }),
+      match({ id: 'm5', teamA: [A], teamB: [B], scoreA: 5, scoreB: 4, target: 5 }),
+      flagged({ id: 'm6', teamA: [A], teamB: [B], scoreA: 5, scoreB: 2 }),
+      match({ id: 'm7', teamA: [B], teamB: [D], scoreA: 5, scoreB: 0, target: 5 }),
+      match({ id: 'm8', teamA: [A], teamB: [D], scoreA: 10, scoreB: 0 }),
+    ]
+    const record = (fannyGiven: number, fannyTaken: number, comebackDone: number, comebackSuffered: number) => ({
+      fannyGiven,
+      fannyTaken,
+      comebackDone,
+      comebackSuffered,
+    })
+    expect(fannyComebackRecord(A, matches)).toEqual(record(2, 1, 1, 1))
+    expect(fannyComebackRecord(C, matches)).toEqual(record(1, 1, 1, 1))
+    expect(fannyComebackRecord(E, matches)).toEqual(record(0, 0, 0, 0))
   })
 })

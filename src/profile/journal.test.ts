@@ -143,3 +143,13 @@ describe('authorshipLine', () => {
     expect(authorshipLine(base, PLAYERS)).toBeNull()
   })
 })
+
+describe('scoreChange with comeback', () => {
+  const snap = (scoreA: number, scoreB: number, comeback?: boolean) => ({ target: 5 as const, teamA: ['a'], teamB: ['b'], scoreA, scoreB, comeback })
+  const ev = (before: ReturnType<typeof snap>, after: ReturnType<typeof snap>) => ({ id: 1, at: '2026-10-12T10:00:00Z', action: 'updated' as const, matchId: 'm', actorId: null, before, after })
+  it('mentions a ticked or unticked comeback', () => {
+    expect(scoreChange(ev(snap(5, 4), snap(5, 4, true)))).toBe('comeback coché')
+    expect(scoreChange(ev(snap(5, 4, true), snap(5, 4)))).toBe('comeback décoché')
+    expect(scoreChange(ev(snap(5, 4, true), snap(5, 4, true)))).toBeNull()
+  })
+})

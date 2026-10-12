@@ -6,6 +6,7 @@ import { Badge } from './Badge'
 import { POSITION_LABEL, positionOf } from '../stats'
 import { Delta } from './Delta'
 import { ListRow } from './ListRow'
+import { MatchPills } from './MatchPills'
 
 const ROOKIE_MATCHES = 10
 
@@ -128,6 +129,7 @@ export function MatchSummary({ match, result, players, byPlayer, rankBefore, ran
     <section className="ms">
       <div className="ms-date">
         {dateLine}
+        <MatchPills match={match} className="ms-pills" />
         {authors !== null && <div className="ms-author">{authors}</div>}
       </div>
       <div className="ms-hero" role="img" aria-label={heroLabel}>

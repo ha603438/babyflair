@@ -55,6 +55,7 @@ describe('AppStateProvider', () => {
       activeSlot: 0,
       score: null,
       step: 'players',
+      comeback: false,
     })
     expect(state.toast.current).toBeNull()
     expect(typeof state.dispatch).toBe('function')

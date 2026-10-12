@@ -345,8 +345,16 @@ function readMatch(raw: unknown, position: number, playerIds: Set<PlayerId>): { 
       teamB,
       scoreA: scores.scoreA,
       scoreB: scores.scoreB,
+      ...readComeback(raw.comeback, { target: raw.target, ...scores }),
     },
   }
+}
+
+// Optional (older exports have none); a stray `true` on another score than 5-4 in 5 is dropped to false rather than
+// rejecting the whole file.
+function readComeback(raw: unknown, line: ScoreLine): Pick<Match, 'comeback'> {
+  if (typeof raw !== 'boolean') return {}
+  return { comeback: raw && isComebackScore(line) }
 }
 
 function readFormat(raw: unknown): Format {
@@ -476,4 +484,77 @@ export function nemesis(playerId: PlayerId, matches: Match[], players: Map<Playe
   const candidates = tally(playerId, matches, (match) => opponentsOf(playerId, match)).filter((r) => r.losses > 0)
   candidates.sort((a, b) => a.wins * b.matches - b.wins * a.matches || b.losses - a.losses || byName(players)(a, b))
   return candidates[0] ?? null
+}
+
+// ---------------------------------------------------------------------------
+// Fanny (the loser scored 0) and comeback (winners trailing 0-4 who won 5-4, ticked at entry). Neither moves points.
+// ---------------------------------------------------------------------------
+
+export const COMEBACK_TARGET: Target = 5
+export const COMEBACK_LOSER_GOALS = 4
+
+/** The score part of a match, enough to tell a fanny or a comeback score. */
+export type ScoreLine = Pick<Match, 'target' | 'scoreA' | 'scoreB'>
+
+export type FannyComebackRecord = {
+  /** Wins where the losers scored 0. */
+  fannyGiven: number
+  /** Losses without scoring a goal. */
+  fannyTaken: number
+  /** Wins of comeback matches. */
+  comebackDone: number
+  /** Losses of comeback matches. */
+  comebackSuffered: number
+}
+
+/** A shutout: the winner reached the target and the loser scored 0 (5-0, or 10-0 in a game to 10). */
+export function isFanny(match: ScoreLine): boolean {
+  if (Math.max(match.scoreA, match.scoreB) !== match.target) return false
+  return Math.min(match.scoreA, match.scoreB) === 0
+}
+
+/** The only score a comeback can carry: 5-4 in a game to 5. */
+export function isComebackScore(match: ScoreLine): boolean {
+  if (match.target !== COMEBACK_TARGET) return false
+  if (Math.max(match.scoreA, match.scoreB) !== COMEBACK_TARGET) return false
+  return Math.min(match.scoreA, match.scoreB) === COMEBACK_LOSER_GOALS
+}
+
+/** A match flagged as a comeback, on the only score that allows it. */
+export function isComeback(match: ScoreLine & Pick<Match, 'comeback'>): boolean {
+  return match.comeback === true && isComebackScore(match)
+}
+
+/** Drops a stray comeback flag (any score but 5-4 in 5) to false; the match itself when there is nothing to fix. */
+export function withValidComeback<T extends ScoreLine & Pick<Match, 'comeback'>>(match: T): T {
+  if (match.comeback !== true || isComebackScore(match)) return match
+  return { ...match, comeback: false }
+}
+
+function countFanny(record: FannyComebackRecord, outcome: Outcome): void {
+  if (outcome === 'win') {
+    record.fannyGiven += 1
+    return
+  }
+  record.fannyTaken += 1
+}
+
+function countComeback(record: FannyComebackRecord, outcome: Outcome): void {
+  if (outcome === 'win') {
+    record.comebackDone += 1
+    return
+  }
+  record.comebackSuffered += 1
+}
+
+/** Fannys given / taken and comebacks done / suffered by a player over the matches he played. */
+export function fannyComebackRecord(playerId: PlayerId, matches: Match[]): FannyComebackRecord {
+  const record: FannyComebackRecord = { fannyGiven: 0, fannyTaken: 0, comebackDone: 0, comebackSuffered: 0 }
+  for (const match of matches) {
+    const outcome = outcomeFor(playerId, match)
+    if (outcome === null) continue
+    if (isFanny(match)) countFanny(record, outcome)
+    if (isComeback(match)) countComeback(record, outcome)
+  }
+  return record
 }

@@ -228,7 +228,15 @@
 .side-line { margin: 0; padding: 0 16px 8px; font-size: 13px; color: var(--text-2); text-align: center; }
 .side-line__white { color: var(--text); font-weight: 600; }
 .side-line__black { color: var(--text); font-weight: 600; }
-.tiles--2 { grid-template-columns: repeat(2, minmax(0, 1fr)); }
+.tiles--2 { grid-template-columns: repeat(2, minmax(0, 1fr)); row-gap: var(--s3); }
+
+/* Title of a tiles card (« Fanny et comebacks »); the tiles sit in a 2 × 2 grid under it. */
+.tiles-title {
+  margin-bottom: var(--s3);
+  font-size: var(--fs-label);
+  font-weight: 600;
+  line-height: 1.4;
+}
 
 /* Meilleur allié / Némésis: two rows in one card, each a link to the other player's page. */
 .rivalries { display: flex; flex-direction: column; gap: 12px; }

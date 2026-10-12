@@ -65,11 +65,26 @@ export function eventSnapshot(event: MatchEvent): MatchSnapshot | null {
   return event.after ?? event.before
 }
 
+function comebackChange(before: MatchSnapshot, after: MatchSnapshot): string | null {
+  const was = before.comeback === true
+  const is = after.comeback === true
+  if (was === is) return null
+  if (is) return 'comeback coché'
+  return 'comeback décoché'
+}
+
+/** Updates only: « 5 – 3 → 5 – 4 », « comeback coché », or both joined by « · ». */
 export function scoreChange(event: MatchEvent): string | null {
   if (event.action !== 'updated' || event.before === null || event.after === null) return null
   const { before, after } = event
-  if (before.scoreA === after.scoreA && before.scoreB === after.scoreB) return null
-  return `${fmtScore(before.scoreA, before.scoreB)} → ${fmtScore(after.scoreA, after.scoreB)}`
+  const parts: string[] = []
+  if (before.scoreA !== after.scoreA || before.scoreB !== after.scoreB) {
+    parts.push(`${fmtScore(before.scoreA, before.scoreB)} → ${fmtScore(after.scoreA, after.scoreB)}`)
+  }
+  const comeback = comebackChange(before, after)
+  if (comeback !== null) parts.push(comeback)
+  if (parts.length === 0) return null
+  return parts.join(' · ')
 }
 
 export function journalRow(

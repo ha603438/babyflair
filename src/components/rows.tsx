@@ -5,6 +5,7 @@ import { sevenDayDelta, teamLabel } from '../stats'
 import { Badge } from './Badge'
 import { Delta } from './Delta'
 import { ListRow } from './ListRow'
+import { MatchPills } from './MatchPills'
 
 const ROOKIE_MATCHES = 10
 
@@ -198,6 +199,7 @@ export function HistoryRow({ match, result, players, href, emphasisId }: History
           {fmtTime(match.playedAt)}
         </time>
         {match.target === 5 && <span className="pill">en 5</span>}
+        <MatchPills match={match} />
         {isEdited(match) && <span className="hr-edited">modifié</span>}
       </div>
       <div className="hr-grid">

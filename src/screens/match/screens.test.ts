@@ -7,6 +7,7 @@ import { replay } from '../../rating'
 import { AppStateProvider } from '../../store'
 import type { Match, Player, Store } from '../../types'
 import { Match as MatchScreen } from '../Match'
+import { Joueur } from '../Joueur'
 import { MatchEdit } from '../MatchEdit'
 import { MatchPreview } from './MatchPreview'
 import { computePreview } from './preview'
@@ -126,6 +127,59 @@ describe('MatchEdit screen', () => {
 
   it('renders nothing for an unknown id (the effect then redirects to the history)', () => {
     expect(render(createElement(MatchEdit, { id: 'nope' }), storeOf(PLAYERS, [MATCH]))).toBe('')
+  })
+
+  it('shows the « Comeback » box under the grid on a 5-4 in 5, ticked from the stored match', () => {
+    const comeback: Match = { ...MATCH, target: 5, scoreA: 4, scoreB: 5, comeback: true }
+    const html = render(createElement(MatchEdit, { id: 'm1' }), storeOf(PLAYERS, [comeback]))
+    const copy = plain(html)
+    expect(html).toContain('<label class="inline-form-check comeback-check"><input type="checkbox" checked=""/>')
+    expect(copy).toContain('>Comeback<')
+    expect(copy).toContain('>Les vainqueurs étaient menés 0-4<')
+    expect(html.indexOf('comeback-check')).toBeGreaterThan(html.indexOf('class="scoregrid"'))
+    const unflagged: Match = { ...comeback, comeback: false }
+    const unticked = render(createElement(MatchEdit, { id: 'm1' }), storeOf(PLAYERS, [unflagged]))
+    expect(unticked).toContain('<label class="inline-form-check comeback-check"><input type="checkbox"/>')
+  })
+
+  it('has no « Comeback » box on any other score', () => {
+    expect(render(createElement(MatchEdit, { id: 'm1' }), storeOf(PLAYERS, [MATCH]))).not.toContain('Comeback')
+    const fiveThree: Match = { ...MATCH, target: 5, scoreA: 5, scoreB: 3 }
+    expect(render(createElement(MatchEdit, { id: 'm1' }), storeOf(PLAYERS, [fiveThree]))).not.toContain('Comeback')
+  })
+})
+
+describe('Joueur screen, « Fanny et comebacks »', () => {
+  const at = (minutes: number): string => new Date(Date.UTC(2025, 9, 1, 12, minutes)).toISOString()
+  const played = (id: string, minutes: number, extra: Partial<Match>): Match => ({
+    ...MATCH,
+    id,
+    seq: minutes,
+    playedAt: at(minutes),
+    createdAt: at(minutes),
+    updatedAt: at(minutes),
+    ...extra,
+  })
+
+  it('counts fannys and comebacks of the player in four tiles', () => {
+    const matches = [
+      played('m1', 1, { target: 5, scoreA: 5, scoreB: 0 }),
+      played('m2', 2, { target: 10, scoreA: 0, scoreB: 10 }),
+      played('m3', 3, { target: 5, scoreA: 5, scoreB: 4, comeback: true }),
+      played('m4', 4, { target: 5, scoreA: 5, scoreB: 0 }),
+    ]
+    const copy = plain(render(createElement(Joueur, { id: 'alice' }), storeOf(PLAYERS, matches)))
+    expect(copy).toContain('>Fanny et comebacks<')
+    const tile = (label: string, value: number) => `>${label}</span><span class="tile-value t-num">${value}<`
+    expect(copy).toContain(tile('Fanny mis', 2))
+    expect(copy).toContain(tile('Fanny encaissés', 1))
+    expect(copy).toContain(tile('Comebacks réussis', 1))
+    expect(copy).toContain(tile('Comebacks subis', 0))
+  })
+
+  it('is hidden for a player without matches', () => {
+    const copy = plain(render(createElement(Joueur, { id: 'eve' }), storeOf(PLAYERS, [MATCH])))
+    expect(copy).not.toContain('Fanny et comebacks')
   })
 })
 

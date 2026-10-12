@@ -55,6 +55,7 @@ const match: Match = {
   teamB: ['p3', 'p4'],
   scoreA: 5,
   scoreB: 3,
+  comeback: false,
 }
 const matchRow: MatchRow = {
   id: 'm1',
@@ -67,6 +68,7 @@ const matchRow: MatchRow = {
   team_b: ['p3', 'p4'],
   score_a: 5,
   score_b: 3,
+  comeback: false,
 }
 
 async function kindOf(promise: Promise<unknown>): Promise<string> {
@@ -114,6 +116,15 @@ describe('row mapping', () => {
     const row = matchToRow(signed)
     expect('created_by' in row).toBe(false)
     expect('updated_by' in row).toBe(false)
+  })
+
+  it('reads comeback (false when the column is missing) and always sends it, false by default', () => {
+    const { comeback: _column, ...oldRow } = matchRow
+    expect(matchFromRow(oldRow).comeback).toBe(false)
+    expect(matchFromRow({ ...matchRow, score_b: 4, comeback: true })).toEqual({ ...match, scoreB: 4, comeback: true })
+    expect(matchToRow({ ...match, scoreB: 4, comeback: true }).comeback).toBe(true)
+    const { comeback: _field, ...unflagged } = match
+    expect(matchToRow(unflagged).comeback).toBe(false)
   })
 
   it('maps match_events rows: action, actor, before / after images', () => {
@@ -320,8 +331,15 @@ describe('createApi', () => {
       team_b: ['p3', 'p4'],
       score_a: 5,
       score_b: 3,
+      comeback: false,
       updated_at: match.updatedAt,
     })
+  })
+
+  it('updateMatch sends the comeback box, so an edit of the box alone reaches the server', async () => {
+    const { fetch, calls } = fakeFetch(() => ({ status: 200, body: [matchRow] }))
+    await createApi({ fetch, config, officeCode: 'secret' }).updateMatch({ ...match, scoreB: 4, comeback: true })
+    expect(calls[0].body).toMatchObject({ score_b: 4, comeback: true })
   })
 
   it('updatePlayer patches name and is_guest', async () => {

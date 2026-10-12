@@ -6,6 +6,15 @@ export type ChangelogEntry = { id: string; date: string; title: string; items: s
 
 export const CHANGELOG: ChangelogEntry[] = [
   {
+    id: '2026-10-12-8',
+    date: '2026-10-12',
+    title: 'Fanny et comebacks',
+    items: [
+      'Case « Comeback » sous le score quand les vainqueurs gagnent 5-4 après avoir été menés 0-4.',
+      'Pastilles fanny et comeback dans l’historique, et leur bilan sur la page de chaque joueur.',
+    ],
+  },
+  {
     id: '2026-10-12-7',
     date: '2026-10-12',
     title: 'Nouveau match en un tap',

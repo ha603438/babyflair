@@ -228,6 +228,22 @@ describe('HistoryRow', () => {
     expect(historyRow({ emphasisId: 'a' })).toContain('class="hr-p is-me"><span class="hr-name">Alice<')
   })
 
+  it('shows a « fanny » pill when the loser scored 0, in 5 or in 10', () => {
+    const inFive = historyRow({ match: { ...match, target: 5, scoreA: 0, scoreB: 5 } })
+    expect(inFive).toContain('class="pill">en 5</span><span class="pill">fanny<')
+    expect(historyRow({ match: { ...match, scoreA: 0 } })).toContain('class="pill">fanny<')
+    expect(historyRow({ match: { ...match, scoreA: 1 } })).not.toContain('fanny')
+  })
+
+  it('shows the accent « comeback » pill on a flagged 5-4 only', () => {
+    const flagged: Match = { ...match, target: 5, scoreA: 4, scoreB: 5, comeback: true }
+    const html = historyRow({ match: flagged })
+    expect(html).toContain('class="pill">en 5</span><span class="pill pill--comeback">comeback<')
+    expect(html).not.toContain('fanny')
+    expect(historyRow({ match: { ...flagged, comeback: false } })).not.toContain('comeback')
+    expect(historyRow({ match: { ...flagged, scoreA: 3 } })).not.toContain('comeback')
+  })
+
   it('shows names without deltas when there is no result', () => {
     const html = historyRow({ result: undefined })
     expect(html).toContain('class="hr-name">Alice<')
@@ -302,6 +318,14 @@ describe('MatchSummary', () => {
     expect(html).toMatch(/1\s050 → 1\s037 · classé : 9e/)
     expect(html).toMatch(/1\s040 → 1\s030 · de retour dans le classement/)
     expect(html).toContain('badge--rookie')
+  })
+
+  it('adds the fanny / comeback pills after the date line, none for an ordinary match', () => {
+    const fanny = summary({ match: { ...match, scoreA: 0 } })
+    expect(fanny).toContain('· en 10<span class="ms-pills"><span class="pill">fanny<')
+    const comeback = summary({ match: { ...match, target: 5, scoreA: 4, scoreB: 5, comeback: true } })
+    expect(comeback).toContain('<span class="ms-pills"><span class="pill pill--comeback">comeback</span></span>')
+    expect(summary()).not.toContain('ms-pills')
   })
 
   it('uses « 1er » for the first rank', () => {

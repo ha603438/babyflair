@@ -1,6 +1,6 @@
 import { describe, expect, it } from 'vitest'
 import type { Draft } from '../types'
-import { draftReducer, initialDraft, isDraftComplete, NO_ACTIVE_SLOT, visibleSlots } from './draft'
+import { canBeComeback, draftReducer, initialDraft, isDraftComplete, NO_ACTIVE_SLOT, visibleSlots } from './draft'
 import type { DraftAction } from './draft'
 
 const SETTINGS = { lastFormat: '2v2', lastTarget: 10 } as const
@@ -22,6 +22,7 @@ describe('initialDraft', () => {
       activeSlot: 0,
       score: null,
       step: 'players',
+      comeback: false,
     })
   })
 
@@ -227,6 +228,7 @@ describe('saved / reset / prefill', () => {
       activeSlot: NO_ACTIVE_SLOT,
       score: null,
       step: 'score',
+      comeback: false,
     })
     const single = draftReducer(done, { type: 'prefill', teamA: ['a'], teamB: ['b'], target: 10 })
     expect(single.format).toBe('1v1')
@@ -265,5 +267,80 @@ describe('keepWinners', () => {
     expect(solo.format).toBe('1v1')
     expect(solo.slots).toEqual(['a', null, null, null])
     expect(solo.activeSlot).toBe(2)
+  })
+})
+
+describe('comeback', () => {
+  const fourFive = { winner: 'B', loserGoals: 4 } as const
+
+  /** A complete 2v2 draft in 5 scored 4-5 with the « Comeback » box ticked. */
+  function ticked(): Draft {
+    const scored = run(pickAll(initialDraft({ lastFormat: '2v2', lastTarget: 5 }), 'a', 'b', 'c', 'd'), {
+      type: 'setScore',
+      score: fourFive,
+    })
+    return draftReducer(scored, { type: 'setComeback', value: true })
+  }
+
+  it('canBeComeback only accepts a 5-4 in a game to 5', () => {
+    expect(canBeComeback({ target: 5, score: { winner: 'A', loserGoals: 4 } })).toBe(true)
+    expect(canBeComeback({ target: 5, score: fourFive })).toBe(true)
+    expect(canBeComeback({ target: 5, score: { winner: 'A', loserGoals: 3 } })).toBe(false)
+    expect(canBeComeback({ target: 10, score: { winner: 'A', loserGoals: 4 } })).toBe(false)
+    expect(canBeComeback({ target: 5, score: null })).toBe(false)
+  })
+
+  it('setComeback ticks and unticks the box on a 5-4 in 5', () => {
+    const on = ticked()
+    expect(on.comeback).toBe(true)
+    expect(draftReducer(on, { type: 'setComeback', value: true })).toBe(on)
+    expect(draftReducer(on, { type: 'setComeback', value: false }).comeback).toBe(false)
+  })
+
+  it('setComeback is refused on any other score or target', () => {
+    const tenEight = run(pickAll(initialDraft(SETTINGS), 'a', 'b', 'c', 'd'), {
+      type: 'setScore',
+      score: { winner: 'A', loserGoals: 8 },
+    })
+    expect(draftReducer(tenEight, { type: 'setComeback', value: true })).toBe(tenEight)
+    const fourInTen = draftReducer(tenEight, { type: 'setScore', score: { winner: 'A', loserGoals: 4 } })
+    expect(draftReducer(fourInTen, { type: 'setComeback', value: true }).comeback).toBe(false)
+    const unscored = initialDraft({ lastFormat: '2v2', lastTarget: 5 })
+    expect(draftReducer(unscored, { type: 'setComeback', value: true }).comeback).toBe(false)
+  })
+
+  it('a new score clears it, the same score tapped again keeps it', () => {
+    const on = ticked()
+    expect(draftReducer(on, { type: 'setScore', score: { winner: 'B', loserGoals: 4 } }).comeback).toBe(true)
+    expect(draftReducer(on, { type: 'setScore', score: { winner: 'A', loserGoals: 4 } }).comeback).toBe(false)
+    expect(draftReducer(on, { type: 'setScore', score: { winner: 'B', loserGoals: 3 } }).comeback).toBe(false)
+    expect(draftReducer(on, { type: 'setScore', score: null }).comeback).toBe(false)
+  })
+
+  it('a change of target, format or players clears it', () => {
+    const on = ticked()
+    expect(draftReducer(on, { type: 'setTarget', target: 10 }).comeback).toBe(false)
+    expect(draftReducer(on, { type: 'setFormat', format: '1v1' }).comeback).toBe(false)
+    expect(draftReducer(on, { type: 'pick', playerId: 'a' }).comeback).toBe(false)
+    expect(draftReducer(on, { type: 'clearSlot', index: 3 }).comeback).toBe(false)
+    const replaced = run(on, { type: 'setActiveSlot', index: 1 }, { type: 'pick', playerId: 'e' })
+    expect(replaced.comeback).toBe(false)
+  })
+
+  it('moving around or swapping arrière and avant keeps it', () => {
+    const on = ticked()
+    expect(draftReducer(on, { type: 'swapTeam', team: 2 }).comeback).toBe(true)
+    expect(draftReducer(on, { type: 'goToPlayers' }).comeback).toBe(true)
+    expect(draftReducer(on, { type: 'setActiveSlot', index: 0 }).comeback).toBe(true)
+    expect(draftReducer(on, { type: 'saved', matchId: 'm1' }).comeback).toBe(true)
+  })
+
+  it('reset, prefill and keepWinners start unticked', () => {
+    const done = draftReducer(ticked(), { type: 'saved', matchId: 'm1' })
+    expect(draftReducer(done, { type: 'reset' }).comeback).toBe(false)
+    const prefilled = draftReducer(done, { type: 'prefill', teamA: ['a', 'b'], teamB: ['c', 'd'], target: 5 })
+    expect(prefilled.comeback).toBe(false)
+    const keep: DraftAction = { type: 'keepWinners', winner: 'B', teamA: ['a', 'b'], teamB: ['c', 'd'], target: 5 }
+    expect(draftReducer(done, keep).comeback).toBe(false)
   })
 })

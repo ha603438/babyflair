@@ -331,3 +331,36 @@ describe('appels à jouer', () => {
     expect(reducer(state, { type: 'clearAll' }).calls).toEqual([])
   })
 })
+
+describe('comeback', () => {
+  const fiveFour = { target: 5, scoreA: 5, scoreB: 4 } as const
+
+  it('addMatch, updateMatch and restoreMatch keep a comeback on a 5-4 in 5 and drop a stray one', () => {
+    const state = seeded()
+    const input = matchInput('m4', ['alice'], ['dan'])
+    const added = reducer(state, { type: 'addMatch', match: { ...input, ...fiveFour, comeback: true } })
+    expect(added.matches.at(-1)?.comeback).toBe(true)
+    const stray = reducer(state, { type: 'addMatch', match: { ...input, comeback: true } })
+    expect(stray.matches.at(-1)?.comeback).toBe(false)
+    const edited = reducer(state, { type: 'updateMatch', match: { ...state.matches[0], ...fiveFour, comeback: true } })
+    expect(edited.matches[0]).toMatchObject({ ...fiveFour, comeback: true })
+    const unticked = reducer(edited, { type: 'updateMatch', match: { ...edited.matches[0], scoreB: 3 } })
+    expect(unticked.matches[0]).toMatchObject({ scoreB: 3, comeback: false })
+    const removed = { ...state.matches[2], comeback: true }
+    const without = reducer(state, { type: 'deleteMatch', id: removed.id })
+    expect(reducer(without, { type: 'restoreMatch', match: removed, index: 2 }).matches[2].comeback).toBe(false)
+  })
+
+  it('importAll and replaceData drop stray flags and keep the array when there is nothing to fix', () => {
+    const valid: Match = { ...matchInput('x1', ['p1'], ['p2']), ...fiveFour, seq: 1, comeback: true }
+    const stray: Match = { ...matchInput('x2', ['p2'], ['p1']), seq: 2, comeback: true }
+    const settings = { lastFormat: '1v1', lastTarget: 5 } as const
+    const players = [player('p1'), player('p2')]
+    const imported = reducer(initialStore, { type: 'importAll', players, matches: [valid, stray], settings })
+    expect(imported.matches.map((m) => m.comeback)).toEqual([true, false])
+    const replaced = reducer(initialStore, { type: 'replaceData', players, matches: [valid, stray] })
+    expect(replaced.matches.map((m) => m.comeback)).toEqual([true, false])
+    const clean = [valid]
+    expect(reducer(initialStore, { type: 'replaceData', players, matches: clean }).matches).toBe(clean)
+  })
+})

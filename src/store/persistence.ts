@@ -1,3 +1,4 @@
+import { isComebackScore } from '../stats'
 import type { Call, CallPlayer, Match, Player, Settings, Store } from '../types'
 import { backfillSeq, DEFAULT_SETTINGS, initialStore, nextSeqOf } from './reducer'
 
@@ -54,6 +55,8 @@ function normaliseMatch(value: unknown): Match | null {
   // Mode partagé authorship (server trigger); optional, so older data and exports stay valid without it.
   if (typeof value.createdBy === 'string' && value.createdBy.length > 0) match.createdBy = value.createdBy
   if (typeof value.updatedBy === 'string' && value.updatedBy.length > 0) match.updatedBy = value.updatedBy
+  // Comeback box (absent in older data); a flag on any other score than 5-4 in 5 is dropped to false.
+  if (typeof value.comeback === 'boolean') match.comeback = value.comeback && isComebackScore(match)
   return match
 }
 

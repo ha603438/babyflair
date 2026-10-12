@@ -98,6 +98,7 @@ describe('matchToDraft', () => {
       activeSlot: NO_ACTIVE_SLOT,
       score: { winner: 'A', loserGoals: 8 },
       step: 'score',
+      comeback: false,
     })
   })
 
@@ -128,6 +129,7 @@ describe('matchFieldsOf / draftToMatch / newMatchFromDraft', () => {
       teamB: ['chloe', 'dan'],
       scoreA: 10,
       scoreB: 8,
+      comeback: false,
     })
   })
 
@@ -140,6 +142,7 @@ describe('matchFieldsOf / draftToMatch / newMatchFromDraft', () => {
       target: 5,
       scoreA: 1,
       scoreB: 5,
+      comeback: false,
     })
   })
 
@@ -150,8 +153,10 @@ describe('matchFieldsOf / draftToMatch / newMatchFromDraft', () => {
   })
 
   it('round-trips a stored match except for updatedAt', () => {
-    const base = match({ target: 5, teamA: ['alice'], teamB: ['dan'], scoreA: 3, scoreB: 5 })
+    const base = match({ target: 5, teamA: ['alice'], teamB: ['dan'], scoreA: 3, scoreB: 5, comeback: false })
     expect(draftToMatch(matchToDraft(base), base, NOW_ISO)).toEqual({ ...base, updatedAt: NOW_ISO })
+    const comeback = match({ target: 5, scoreA: 4, scoreB: 5, comeback: true })
+    expect(draftToMatch(matchToDraft(comeback), comeback, NOW_ISO)).toEqual({ ...comeback, updatedAt: NOW_ISO })
   })
 
   it('draftToMatch and newMatchFromDraft throw on an unscored or incomplete draft', () => {
@@ -171,6 +176,7 @@ describe('matchFieldsOf / draftToMatch / newMatchFromDraft', () => {
       teamB: ['chloe', 'dan'],
       scoreA: 10,
       scoreB: 8,
+      comeback: false,
     })
     expect('seq' in created).toBe(false)
   })
@@ -201,6 +207,44 @@ describe('isDraftChanged', () => {
 
   it('is true when the format changes to 1v1 with the same first players', () => {
     expect(isDraftChanged(draft({ format: '1v1' }), base)).toBe(true)
+  })
+})
+
+describe('comeback', () => {
+  const fiveFour = { target: 5, scoreA: 5, scoreB: 4 } as const
+  const fourFive = draft({ target: 5, score: { winner: 'A', loserGoals: 4 } })
+
+  it('matchToDraft reads the flag of a 5-4 and ignores a missing or stray one', () => {
+    expect(matchToDraft(match({ ...fiveFour, comeback: true })).comeback).toBe(true)
+    expect(matchToDraft(match(fiveFour)).comeback).toBe(false)
+    expect(matchToDraft(match({ comeback: true })).comeback).toBe(false)
+  })
+
+  it('newMatchFromDraft and draftToMatch write true for a ticked 5-4, false otherwise', () => {
+    expect(newMatchFromDraft({ ...fourFive, comeback: true }, 'new-id', NOW_ISO)).toMatchObject({
+      ...fiveFour,
+      comeback: true,
+    })
+    expect(newMatchFromDraft(fourFive, 'new-id', NOW_ISO).comeback).toBe(false)
+    const edited = draftToMatch({ ...fourFive, comeback: true }, match(), NOW_ISO)
+    expect(edited).toMatchObject({ ...fiveFour, comeback: true })
+    expect(draftToMatch({ ...fourFive, comeback: false }, match(), NOW_ISO).comeback).toBe(false)
+  })
+
+  it('a stray ticked box on another score is written as false', () => {
+    expect(newMatchFromDraft(draft({ comeback: true }), 'new-id', NOW_ISO).comeback).toBe(false)
+    expect(draftToMatch(draft({ target: 5, score: { winner: 'A', loserGoals: 3 }, comeback: true }), match(), NOW_ISO))
+      .toMatchObject({ scoreB: 3, comeback: false })
+  })
+
+  it('isDraftChanged sees a comeback-only change, so the edit screen can save just the box', () => {
+    const flagged = match({ ...fiveFour, comeback: true })
+    const plain = match(fiveFour)
+    expect(isDraftChanged(matchToDraft(flagged), flagged)).toBe(false)
+    expect(isDraftChanged({ ...matchToDraft(plain), comeback: true }, plain)).toBe(true)
+    expect(isDraftChanged({ ...matchToDraft(flagged), comeback: false }, flagged)).toBe(true)
+    // An untouched stored match without the field reads as « not a comeback ».
+    expect(isDraftChanged({ ...matchToDraft(plain), comeback: false }, plain)).toBe(false)
   })
 })
 

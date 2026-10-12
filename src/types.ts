@@ -23,6 +23,8 @@ export type Match = {
   /** Exactly one equals target, the other is in [0, target - 1]. */
   scoreA: number
   scoreB: number
+  /** Winners trailing 0-4 who won 5-4 (box ticked at entry). Only ever true on a 5-4 in 5; absent means false. */
+  comeback?: boolean
   /** Mode partagé: who saved / last changed it, set by a server trigger from x-player-id. Never sent by the app. */
   createdBy?: PlayerId
   updatedBy?: PlayerId
@@ -67,7 +69,14 @@ export type CallPlayer = { callId: string; playerId: PlayerId; joinedAt: string 
 export type MatchEventAction = 'created' | 'updated' | 'deleted' | 'restored'
 
 /** The parts of a match row the journal displays (before / after of an event). */
-export type MatchSnapshot = { target: Target; teamA: PlayerId[]; teamB: PlayerId[]; scoreA: number; scoreB: number }
+export type MatchSnapshot = {
+  target: Target
+  teamA: PlayerId[]
+  teamB: PlayerId[]
+  scoreA: number
+  scoreB: number
+  comeback?: boolean
+}
 
 export type MatchEvent = {
   id: number
@@ -158,6 +167,8 @@ export type Draft = {
   score: Score | null
   step: 'players' | 'score' | 'done'
   lastSavedMatchId?: MatchId
+  /** « Comeback » box under the score; only true while the score is a 5-4 in 5, cleared by any other change. */
+  comeback?: boolean
 }
 
 export type PreviewWhatIf = {

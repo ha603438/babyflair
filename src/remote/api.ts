@@ -71,13 +71,18 @@ export type MatchRow = {
   team_b: string[]
   score_a: number
   score_b: number
+  /** « Comeback » box (docs/supabase/comeback.sql, not null default false); absent before that migration. */
+  comeback?: boolean
   /** Filled by the server trigger (docs/supabase/profiles.sql); absent before that migration. */
   created_by?: string | null
   updated_by?: string | null
 }
 
-/** What the app writes: the authorship columns are the trigger's, never sent. */
-export type MatchWriteRow = Omit<MatchRow, 'seq' | 'created_by' | 'updated_by'> & { seq?: number }
+/** What the app writes: the authorship columns are the trigger's, never sent; `comeback` always is. */
+export type MatchWriteRow = Omit<MatchRow, 'seq' | 'comeback' | 'created_by' | 'updated_by'> & {
+  seq?: number
+  comeback: boolean
+}
 
 export type MatchEventRow = {
   id: number
@@ -139,6 +144,7 @@ export function matchFromRow(row: MatchRow): Match {
     teamB: [...row.team_b],
     scoreA: row.score_a,
     scoreB: row.score_b,
+    comeback: row.comeback === true,
   }
   const createdBy = nonEmptyString(row.created_by)
   const updatedBy = nonEmptyString(row.updated_by)
@@ -162,6 +168,7 @@ export function matchToRow(match: Omit<Match, 'seq'> & { seq?: number }): MatchW
     team_b: [...match.teamB],
     score_a: match.scoreA,
     score_b: match.scoreB,
+    comeback: match.comeback === true,
   }
   if (match.seq !== undefined) row.seq = match.seq
   return row
@@ -181,7 +188,9 @@ export function snapshotFromJson(value: unknown): MatchSnapshot | null {
   const { target, team_a: teamA, team_b: teamB, score_a: scoreA, score_b: scoreB } = value
   if (!isIdList(teamA) || !isIdList(teamB)) return null
   if (typeof scoreA !== 'number' || typeof scoreB !== 'number' || typeof target !== 'number') return null
-  return { target: targetOf(target), teamA: [...teamA], teamB: [...teamB], scoreA, scoreB }
+  const snapshot: MatchSnapshot = { target: targetOf(target), teamA: [...teamA], teamB: [...teamB], scoreA, scoreB }
+  if (value.comeback === true) snapshot.comeback = true
+  return snapshot
 }
 
 const EVENT_ACTIONS: readonly MatchEventAction[] = ['created', 'updated', 'deleted', 'restored']
@@ -424,6 +433,7 @@ export function createApi(deps: ApiDeps): RemoteApi {
       team_b: row.team_b,
       score_a: row.score_a,
       score_b: row.score_b,
+      comeback: row.comeback,
       updated_at: row.updated_at,
     }
     await sendWrite(deps, 'PATCH', `matches?id=eq.${match.id}`, patch)

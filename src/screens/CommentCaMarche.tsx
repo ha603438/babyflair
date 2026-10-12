@@ -56,6 +56,12 @@ const SECTIONS: Section[] = [
       'chaque poste, et si les Blancs ou les Noirs gagnent plus souvent.',
   },
   {
+    title: 'Fanny et comeback',
+    text:
+      "Un fanny, c'est gagner sans encaisser un seul but (5-0). Un comeback, c'est gagner 5-4 après avoir été " +
+      "mené 0-4 : coche la case sous le score au moment de l'enregistrer. Ni l'un ni l'autre ne change les points.",
+  },
+  {
     title: 'Inactifs',
     text:
       'Sans match pendant 30 jours, tu passes dans la section Inactifs, sans perdre aucun point. Un match ' +

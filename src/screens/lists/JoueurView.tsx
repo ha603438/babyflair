@@ -14,7 +14,15 @@ import type { Guard } from '../../profile/useWriteGuard'
 import { fmtInt, fmtPercent } from '../../format'
 import { back, hrefOf, navigate } from '../../router'
 import { playerHasMatches } from '../../store'
-import { bestAlly, currentStreak, favouritePartner, nemesis, positionRecord, sevenDayDelta } from '../../stats'
+import {
+  bestAlly,
+  currentStreak,
+  fannyComebackRecord,
+  favouritePartner,
+  nemesis,
+  positionRecord,
+  sevenDayDelta,
+} from '../../stats'
 import type { Rivalry } from '../../stats'
 import type { Match, MatchId, Player, PlayerId, PlayerStats } from '../../types'
 import type { ReplayData, ScreenContext } from './context'
@@ -177,6 +185,23 @@ function PositionsCard({ playerId, matches }: { playerId: PlayerId; matches: Mat
   )
 }
 
+/** Shutouts and comebacks, as winner and as loser (2 × 2 tiles); hidden until the player has a match. */
+function FannyComebackCard({ playerId, matches }: { playerId: PlayerId; matches: Match[] }) {
+  if (!playerHasMatches(matches, playerId)) return null
+  const record = fannyComebackRecord(playerId, matches)
+  return (
+    <section className="card card-pad">
+      <h2 className="tiles-title">Fanny et comebacks</h2>
+      <div className="tiles tiles--2">
+        <Tile label="Fanny mis" value={fmtInt(record.fannyGiven)} />
+        <Tile label="Fanny encaissés" value={fmtInt(record.fannyTaken)} />
+        <Tile label="Comebacks réussis" value={fmtInt(record.comebackDone)} />
+        <Tile label="Comebacks subis" value={fmtInt(record.comebackSuffered)} />
+      </div>
+    </section>
+  )
+}
+
 type PartnerProps = { playerId: PlayerId; matches: Match[]; players: Map<PlayerId, Player> }
 
 type RivalryRowProps = { label: string; rivalry: Rivalry | null; text: (r: Rivalry) => string }
@@ -248,6 +273,7 @@ function Details({ player, stats, replay, matches }: DetailsProps) {
       <SparklineCard stats={stats} />
       <StatsCard stats={stats} matches={replay.matches} />
       <PositionsCard playerId={player.id} matches={matches} />
+      <FannyComebackCard playerId={player.id} matches={matches} />
       <PartnerCard playerId={player.id} matches={matches} players={replay.players} />
       <RivalriesCard playerId={player.id} matches={matches} players={replay.players} />
     </>

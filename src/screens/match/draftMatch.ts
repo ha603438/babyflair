@@ -2,8 +2,8 @@
 // derived from a Draft, a Match and the store's players, so it is unit-tested in vitest's node environment.
 import type { ChipState } from '../../components/Chip'
 import { fmtDayHeader, fmtScore, fmtTime, plural } from '../../format'
-import { rankIndexOf } from '../../stats'
-import { NO_ACTIVE_SLOT, visibleSlots } from '../../store/draft'
+import { isComeback, rankIndexOf } from '../../stats'
+import { canBeComeback, NO_ACTIVE_SLOT, visibleSlots } from '../../store/draft'
 import type { Draft, Format, Match, MatchId, PlayerId, Ranking, Score, Target } from '../../types'
 
 /** Slot indices of each team (spec §4: 0-1 = Équipe 1, 2-3 = Équipe 2). */
@@ -13,7 +13,7 @@ export const TEAM_B_FIRST_SLOT = 2
 export type DraftTeams = { teamA: PlayerId[]; teamB: PlayerId[] }
 
 /** Fields of a Match that the draft decides; id, seq and the dates come from the caller. */
-export type MatchFields = Pick<Match, 'target' | 'teamA' | 'teamB' | 'scoreA' | 'scoreB'>
+export type MatchFields = Pick<Match, 'target' | 'teamA' | 'teamB' | 'scoreA' | 'scoreB'> & { comeback: boolean }
 
 function formatOf(match: Pick<Match, 'teamA' | 'teamB'>): Format {
   if (match.teamA.length > 1 || match.teamB.length > 1) return '2v2'
@@ -69,11 +69,17 @@ export function draftPlayerIds(draft: Pick<Draft, 'slots' | 'format'>): PlayerId
   return ids
 }
 
+/** The comeback flag a draft writes: the box ticked on a 5-4 in 5, false otherwise. */
+function draftComeback(draft: Draft): boolean {
+  return draft.comeback === true && canBeComeback(draft)
+}
+
 /** The match fields a complete, scored draft describes; null while the roster or the score is missing. */
 export function matchFieldsOf(draft: Draft): MatchFields | null {
   const teams = draftTeams(draft)
   if (teams === null || draft.score === null) return null
-  return { target: draft.target, teamA: teams.teamA, teamB: teams.teamB, ...scoresOf(draft.score, draft.target) }
+  const scores = scoresOf(draft.score, draft.target)
+  return { target: draft.target, teamA: teams.teamA, teamB: teams.teamB, ...scores, comeback: draftComeback(draft) }
 }
 
 /** Edit screen: a local draft opened directly on the score step, format derived from the team sizes. */
@@ -85,11 +91,12 @@ export function matchToDraft(match: Match): Draft {
     activeSlot: NO_ACTIVE_SLOT,
     score: scoreOf(match),
     step: 'score',
+    comeback: isComeback(match),
   }
 }
 
 /**
- * Edit screen save: the stored match with the draft's teams, target and score. Keeps id, seq, createdAt and
+ * Edit screen save: the stored match with the draft's teams, target, score and comeback. Keeps id, seq, createdAt and
  * playedAt (the date is not editable in v1) and stamps updatedAt. Throws on an incomplete or unscored draft:
  * callers gate the save button with `isDraftChanged`.
  */
@@ -119,6 +126,7 @@ export function isDraftChanged(draft: Draft, base: Match): boolean {
   if (fields === null) return false
   if (fields.target !== base.target) return true
   if (fields.scoreA !== base.scoreA || fields.scoreB !== base.scoreB) return true
+  if (fields.comeback !== (base.comeback === true)) return true
   return !sameIds(fields.teamA, base.teamA) || !sameIds(fields.teamB, base.teamB)
 }
 

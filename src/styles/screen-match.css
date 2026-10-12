@@ -184,6 +184,11 @@
   line-height: 1.25;
 }
 
+/* « Comeback » box under the ScoreGrid (5-4 in 5 only): the .inline-form-check row, aligned with the roster bar. */
+.comeback-check {
+  padding-inline: var(--s1);
+}
+
 /* Sticky CTA strip: --surface behind the 56 px button, 8 px above the tab bar. margin-top: auto pushes it to the
    bottom when the panel is short; position: sticky keeps it reachable when the panel scrolls (SE, En 10). */
 .match-save {

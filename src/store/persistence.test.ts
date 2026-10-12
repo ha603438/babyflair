@@ -231,3 +231,31 @@ describe('profils', () => {
     expect(store?.matches[1].createdBy).toBeUndefined()
   })
 })
+
+describe('comeback', () => {
+  it('normaliseStore keeps the flag of a 5-4 in 5, drops a stray one to false and leaves older data without it', () => {
+    const match = {
+      id: 'm1',
+      seq: 1,
+      playedAt: '2025-10-06T12:42:00.000Z',
+      target: 5,
+      teamA: ['a'],
+      teamB: ['b'],
+      scoreA: 4,
+      scoreB: 5,
+    }
+    const store = normaliseStore({
+      version: 1,
+      players: [],
+      matches: [
+        { ...match, comeback: true },
+        { ...match, id: 'm2', seq: 2, scoreA: 3, comeback: true },
+        { ...match, id: 'm3', seq: 3, comeback: false },
+        { ...match, id: 'm4', seq: 4, comeback: 'oui' },
+        { ...match, id: 'm5', seq: 5 },
+      ],
+    })
+    expect(store?.matches.map((m) => m.comeback)).toEqual([true, false, false, undefined, undefined])
+    expect(store !== null && 'comeback' in store.matches[4]).toBe(false)
+  })
+})

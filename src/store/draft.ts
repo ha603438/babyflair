@@ -13,6 +13,7 @@ export type DraftAction =
   | { type: 'prefill'; teamA: PlayerId[]; teamB: PlayerId[]; target: Target }
   | { type: 'swapTeam'; team: 1 | 2 } /* 2v2: swaps arrière and avant of a team */
   | { type: 'keepWinners'; winner: Team; teamA: PlayerId[]; teamB: PlayerId[]; target: Target } /* winners stay on their side */
+  | { type: 'setComeback'; value: boolean } /* « Comeback » box, only kept on a 5-4 in 5 */
 
 /** `activeSlot` value meaning "no slot is active" (every required slot is filled). */
 export const NO_ACTIVE_SLOT = -1
@@ -34,7 +35,13 @@ export function initialDraft(settings: Settings): Draft {
     activeSlot: 0,
     score: null,
     step: 'players',
+    comeback: false,
   }
+}
+
+/** The « Comeback » box only applies to a 5-4 in a game to 5 (winners trailing 0-4). */
+export function canBeComeback(draft: Pick<Draft, 'target' | 'score'>): boolean {
+  return draft.target === 5 && draft.score?.loserGoals === 4
 }
 
 function firstEmptySlot(slots: (PlayerId | null)[], format: Format): number {
@@ -64,7 +71,7 @@ function setFormat(draft: Draft, format: Format): Draft {
   // On the result view the control only chooses the format of the next match; the result stays on screen.
   if (draft.step === 'done') return { ...draft, format }
   if (format === draft.format) return draft
-  const base: Draft = { ...draft, format, score: null }
+  const base: Draft = { ...draft, format, score: null, comeback: false }
   if (isDraftComplete(base)) return { ...base, activeSlot: NO_ACTIVE_SLOT, step: 'score' }
   const keepActive = visibleSlots(format).includes(draft.activeSlot)
   const activeSlot = keepActive ? draft.activeSlot : firstEmptySlot(base.slots, format)
@@ -73,7 +80,7 @@ function setFormat(draft: Draft, format: Format): Draft {
 
 function setTarget(draft: Draft, target: Target): Draft {
   if (target === draft.target) return draft
-  return { ...draft, target, score: null }
+  return { ...draft, target, score: null, comeback: false }
 }
 
 function setActiveSlot(draft: Draft, index: number): Draft {
@@ -92,18 +99,37 @@ function pick(draft: Draft, playerId: PlayerId): Draft {
       activeSlot: occupied,
       score: null,
       step: 'players',
+      comeback: false,
     }
   }
   if (!visible.includes(draft.activeSlot)) return draft
   // Drop the player from a hidden slot first so switching back to 2v2 never shows him twice.
   const cleared = draft.slots.map((id) => (id === playerId ? null : id))
-  return settle({ ...draft, slots: withSlot(cleared, draft.activeSlot, playerId), score: null })
+  return settle({ ...draft, slots: withSlot(cleared, draft.activeSlot, playerId), score: null, comeback: false })
 }
 
 function clearSlot(draft: Draft, index: number): Draft {
   if (!visibleSlots(draft.format).includes(index)) return draft
   if (draft.slots[index] === null) return { ...draft, activeSlot: index, step: 'players' }
-  return { ...draft, slots: withSlot(draft.slots, index, null), activeSlot: index, score: null, step: 'players' }
+  const slots = withSlot(draft.slots, index, null)
+  return { ...draft, slots, activeSlot: index, score: null, step: 'players', comeback: false }
+}
+
+function sameScore(a: Score | null, b: Score | null): boolean {
+  if (a === null || b === null) return a === b
+  return a.winner === b.winner && a.loserGoals === b.loserGoals
+}
+
+/** A new score clears the « Comeback » box; tapping the selected score again keeps it. */
+function setScore(draft: Draft, score: Score | null): Draft {
+  if (sameScore(draft.score, score)) return { ...draft, score }
+  return { ...draft, score, comeback: false }
+}
+
+function setComeback(draft: Draft, value: boolean): Draft {
+  const comeback = value && canBeComeback(draft)
+  if (comeback === (draft.comeback === true)) return draft
+  return { ...draft, comeback }
 }
 
 function goToPlayers(draft: Draft): Draft {
@@ -119,7 +145,7 @@ function slotAt(ids: PlayerId[], index: number): PlayerId | null {
 function prefill(draft: Draft, teamA: PlayerId[], teamB: PlayerId[], target: Target): Draft {
   const format: Format = teamA.length > 1 || teamB.length > 1 ? '2v2' : '1v1'
   const slots = [slotAt(teamA, 0), slotAt(teamA, 1), slotAt(teamB, 0), slotAt(teamB, 1)]
-  return settle({ format, target, slots, activeSlot: draft.activeSlot, score: null, step: 'players' })
+  return settle({ format, target, slots, activeSlot: draft.activeSlot, score: null, step: 'players', comeback: false })
 }
 
 function swapTeam(draft: Draft, team: 1 | 2): Draft {
@@ -138,7 +164,7 @@ function keepWinners(draft: Draft, winner: Team, teamA: PlayerId[], teamB: Playe
   const slots: (PlayerId | null)[] = [null, null, null, null]
   slots[first] = slotAt(winners, 0)
   slots[first + 1] = slotAt(winners, 1)
-  return settle({ format, target, slots, activeSlot: draft.activeSlot, score: null, step: 'players' })
+  return settle({ format, target, slots, activeSlot: draft.activeSlot, score: null, step: 'players', comeback: false })
 }
 
 export function draftReducer(draft: Draft, action: DraftAction): Draft {
@@ -154,7 +180,7 @@ export function draftReducer(draft: Draft, action: DraftAction): Draft {
     case 'clearSlot':
       return clearSlot(draft, action.index)
     case 'setScore':
-      return { ...draft, score: action.score }
+      return setScore(draft, action.score)
     case 'goToPlayers':
       return goToPlayers(draft)
     case 'saved':
@@ -167,5 +193,7 @@ export function draftReducer(draft: Draft, action: DraftAction): Draft {
       return swapTeam(draft, action.team)
     case 'keepWinners':
       return keepWinners(draft, action.winner, action.teamA, action.teamB, action.target)
+    case 'setComeback':
+      return setComeback(draft, action.value)
   }
 }
