@@ -11,10 +11,11 @@ import { SectionHeader } from '../../components/SectionHeader'
 import { Sparkline } from '../../components/Sparkline'
 import { HistoryRow } from '../../components/rows'
 import type { Guard } from '../../profile/useWriteGuard'
-import { fmtInt } from '../../format'
+import { fmtInt, fmtPercent } from '../../format'
 import { back, hrefOf, navigate } from '../../router'
 import { playerHasMatches } from '../../store'
-import { currentStreak, favouritePartner, positionRecord, sevenDayDelta } from '../../stats'
+import { bestAlly, currentStreak, favouritePartner, nemesis, positionRecord, sevenDayDelta } from '../../stats'
+import type { Rivalry } from '../../stats'
 import type { Match, MatchId, Player, PlayerId, PlayerStats } from '../../types'
 import type { ReplayData, ScreenContext } from './context'
 import {
@@ -178,6 +179,49 @@ function PositionsCard({ playerId, matches }: { playerId: PlayerId; matches: Mat
 
 type PartnerProps = { playerId: PlayerId; matches: Match[]; players: Map<PlayerId, Player> }
 
+type RivalryRowProps = { label: string; rivalry: Rivalry | null; text: (r: Rivalry) => string }
+
+function RivalryRow({ label, rivalry, text }: RivalryRowProps) {
+  const body = (
+    <>
+      <p className="partner-label">{label}</p>
+      <p className="partner-value">{rivalry === null ? 'Pas encore assez de matchs ensemble' : text(rivalry)}</p>
+    </>
+  )
+  if (rivalry === null) return <div className="rivalry">{body}</div>
+  return (
+    <a className="rivalry partner--link" href={hrefOf({ name: 'joueur', id: rivalry.playerId })}>
+      {body}
+    </a>
+  )
+}
+
+function nameOf(players: Map<PlayerId, Player>, id: PlayerId): string {
+  return players.get(id)?.name ?? '?'
+}
+
+function RivalriesCard({ playerId, matches, players }: PartnerProps) {
+  const ally = bestAlly(playerId, matches, players)
+  const enemy = nemesis(playerId, matches, players)
+  if (ally === null && enemy === null) return null
+  return (
+    <section className="card card-pad rivalries">
+      <RivalryRow
+        label="Meilleur allié"
+        rivalry={ally}
+        text={(r) =>
+          `${nameOf(players, r.playerId)} · ${r.wins} V sur ${r.matches} ensemble (${fmtPercent(r.wins / r.matches)})`
+        }
+      />
+      <RivalryRow
+        label="Némésis"
+        rivalry={enemy}
+        text={(r) => `${nameOf(players, r.playerId)} · ${r.losses} défaites en ${r.matches} matchs face à ce joueur`}
+      />
+    </section>
+  )
+}
+
 function PartnerCard({ playerId, matches, players }: PartnerProps) {
   if (!hasTwoVsTwo(playerId, matches)) return null
   const partner = favouritePartner(playerId, matches, players)
@@ -205,6 +249,7 @@ function Details({ player, stats, replay, matches }: DetailsProps) {
       <StatsCard stats={stats} matches={replay.matches} />
       <PositionsCard playerId={player.id} matches={matches} />
       <PartnerCard playerId={player.id} matches={matches} players={replay.players} />
+      <RivalriesCard playerId={player.id} matches={matches} players={replay.players} />
     </>
   )
 }

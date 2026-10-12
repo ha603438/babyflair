@@ -6,6 +6,12 @@ export type ChangelogEntry = { id: string; date: string; title: string; items: s
 
 export const CHANGELOG: ChangelogEntry[] = [
   {
+    id: '2026-10-12-6',
+    date: '2026-10-12',
+    title: 'Meilleur allié et némésis',
+    items: ['Sur la page de chaque joueur : son meilleur allié et sa némésis (à partir de 3 matchs ensemble ou face à face).'],
+  },
+  {
     id: '2026-10-12-5',
     date: '2026-10-12',
     title: 'Profils',

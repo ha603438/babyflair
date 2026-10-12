@@ -15,6 +15,8 @@ import {
   positionOf,
   positionRecord,
   sideRecord,
+  bestAlly,
+  nemesis,
 } from './stats'
 import type { HistoryPoint, Match, MatchId, Player, PlayerId, PlayerStats, Ranking, Settings, Store, Target } from './types'
 
@@ -618,5 +620,30 @@ describe('positions and sides', () => {
   })
   it('counts the winning side', () => {
     expect(sideRecord(matches)).toEqual({ blancs: 2, noirs: 1 })
+  })
+})
+
+describe('best ally and nemesis', () => {
+  const m = (id: string, teamA: string[], teamB: string[], aWins: boolean): Match => ({
+    id, seq: 1, playedAt: '2026-10-12T10:00:00.000Z', createdAt: '2026-10-12T10:00:00.000Z',
+    updatedAt: '2026-10-12T10:00:00.000Z', target: 5, teamA, teamB, scoreA: aWins ? 5 : 2, scoreB: aWins ? 2 : 5,
+  })
+  const names = new Map(['b', 'c', 'd', 'e'].map((id) => [id, { id, name: id.toUpperCase(), isGuest: false, createdAt: '2026-01-01T00:00:00.000Z' }]))
+  const matches = [
+    m('1', ['a', 'b'], ['c', 'd'], true), m('2', ['a', 'b'], ['c', 'e'], true), m('3', ['b', 'a'], ['d', 'c'], true),
+    m('4', ['a', 'e'], ['c', 'b'], false), m('5', ['a', 'e'], ['c', 'd'], false), m('6', ['e', 'a'], ['b', 'c'], true),
+    m('7', ['a'], ['c'], false),
+  ]
+  it('picks the teammate with the best record together', () => {
+    expect(bestAlly('a', matches, names)).toEqual({ playerId: 'b', matches: 3, wins: 3, losses: 0 })
+  })
+  it('picks the opponent with the worst record against', () => {
+    const worst = nemesis('a', matches, names)
+    expect(worst?.playerId).toBe('c')
+    expect(worst).toMatchObject({ matches: 7, wins: 4, losses: 3 })
+  })
+  it('needs at least 3 matches', () => {
+    expect(bestAlly('a', matches.slice(0, 2), names)).toBeNull()
+    expect(nemesis('a', matches.slice(0, 2), names)).toBeNull()
   })
 })

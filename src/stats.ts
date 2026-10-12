@@ -424,3 +424,56 @@ export function sideRecord(matches: Match[]): { blancs: number; noirs: number } 
   }
   return { blancs, noirs }
 }
+
+// ---------------------------------------------------------------------------
+// Rivalries: best ally (teammate) and nemesis (opponent), over at least RIVALRY_MIN_MATCHES matches together
+// ---------------------------------------------------------------------------
+
+export const RIVALRY_MIN_MATCHES = 3
+export type Rivalry = { playerId: PlayerId; matches: number; wins: number; losses: number }
+
+function opponentsOf(playerId: PlayerId, match: Match): PlayerId[] {
+  if (match.teamA.includes(playerId)) return match.teamB
+  if (match.teamB.includes(playerId)) return match.teamA
+  return []
+}
+
+function tally(playerId: PlayerId, matches: Match[], others: (match: Match) => PlayerId[]): Rivalry[] {
+  const byId = new Map<PlayerId, Rivalry>()
+  for (const match of matches) {
+    const outcome = outcomeFor(playerId, match)
+    if (outcome === null) continue
+    for (const other of others(match)) {
+      const entry = byId.get(other) ?? { playerId: other, matches: 0, wins: 0, losses: 0 }
+      entry.matches += 1
+      if (outcome === 'win') entry.wins += 1
+      else entry.losses += 1
+      byId.set(other, entry)
+    }
+  }
+  return [...byId.values()].filter((entry) => entry.matches >= RIVALRY_MIN_MATCHES)
+}
+
+function byName(players: Map<PlayerId, Player>) {
+  return (a: Rivalry, b: Rivalry): number =>
+    compareNames(players.get(a.playerId)?.name ?? '', players.get(b.playerId)?.name ?? '')
+}
+
+/** Teammate with the best win rate together (≥ 3 shared 2v2 matches); ties → more matches, then name. */
+export function bestAlly(playerId: PlayerId, matches: Match[], players: Map<PlayerId, Player>): Rivalry | null {
+  const partners = (match: Match): PlayerId[] => {
+    const partner = partnerIn(playerId, match)
+    if (partner === null) return []
+    return [partner]
+  }
+  const candidates = tally(playerId, matches, partners)
+  candidates.sort((a, b) => b.wins * a.matches - a.wins * b.matches || b.matches - a.matches || byName(players)(a, b))
+  return candidates[0] ?? null
+}
+
+/** Opponent against whom the win rate is the worst (≥ 3 matches faced, 1v1 or 2v2); ties → more losses, then name. */
+export function nemesis(playerId: PlayerId, matches: Match[], players: Map<PlayerId, Player>): Rivalry | null {
+  const candidates = tally(playerId, matches, (match) => opponentsOf(playerId, match)).filter((r) => r.losses > 0)
+  candidates.sort((a, b) => a.wins * b.matches - b.wins * a.matches || b.losses - a.losses || byName(players)(a, b))
+  return candidates[0] ?? null
+}

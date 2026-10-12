@@ -229,3 +229,7 @@
 .side-line__white { color: var(--text); font-weight: 600; }
 .side-line__black { color: var(--text); font-weight: 600; }
 .tiles--2 { grid-template-columns: repeat(2, minmax(0, 1fr)); }
+
+/* Meilleur allié / Némésis: two rows in one card, each a link to the other player's page. */
+.rivalries { display: flex; flex-direction: column; gap: 12px; }
+.rivalry { display: block; color: inherit; text-decoration: none; }
