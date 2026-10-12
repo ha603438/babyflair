@@ -33,6 +33,8 @@ export type Settings = {
   lastExportAt?: string
   /** Mode partagé: the office code this phone sends to the server. Never exported. */
   officeCode?: string
+  /** Id of the newest Nouveautés entry seen on this phone (tab badge). */
+  seenChangelogId?: string
 }
 
 export type SyncMode = 'local' | 'shared'

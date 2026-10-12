@@ -21,6 +21,8 @@ import { Joueurs } from './screens/Joueurs'
 import { Joueur } from './screens/Joueur'
 import { Reglages } from './screens/Reglages'
 import { CommentCaMarche } from './screens/CommentCaMarche'
+import { Nouveautes } from './screens/Nouveautes'
+import { unseenEntries } from './changelog'
 import { CodeGate } from './screens/CodeGate'
 
 const STORAGE_BLOCKED_TEXT = "Impossible d'enregistrer : le stockage du navigateur est bloqué (navigation privée ?)."
@@ -50,6 +52,8 @@ function Screen({ route }: { route: Route }): ReactNode {
       return <Reglages />
     case 'comment-ca-marche':
       return <CommentCaMarche />
+    case 'nouveautes':
+      return <Nouveautes />
   }
 }
 
@@ -121,12 +125,15 @@ function AppHeader({ route }: { route: Route }) {
       return <Header title="Réglages" back />
     case 'comment-ca-marche':
       return <Header title="Comment ça marche" back />
+    case 'nouveautes':
+      return <Header title="Nouveautés" onBrandDoubleTap={onBrandDoubleTap} />
   }
 }
 
 function AppShell() {
   const route = useRoute()
-  const { draft, draftDispatch, toast, storageBlocked } = useAppState()
+  const { store, draft, draftDispatch, toast, storageBlocked } = useAppState()
+  const newsBadge = unseenEntries(store.settings).length
   const showToast = toast.show
   const mainRef = useRef<HTMLElement>(null)
 
@@ -150,7 +157,7 @@ function AppShell() {
       <main ref={mainRef}>
         <Screen route={route} />
       </main>
-      <TabBar current={route.name} onReselect={onReselect} />
+      <TabBar current={route.name} onReselect={onReselect} newsBadge={newsBadge} />
       <Toast toast={toast.current} onDismiss={toast.dismiss} />
     </div>
   )

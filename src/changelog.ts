@@ -1,0 +1,54 @@
+// Nouveautés : une entrée par mise en ligne, une ligne par changement. Ajouter la plus récente EN TÊTE ;
+// l'onglet affiche une pastille tant que l'entrée la plus récente n'a pas été vue sur ce téléphone.
+import type { Settings } from './types'
+
+export type ChangelogEntry = { id: string; date: string; title: string; items: string[] }
+
+export const CHANGELOG: ChangelogEntry[] = [
+  {
+    id: '2026-10-12-3',
+    date: '2026-10-12',
+    title: 'Mises à jour et nouveautés',
+    items: [
+      'Onglet Nouveautés : la liste des mises à jour de l’app.',
+      'Double-tap sur le blason pour forcer la mise à jour de l’app.',
+      'Date de version affichée dans Réglages.',
+      'Icône d’app corrigée (logo plein cadre).',
+    ],
+  },
+  {
+    id: '2026-10-12-2',
+    date: '2026-10-12',
+    title: 'Identité BabyFlair',
+    items: ['Logo et couleurs bleu, blanc, rouge dans toute l’app.', 'Blason dans l’en-tête de chaque onglet.'],
+  },
+  {
+    id: '2026-10-12-1',
+    date: '2026-10-12',
+    title: 'Classement partagé',
+    items: [
+      'Les joueurs et les matchs sont partagés entre tous les téléphones.',
+      'Code du bureau demandé une fois par téléphone.',
+      'Synchronisation automatique à l’ouverture et toutes les 20 secondes.',
+    ],
+  },
+  {
+    id: '2026-10-11-1',
+    date: '2026-10-11',
+    title: 'Première version',
+    items: ['Saisie des matchs 1v1 et 2v2, en 5 ou en 10.', 'Classement BabyElo, historique, pages joueur, export JSON.'],
+  },
+]
+
+/** Entries newer than the last one seen on this phone (all of them before the first visit). */
+export function unseenEntries(settings: Pick<Settings, 'seenChangelogId'>, entries: ChangelogEntry[] = CHANGELOG): ChangelogEntry[] {
+  const seen = settings.seenChangelogId
+  if (seen === undefined) return entries
+  const index = entries.findIndex((entry) => entry.id === seen)
+  if (index === -1) return entries
+  return entries.slice(0, index)
+}
+
+export function latestChangelogId(entries: ChangelogEntry[] = CHANGELOG): string | undefined {
+  return entries[0]?.id
+}

@@ -111,14 +111,15 @@ describe('Header', () => {
 })
 
 describe('TabBar', () => {
-  it('renders the 4 tabs in order as links with hrefOf and aria-current on the active one', () => {
+  it('renders the 5 tabs in order as links with hrefOf and aria-current on the active one', () => {
     const html = render(TabBar, { current: 'historique' })
     const links = html.match(/<a [^>]*>/g) ?? []
-    expect(links).toHaveLength(4)
+    expect(links).toHaveLength(5)
     expect(links[0]).toContain('href="#/"')
     expect(links[1]).toContain('href="#/match"')
     expect(links[2]).toContain('href="#/historique"')
     expect(links[3]).toContain('href="#/joueurs"')
+    expect(links[4]).toContain('href="#/nouveautes"')
     expect(links[2]).toContain('aria-current="page"')
     expect(links[2]).toContain('tab-active')
     expect(html.match(/aria-current="page"/g)).toHaveLength(1)

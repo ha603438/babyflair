@@ -11,6 +11,7 @@ export type Route =
   | { name: 'joueur'; id: PlayerId }
   | { name: 'reglages' }
   | { name: 'comment-ca-marche' }
+  | { name: 'nouveautes' }
 
 const HOME: Route = { name: 'classement' }
 
@@ -47,7 +48,7 @@ function parseJoueurs(segments: string[], params: URLSearchParams): Route {
   return { name: 'joueurs' }
 }
 
-function parseSimple(segments: string[], name: 'reglages' | 'comment-ca-marche'): Route {
+function parseSimple(segments: string[], name: 'reglages' | 'comment-ca-marche' | 'nouveautes'): Route {
   if (segments.length === 1) return { name }
   return HOME
 }
@@ -72,6 +73,8 @@ export function parseHash(hash: string): Route {
       return parseSimple(segments, 'reglages')
     case 'comment-ca-marche':
       return parseSimple(segments, 'comment-ca-marche')
+    case 'nouveautes':
+      return parseSimple(segments, 'nouveautes')
     default:
       return HOME
   }
@@ -98,6 +101,8 @@ export function hrefOf(route: Route): string {
       return '#/reglages'
     case 'comment-ca-marche':
       return '#/comment-ca-marche'
+    case 'nouveautes':
+      return '#/nouveautes'
   }
 }
 
