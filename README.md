@@ -56,7 +56,7 @@ uniquement). Mise en place :
 1. Exécuter `docs/supabase/notifications.sql` (tables `calls`, `call_players`, `push_subscriptions`).
 2. Générer une paire de clés VAPID (`npx web-push generate-vapid-keys`) et déployer la fonction
    `supabase/functions/notify-call` avec les secrets `VAPID_PUBLIC_KEY`, `VAPID_PRIVATE_KEY` et `VAPID_SUBJECT`
-   (`mailto:…`) : `supabase secrets set VAPID_PUBLIC_KEY=… VAPID_PRIVATE_KEY=… VAPID_SUBJECT=mailto:…` puis
+   (adresse de l’app, aucun mail n’est envoyé) : `supabase secrets set VAPID_PUBLIC_KEY=… VAPID_PRIVATE_KEY=… VAPID_SUBJECT=https://ha603438.github.io/babyflair/` puis
    `supabase functions deploy notify-call`. L'app l'appelle sur `${VITE_SUPABASE_URL}/functions/v1/notify-call`.
 3. Variable de dépôt `VITE_VAPID_PUBLIC_KEY` (la clé publique, même valeur que le secret) ; en local, dans
    `.env.development.local`.
