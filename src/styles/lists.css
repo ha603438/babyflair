@@ -133,87 +133,105 @@
   font-size: var(--fs-body);
 }
 
-/* ---------- HistoryRow (§3.3) ---------- */
+/* ---------- HistoryRow: Blancs | score | Noirs, one line per player ---------- */
 .row--history {
-  min-height: 72px;
+  display: block;
+  min-height: 0;
+  padding: 10px var(--s4);
 }
 
-.row--history .row-leading {
-  width: 44px;
-  justify-content: flex-start;
+.hr-meta {
+  display: flex;
+  align-items: center;
+  gap: var(--s2);
+  margin-bottom: 4px;
 }
 
 .hr-time {
-  font-size: var(--fs-caption);
-  color: var(--text-2);
+  font-size: var(--fs-micro);
+  color: var(--text-3);
   font-variant-numeric: tabular-nums;
 }
 
-/* [winners] [score] [en 5] [losers] [modifié]: names shrink and ellipsize, score and pills never do. */
-.hr-line {
-  display: flex;
-  align-items: baseline;
-  gap: var(--s2);
-  min-width: 0;
-}
-
-.hr-win,
-.hr-lose {
-  flex: 0 1 auto;
-  min-width: 0;
-  overflow: hidden;
-  text-overflow: ellipsis;
-  white-space: nowrap;
-}
-
-.hr-win {
-  font-size: var(--fs-body);
-  font-weight: 600;
-  color: var(--text);
-}
-
-.hr-lose {
-  font-size: var(--fs-label);
-  font-weight: 400;
-  color: var(--text-2);
-}
-
-.hr-score {
-  flex: 0 0 auto;
-  font-size: 17px;
-  font-weight: 700;
-  white-space: nowrap;
-}
-
 .hr-edited {
-  flex: 0 0 auto;
   font-size: var(--fs-tab);
   font-weight: 500;
   color: var(--text-3);
 }
 
-.hr-deltas {
+.hr-grid {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) auto minmax(0, 1fr);
+  align-items: center;
+  gap: var(--s3);
+}
+
+.hr-team {
   display: flex;
-  flex-wrap: wrap;
-  margin-top: 2px;
+  flex-direction: column;
+  gap: 2px;
+  min-width: 0;
+}
+
+.hr-team--b {
+  align-items: flex-end;
+}
+
+.hr-p {
+  display: flex;
+  align-items: baseline;
+  gap: 6px;
+  max-width: 100%;
+  min-width: 0;
+}
+
+.hr-name {
+  min-width: 0;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+  font-size: var(--fs-label);
+  font-weight: 500;
+  color: var(--text-2);
+}
+
+.hr-team.is-winner .hr-name {
+  font-weight: 700;
+  color: var(--text);
+}
+
+.hr-p .delta {
+  flex: 0 0 auto;
   font-size: var(--fs-caption);
-  font-weight: 600;
   font-variant-numeric: tabular-nums;
 }
 
-.hr-d {
+/* Joueur page: the player of the page stands out in the row. */
+.hr-p.is-me .hr-name {
+  color: var(--accent);
+}
+
+.hr-score {
+  display: flex;
+  align-items: baseline;
+  gap: 4px;
+  font-size: 20px;
+  font-weight: 800;
   white-space: nowrap;
+  font-variant-numeric: tabular-nums;
 }
 
-.hr-sep {
+.hr-s {
   color: var(--text-3);
-  white-space: pre;
 }
 
-/* Joueur page: the other players' deltas are plain --text-2 (§3.7), the emphasised one sits in the right column. */
-.hr-d--muted,
-.hr-d--muted .delta {
-  color: var(--text-2);
+.hr-s--win {
+  color: var(--text);
+}
+
+.hr-dash {
+  color: var(--text-3);
+  font-weight: 600;
 }
 
 /* ---------- SettingRow (§3.8) ---------- */

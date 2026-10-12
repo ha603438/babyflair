@@ -1,6 +1,5 @@
-import { Fragment } from 'react'
 import type { MouseEventHandler, ReactNode } from 'react'
-import type { Match, MatchPlayerResult, MatchResult, Player, PlayerId, PlayerStats } from '../types'
+import type { Match, MatchResult, Player, PlayerId, PlayerStats } from '../types'
 import { daysSince, fmtInt, fmtPercent, fmtScore, fmtTime, plural } from '../format'
 import { sevenDayDelta, teamLabel } from '../stats'
 import { Badge } from './Badge'
@@ -148,92 +147,69 @@ export type HistoryRowProps = {
   emphasisId?: PlayerId
 }
 
-type Sides = { winners: PlayerId[]; losers: PlayerId[]; winScore: number; loseScore: number }
-
-function sidesOf(match: Match): Sides {
-  if (match.scoreA === match.target) {
-    return { winners: match.teamA, losers: match.teamB, winScore: match.scoreA, loseScore: match.scoreB }
-  }
-  return { winners: match.teamB, losers: match.teamA, winScore: match.scoreB, loseScore: match.scoreA }
-}
-
 function isEdited(match: Match): boolean {
   return Date.parse(match.updatedAt) > Date.parse(match.createdAt)
-}
-
-function orderedResults(result: MatchResult | undefined, order: PlayerId[]): MatchPlayerResult[] {
-  if (!result) return []
-  const byId = new Map(result.perPlayer.map((entry) => [entry.playerId, entry]))
-  const entries: MatchPlayerResult[] = []
-  for (const id of order) {
-    const entry = byId.get(id)
-    if (entry) entries.push(entry)
-  }
-  return entries
 }
 
 function nameOf(players: Map<PlayerId, Player>, id: PlayerId): string {
   return players.get(id)?.name ?? '?'
 }
 
-function deltaTone(delta: number, muted: boolean): string {
-  if (muted) return 'hr-d hr-d--muted'
-  if (delta > 0) return 'hr-d pos'
-  if (delta < 0) return 'hr-d neg'
-  return 'hr-d muted'
+type TeamSideProps = {
+  ids: PlayerId[]
+  side: 'a' | 'b'
+  winner: boolean
+  players: Map<PlayerId, Player>
+  deltas: Map<PlayerId, number>
+  emphasisId?: PlayerId
 }
 
-type DeltaLineProps = { entries: MatchPlayerResult[]; players: Map<PlayerId, Player>; muted: boolean }
-
-function DeltaLine({ entries, players, muted }: DeltaLineProps) {
+/** One team, one line per player (arrière first in 2v2): name and its delta, never truncated to « … » as a pair. */
+function TeamSide({ ids, side, winner, players, deltas, emphasisId }: TeamSideProps) {
+  const classes = ['hr-team', `hr-team--${side}`]
+  if (winner) classes.push('is-winner')
   return (
-    <div className="hr-deltas">
-      {entries.map((entry, i) => (
-        <Fragment key={entry.playerId}>
-          {i > 0 && (
-            <span className="hr-sep" aria-hidden="true">
-              {' · '}
-            </span>
-          )}
-          <span className={deltaTone(entry.delta, muted)}>
-            {nameOf(players, entry.playerId)} <Delta value={entry.delta} size={13} />
-          </span>
-        </Fragment>
-      ))}
+    <div className={classes.join(' ')}>
+      {ids.map((id) => {
+        const delta = deltas.get(id)
+        return (
+          <div key={id} className={id === emphasisId ? 'hr-p is-me' : 'hr-p'}>
+            <span className="hr-name">{nameOf(players, id)}</span>
+            {delta !== undefined && <Delta value={delta} size={13} />}
+          </div>
+        )
+      })}
     </div>
   )
 }
 
-function deltaLineNode(entries: MatchPlayerResult[], players: Map<PlayerId, Player>, muted: boolean): ReactNode {
-  if (entries.length === 0) return undefined
-  return <DeltaLine entries={entries} players={players} muted={muted} />
-}
-
+/**
+ * Historique / Joueur row: Blancs on the left, Noirs on the right, the score in the middle, every player on their own
+ * line with their delta. The whole row is the link to the match detail (no chevron).
+ */
 export function HistoryRow({ match, result, players, href, emphasisId }: HistoryRowProps) {
-  const sides = sidesOf(match)
-  const entries = orderedResults(result, [...sides.winners, ...sides.losers])
-  const emphasised = entries.find((entry) => entry.playerId === emphasisId)
-  const lineEntries = emphasised ? entries.filter((entry) => entry !== emphasised) : entries
-  const subtitle = deltaLineNode(lineEntries, players, Boolean(emphasised))
-  const title = (
-    <div className="hr-line">
-      <span className="hr-win">{teamLabel(sides.winners, players)}</span>
-      <span className="hr-score score">{fmtScore(sides.winScore, sides.loseScore)}</span>
-      {match.target === 5 && <span className="pill">en 5</span>}
-      <span className="hr-lose">{teamLabel(sides.losers, players)}</span>
-      {isEdited(match) && <span className="hr-edited">modifié</span>}
-    </div>
-  )
+  const aWon = match.scoreA === match.target
+  const deltas = new Map((result?.perPlayer ?? []).map((entry) => [entry.playerId, entry.delta]))
+  const label = `${teamLabel(match.teamA, players)} ${fmtScore(match.scoreA, match.scoreB)} ${teamLabel(match.teamB, players)}`
   return (
-    <ListRow
-      className="row--history"
-      href={href}
-      chevron
-      leading={<time className="hr-time" dateTime={match.playedAt}>{fmtTime(match.playedAt)}</time>}
-      title={title}
-      subtitle={subtitle}
-      trailing={emphasised ? <Delta value={emphasised.delta} size={17} /> : undefined}
-    />
+    <a className="row row-divider row--tap row--history" href={href} aria-label={label}>
+      <div className="hr-meta">
+        <time className="hr-time" dateTime={match.playedAt}>
+          {fmtTime(match.playedAt)}
+        </time>
+        {match.target === 5 && <span className="pill">en 5</span>}
+        {isEdited(match) && <span className="hr-edited">modifié</span>}
+      </div>
+      <div className="hr-grid">
+        <TeamSide ids={match.teamA} side="a" winner={aWon} players={players} deltas={deltas} emphasisId={emphasisId} />
+        <div className="hr-score score">
+          <span className={aWon ? 'hr-s hr-s--win' : 'hr-s'}>{match.scoreA}</span>
+          <span className="hr-dash">–</span>
+          <span className={aWon ? 'hr-s' : 'hr-s hr-s--win'}>{match.scoreB}</span>
+        </div>
+        <TeamSide ids={match.teamB} side="b" winner={!aWon} players={players} deltas={deltas} emphasisId={emphasisId} />
+      </div>
+    </a>
   )
 }
 

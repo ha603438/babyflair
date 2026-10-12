@@ -199,25 +199,21 @@ describe('PlayerRow', () => {
 })
 
 describe('HistoryRow', () => {
-  it('shows time, winners first, score, losers, per-player deltas and a chevron', () => {
+  it('shows Blancs left, the score, Noirs right, one line per player with its delta, and no chevron', () => {
     const html = historyRow()
-    expect(html).toContain('row--history')
-    expect(html).toContain('href="#/historique/m1"')
+    expect(html.startsWith('<a class="row row-divider row--tap row--history" href="#/historique/m1"')).toBe(true)
     expect(html).toMatch(/<time class="hr-time" datetime="[^"]+">\d{2}:\d{2}<\/time>/i)
-    expect(html).toContain('class="hr-win">Alice &amp; Bob<')
-    expect(html).toContain('class="hr-score score">10 – 8<')
-    expect(html).toContain('class="hr-lose">Chloé &amp; Dan<')
-    expect(html).not.toContain('pill')
-    expect(html).not.toContain('modifié')
-    // deltas in winners-then-losers order
-    const order = ['Alice', 'Bob', 'Chloé', 'Dan'].map((n) => html.indexOf(`${n} <span class="delta`))
+    // team A (Chloé, Dan) on the left, team B (Alice, Bob) on the right, every name in full
+    const order = ['Chloé', 'Dan', 'Alice', 'Bob'].map((n) => html.indexOf(`class="hr-name">${n}<`))
     expect(order.every((i) => i >= 0)).toBe(true)
     expect([...order].sort((a, b) => a - b)).toEqual(order)
-    expect(html).toContain('hr-d pos">Alice <span class="delta delta--13 pos"')
-    expect(html).toContain(
-      `hr-d neg">Chloé <span class="delta delta--13 neg" aria-label="moins 13 points">${MINUS}13<`,
-    )
-    expect(html).toContain('row-chevron')
+    expect(html).toContain('class="hr-team hr-team--b is-winner"')
+    expect(html).toContain('class="hr-s">8<')
+    expect(html).toContain('class="hr-s hr-s--win">10<')
+    expect(html).toContain(`aria-label="moins 13 points">${MINUS}13<`)
+    expect(html).not.toContain('row-chevron')
+    expect(html).not.toContain('pill')
+    expect(html).not.toContain('modifié')
   })
 
   it('shows the « en 5 » pill and « modifié » when relevant', () => {
@@ -225,19 +221,17 @@ describe('HistoryRow', () => {
     const html = historyRow({ match: edited })
     expect(html).toContain('class="pill">en 5<')
     expect(html).toContain('class="hr-edited">modifié<')
-    expect(html).toContain('class="hr-win">Chloé &amp; Dan<')
-    expect(html).toContain('>5 – 3<')
+    expect(html).toContain('class="hr-team hr-team--a is-winner"')
   })
 
-  it('emphasises one player: their delta in the right column, the others muted on line 2', () => {
-    const html = historyRow({ emphasisId: 'a' })
-    expect(html).toContain('row-trailing-main"><span class="delta delta--17 pos" aria-label="plus 16 points">+16<')
-    expect(html).toContain('hr-d hr-d--muted">Bob <')
-    expect(html).not.toContain('>Alice <span class="delta delta--13')
+  it('highlights the player of the page', () => {
+    expect(historyRow({ emphasisId: 'a' })).toContain('class="hr-p is-me"><span class="hr-name">Alice<')
   })
 
-  it('omits the delta line without a result', () => {
-    expect(historyRow({ result: undefined })).not.toContain('hr-deltas')
+  it('shows names without deltas when there is no result', () => {
+    const html = historyRow({ result: undefined })
+    expect(html).toContain('class="hr-name">Alice<')
+    expect(html).not.toContain('class="delta')
   })
 })
 

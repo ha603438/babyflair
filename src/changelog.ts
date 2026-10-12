@@ -9,7 +9,9 @@ export const CHANGELOG: ChangelogEntry[] = [
     id: '2026-10-12-7',
     date: '2026-10-12',
     title: 'Nouveau match en un tap',
-    items: ['Bouton « ＋ Match » en haut de chaque onglet.', '« Proposer un baby » devient un lien plus discret sous le classement.'],
+    items: [
+      'Historique plus lisible : Blancs à gauche, Noirs à droite, chaque joueur en entier avec ses points.',
+      'Bouton « ＋ Match » en haut de chaque onglet.', '« Proposer un baby » devient un lien plus discret sous le classement.'],
   },
   {
     id: '2026-10-12-6',
