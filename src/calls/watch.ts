@@ -21,7 +21,7 @@ export function callToShow(input: WatchInput): WatchOutput {
   if (input.forcedId !== undefined) {
     const forced = input.calls.find((call) => call.id === input.forcedId)
     if (forced === undefined && input.awaitingFirstSync) return null
-    if (forced === undefined || !isCallOpen(forced, input.now)) return { id: input.forcedId, call: null }
+    if (forced === undefined || !isCallOpen(forced, input.now, input.callPlayers)) return { id: input.forcedId, call: null }
     return { id: forced.id, call: forced }
   }
   const open = openCallFor(input.calls, input.callPlayers, input.viewerId, input.now)

@@ -262,9 +262,10 @@ export function createApi(deps: ApiDeps): RemoteApi {
     return (await send(deps, 'POST', 'rpc/office_ok', {})) === true
   }
 
+  // Calls of the last 45 minutes: a full call outlives its 5-minute recruiting window (see calls.ts isCallOpen).
   function openCallsPath(now: Date): string {
-    const after = encodeURIComponent(now.toISOString())
-    return `calls?select=*,call_players(*)&closed_at=is.null&expires_at=gt.${after}&order=created_at.asc`
+    const after = encodeURIComponent(new Date(now.getTime() - 45 * 60 * 1000).toISOString())
+    return `calls?select=*,call_players(*)&closed_at=is.null&created_at=gt.${after}&order=created_at.asc`
   }
 
   async function fetchCalls(now: Date = new Date()): Promise<CallsData> {

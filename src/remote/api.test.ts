@@ -115,7 +115,7 @@ describe('createApi', () => {
     await api.deletePlayer('p1')
     expect(calls[0].url).toBe('https://x.supabase.co/rest/v1/players?select=*&order=created_at.asc')
     expect(calls[1].url).toBe('https://x.supabase.co/rest/v1/matches?select=*&order=seq.asc')
-    expect(calls[2].url).toMatch(/^https:\/\/x\.supabase\.co\/rest\/v1\/calls\?select=\*,call_players\(\*\)&closed_at=is\.null&expires_at=gt\./)
+    expect(calls[2].url).toMatch(/^https:\/\/x\.supabase\.co\/rest\/v1\/calls\?select=\*,call_players\(\*\)&closed_at=is\.null&created_at=gt\./)
     for (const call of calls) {
       expect(call.headers.apikey).toBe('anon-key')
       expect(call.headers.Authorization).toBe('Bearer anon-key')
@@ -156,7 +156,7 @@ describe('createApi', () => {
       callPlayers: [{ callId: 'c1', playerId: 'p1', joinedAt: '2025-10-06T12:00:00.000Z' }],
     }
     expect(await api.fetchCalls(new Date('2025-10-06T12:10:00.000Z'))).toEqual(expected)
-    expect(calls[0].url).toContain('expires_at=gt.2025-10-06T12%3A10%3A00.000Z')
+    expect(calls[0].url).toContain('created_at=gt.2025-10-06T11%3A25%3A00.000Z')
     expect(await api.fetchAll()).toMatchObject(expected)
   })
 

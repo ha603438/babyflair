@@ -10,6 +10,7 @@ export const CHANGELOG: ChangelogEntry[] = [
     date: '2026-10-12',
     title: 'Proposer un baby',
     items: [
+      'Un appel sans 4 joueurs au bout de 5 minutes est annulé.',
       'Celui qui propose le baby ne reçoit plus sa propre notification.',
       '« Proposer un baby » sur le classement : une notification part sur tous les téléphones abonnés.',
       'Chacun répond « Je suis chaud » ; à 4, « Former les équipes » compose des équipes équilibrées et ouvre le match.',

@@ -3,7 +3,10 @@
 import type { Call, CallPlayer, Player, PlayerId } from '../types'
 
 export const CALL_CAPACITY = 4
-export const CALL_DURATION_MS = 45 * 60 * 1000
+/** Recruiting window: without 4 players after 5 minutes, the call is over (stored as expires_at). */
+export const CALL_RECRUIT_MS = 5 * 60 * 1000
+/** A full call stays open this long after its creation, so the 4 players can still « Former les équipes ». */
+export const CALL_FULL_MS = 45 * 60 * 1000
 
 export const CALL_COPY = {
   propose: 'Proposer un baby',
@@ -29,7 +32,7 @@ export function newCall(id: string, createdBy: PlayerId, now: Date): Call {
   return {
     id,
     createdAt: now.toISOString(),
-    expiresAt: new Date(now.getTime() + CALL_DURATION_MS).toISOString(),
+    expiresAt: new Date(now.getTime() + CALL_RECRUIT_MS).toISOString(),
     createdBy,
   }
 }
@@ -38,10 +41,15 @@ export function newCallPlayer(callId: string, playerId: PlayerId, now: Date): Ca
   return { callId, playerId, joinedAt: now.toISOString() }
 }
 
-/** Not closed and not past expires_at (expired calls are simply ignored client-side: no server cron). */
-export function isCallOpen(call: Call, now: Date): boolean {
+/**
+ * Not closed, and either still recruiting (before expires_at = 5 min) or full with its 4 players (until 45 min after
+ * creation). Expired calls are simply ignored client-side: no server cron.
+ */
+export function isCallOpen(call: Call, now: Date, callPlayers: CallPlayer[] = []): boolean {
   if (call.closedAt !== undefined) return false
-  return parseTime(call.expiresAt) > now.getTime()
+  if (parseTime(call.expiresAt) > now.getTime()) return true
+  if (!isCallFull(call.id, callPlayers)) return false
+  return parseTime(call.createdAt) + CALL_FULL_MS > now.getTime()
 }
 
 export function participantIdsOf(callId: string, callPlayers: CallPlayer[]): PlayerId[] {
@@ -71,15 +79,15 @@ export function openCallFor(
   now: Date,
 ): Call | null {
   const candidates = calls
-    .filter((call) => isCallOpen(call, now))
+    .filter((call) => isCallOpen(call, now, callPlayers))
     .filter((call) => !isCallFull(call.id, callPlayers) || isInCall(call.id, callPlayers, viewerId))
     .sort((a, b) => parseTime(b.createdAt) - parseTime(a.createdAt))
   return candidates[0] ?? null
 }
 
 /** Any open call, full or not: « Proposer un baby » reopens it instead of creating a second one. */
-export function anyOpenCall(calls: Call[], now: Date): Call | null {
-  const open = calls.filter((call) => isCallOpen(call, now)).sort((a, b) => parseTime(b.createdAt) - parseTime(a.createdAt))
+export function anyOpenCall(calls: Call[], now: Date, callPlayers: CallPlayer[] = []): Call | null {
+  const open = calls.filter((call) => isCallOpen(call, now, callPlayers)).sort((a, b) => parseTime(b.createdAt) - parseTime(a.createdAt))
   return open[0] ?? null
 }
 

@@ -54,7 +54,7 @@ Deno.serve(async (req) => {
   await Promise.all(
     targets.map(async (s) => {
       try {
-        await webpush.sendNotification({ endpoint: s.endpoint, keys: { p256dh: s.p256dh, auth: s.auth } }, payload, { TTL: 1800 })
+        await webpush.sendNotification({ endpoint: s.endpoint, keys: { p256dh: s.p256dh, auth: s.auth } }, payload, { TTL: 300 })
         sent += 1
       } catch (error) {
         failed += 1

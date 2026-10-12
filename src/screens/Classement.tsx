@@ -20,7 +20,7 @@ export function Classement() {
 
   // A call already open (full or not) is simply shown again instead of creating a second one.
   function onPropose(): void {
-    const open = anyOpenCall(app.store.calls, new Date())
+    const open = anyOpenCall(app.store.calls, new Date(), app.store.callPlayers)
     if (open !== null) {
       requestCall(open.id)
       return

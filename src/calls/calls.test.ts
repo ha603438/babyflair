@@ -2,7 +2,8 @@ import { describe, expect, it } from 'vitest'
 import type { Call, CallPlayer, Player } from '../types'
 import {
   anyOpenCall,
-  CALL_DURATION_MS,
+  CALL_FULL_MS,
+  CALL_RECRUIT_MS,
   canFormTeams,
   isCallFull,
   isCallOpen,
@@ -35,10 +36,11 @@ const PLAYERS = new Map<string, Player>(
 )
 
 describe('newCall / newCallPlayer', () => {
-  it('expires 45 minutes after creation', () => {
+  it('recruits for 5 minutes after creation', () => {
     const created = newCall('c1', 'alice', NOW)
-    expect(created).toEqual({ id: 'c1', createdAt: NOW.toISOString(), expiresAt: later(45), createdBy: 'alice' })
-    expect(CALL_DURATION_MS).toBe(45 * 60 * 1000)
+    expect(created).toEqual({ id: 'c1', createdAt: NOW.toISOString(), expiresAt: later(5), createdBy: 'alice' })
+    expect(CALL_RECRUIT_MS).toBe(5 * 60 * 1000)
+    expect(CALL_FULL_MS).toBe(45 * 60 * 1000)
     expect(newCallPlayer('c1', 'bob', NOW)).toEqual({ callId: 'c1', playerId: 'bob', joinedAt: NOW.toISOString() })
   })
 })
@@ -163,5 +165,21 @@ describe('callToShow', () => {
 
   it('waits for the first sync before declaring a forced call unknown', () => {
     expect(callToShow({ ...base, calls: [], forcedId: 'c1', awaitingFirstSync: true, hasSeen: () => false })).toBeNull()
+  })
+})
+
+describe('call lifetime', () => {
+  const call = newCall('c1', 'a', NOW)
+  const at = (minutes: number) => new Date(NOW.getTime() + minutes * 60 * 1000)
+  const joined = (ids: string[]) => ids.map((id) => newCallPlayer('c1', id, NOW))
+  it('is over after 5 minutes without 4 players', () => {
+    expect(isCallOpen(call, at(4), joined(['a', 'b', 'c']))).toBe(true)
+    expect(isCallOpen(call, at(6), joined(['a', 'b', 'c']))).toBe(false)
+  })
+  it('stays open for the 4 players until 45 minutes, unless closed', () => {
+    const four = joined(['a', 'b', 'c', 'd'])
+    expect(isCallOpen(call, at(20), four)).toBe(true)
+    expect(isCallOpen(call, at(46), four)).toBe(false)
+    expect(isCallOpen({ ...call, closedAt: at(1).toISOString() }, at(2), four)).toBe(false)
   })
 })
