@@ -49,6 +49,13 @@ const SECTIONS: Section[] = [
       'Débutants.',
   },
   {
+    title: 'Avant et arrière',
+    text:
+      'En 2 contre 2, le premier joueur de chaque équipe est l’arrière, le second l’avant : le bouton « Inverser » ' +
+      'les échange avant d’enregistrer. Ça ne change rien aux points, mais ça permet de voir qui est le meilleur à ' +
+      'chaque poste, et si les Blancs ou les Noirs gagnent plus souvent.',
+  },
+  {
     title: 'Inactifs',
     text:
       'Sans match pendant 30 jours, tu passes dans la section Inactifs, sans perdre aucun point. Un match ' +

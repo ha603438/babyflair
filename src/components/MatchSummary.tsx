@@ -2,6 +2,7 @@ import type { Match, MatchPlayerResult, MatchResult, Player, PlayerId, PlayerSta
 import { fmtInt, fmtOrdinal, fmtScore } from '../format'
 import { teamLabel } from '../stats'
 import { Badge } from './Badge'
+import { POSITION_LABEL, positionOf } from '../stats'
 import { Delta } from './Delta'
 import { ListRow } from './ListRow'
 
@@ -87,9 +88,10 @@ type PlayerLineProps = {
   rookie: boolean
   why: string
   movement: string
+  position: string | null
 }
 
-function PlayerLine({ entry, player, rookie, why, movement }: PlayerLineProps) {
+function PlayerLine({ entry, player, rookie, why, movement, position }: PlayerLineProps) {
   return (
     <ListRow
       className="row--ms"
@@ -99,6 +101,7 @@ function PlayerLine({ entry, player, rookie, why, movement }: PlayerLineProps) {
           <span className="row-name">{player?.name ?? '?'}</span>
           {player?.isGuest && <Badge kind="guest" />}
           {rookie && <Badge kind="rookie" />}
+          {position && <span className="ms-pos">{position}</span>}
         </>
       }
       subtitle={
@@ -144,6 +147,7 @@ export function MatchSummary({ match, result, players, byPlayer, rankBefore, ran
               rookie={isRookie(stats)}
               why={entry.why}
               movement={movementLine(entry, stats, rankBefore, rankAfter)}
+              position={(() => { const p = positionOf(entry.playerId, match); return p === null ? null : POSITION_LABEL[p] })()}
             />
           )
         })}

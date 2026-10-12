@@ -13,7 +13,7 @@ import { HistoryRow } from '../../components/rows'
 import { fmtInt } from '../../format'
 import { back, hrefOf, navigate } from '../../router'
 import { playerHasMatches } from '../../store'
-import { currentStreak, favouritePartner, sevenDayDelta } from '../../stats'
+import { currentStreak, favouritePartner, positionRecord, sevenDayDelta } from '../../stats'
 import type { Match, MatchId, Player, PlayerId, PlayerStats } from '../../types'
 import type { ReplayData, ScreenContext } from './context'
 import {
@@ -157,6 +157,23 @@ function StatsCard({ stats, matches }: { stats: PlayerStats; matches: Map<MatchI
   )
 }
 
+function recordText(record: { wins: number; losses: number }): string {
+  return `${record.wins} V · ${record.losses} D`
+}
+
+function PositionsCard({ playerId, matches }: { playerId: PlayerId; matches: Match[] }) {
+  if (!hasTwoVsTwo(playerId, matches)) return null
+  const record = positionRecord(playerId, matches)
+  return (
+    <section className="card card-pad">
+      <div className="tiles tiles--2">
+        <Tile label="Arrière" value={recordText(record.arriere)} />
+        <Tile label="Avant" value={recordText(record.avant)} />
+      </div>
+    </section>
+  )
+}
+
 type PartnerProps = { playerId: PlayerId; matches: Match[]; players: Map<PlayerId, Player> }
 
 function PartnerCard({ playerId, matches, players }: PartnerProps) {
@@ -184,6 +201,7 @@ function Details({ player, stats, replay, matches }: DetailsProps) {
     <>
       <SparklineCard stats={stats} />
       <StatsCard stats={stats} matches={replay.matches} />
+      <PositionsCard playerId={player.id} matches={matches} />
       <PartnerCard playerId={player.id} matches={matches} players={replay.players} />
     </>
   )

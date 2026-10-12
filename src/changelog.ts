@@ -10,6 +10,7 @@ export const CHANGELOG: ChangelogEntry[] = [
     date: '2026-10-12',
     title: 'Mises à jour et nouveautés',
     items: [
+      'Avant et arrière dans chaque équipe, bilan par poste sur la page joueur, victoires Blancs contre Noirs sur le classement.',
       'Partie en 5 par défaut.',
       'Saisie du score simplifiée : un sélecteur par équipe, un seul geste.',
       'Les équipes deviennent Blancs et Noirs.',

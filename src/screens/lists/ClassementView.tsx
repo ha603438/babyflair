@@ -16,6 +16,7 @@ import { pickHint } from './hints'
 import type { Hint, InstallEnv } from './hints'
 import { promptInstall } from './install'
 import { contextStripText, latestMatch } from './labels'
+import { sideRecord } from '../../stats'
 
 // Classement screen body (spec §3.1): context strip, one HintCard, observation card, ranked list, rookie and
 // inactive sections, empty states and the post-match highlight. Engine data arrives through `replay`.
@@ -41,10 +42,16 @@ function ContextStrip({ app, replay }: { app: ScreenContext; replay: ReplayData 
   const { matches } = app.store
   const latest = latestMatch(matches)
   if (latest === undefined) return null
+  const sides = sideRecord(matches)
   return (
-    <a className="ctx-strip" href={hrefOf({ name: 'historique' })}>
-      {contextStripText(matches.length, replay.ranking.ranked.length, latest.playedAt, replay.now)}
-    </a>
+    <>
+      <a className="ctx-strip" href={hrefOf({ name: 'historique' })}>
+        {contextStripText(matches.length, replay.ranking.ranked.length, latest.playedAt, replay.now)}
+      </a>
+      <p className="side-line">
+        <span className="side-line__white">Blancs {sides.blancs} V</span> · <span className="side-line__black">Noirs {sides.noirs} V</span>
+      </p>
+    </>
   )
 }
 

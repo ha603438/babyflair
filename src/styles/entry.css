@@ -472,3 +472,7 @@
 .scoregrid__cell:active { transform: scale(0.96); }
 .scoregrid__cell--target { background: var(--accent-soft); color: var(--accent); }
 .scoregrid__cell.is-selected { background: var(--accent); color: var(--on-accent); }
+
+/* Position caption inside a 2v2 slot. */
+.slot__position { display: block; font-size: 10px; font-weight: 700; text-transform: uppercase; letter-spacing: .06em; color: var(--text-3); line-height: 1; margin-bottom: 2px; }
+.slot.is-filled .slot__main, .slot.is-active .slot__main { flex-direction: column; align-items: flex-start; justify-content: center; gap: 1px; }

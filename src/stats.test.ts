@@ -12,6 +12,9 @@ import {
   sortByName,
   teamLabel,
   validateImport,
+  positionOf,
+  positionRecord,
+  sideRecord,
 } from './stats'
 import type { HistoryPoint, Match, MatchId, Player, PlayerId, PlayerStats, Ranking, Settings, Store, Target } from './types'
 
@@ -594,5 +597,26 @@ describe('validateImport', () => {
     expect(result.players).toEqual([])
     expect(result.matches).toEqual([])
     expect(result.settings).toEqual({ lastFormat: '2v2', lastTarget: 5 })
+  })
+})
+
+describe('positions and sides', () => {
+  const m = (id: string, teamA: string[], teamB: string[], scoreA: number, scoreB: number): Match => ({
+    id, seq: 1, playedAt: '2026-10-12T10:00:00.000Z', createdAt: '2026-10-12T10:00:00.000Z',
+    updatedAt: '2026-10-12T10:00:00.000Z', target: 10, teamA, teamB, scoreA, scoreB,
+  })
+  const matches = [m('m1', ['a', 'b'], ['c', 'd'], 10, 5), m('m2', ['b', 'a'], ['c', 'd'], 3, 10), m('m3', ['a'], ['c'], 10, 2)]
+  it('reads the position from the team order, 2v2 only', () => {
+    expect(positionOf('a', matches[0])).toBe('arriere')
+    expect(positionOf('b', matches[0])).toBe('avant')
+    expect(positionOf('a', matches[1])).toBe('avant')
+    expect(positionOf('a', matches[2])).toBeNull()
+    expect(positionOf('zz', matches[0])).toBeNull()
+  })
+  it('tallies wins and losses per position', () => {
+    expect(positionRecord('a', matches)).toEqual({ arriere: { wins: 1, losses: 0 }, avant: { wins: 0, losses: 1 } })
+  })
+  it('counts the winning side', () => {
+    expect(sideRecord(matches)).toEqual({ blancs: 2, noirs: 1 })
   })
 })

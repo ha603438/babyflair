@@ -12,6 +12,8 @@ export type RosterSlotsProps = {
   shaking?: boolean
 }
 
+const POSITIONS = ['Arrière', 'Avant'] as const
+
 const TEAMS = [
   { team: 1, caption: 'BLANCS', first: TEAM_A_FIRST_SLOT },
   { team: 2, caption: 'NOIRS', first: TEAM_B_FIRST_SLOT },
@@ -41,6 +43,7 @@ function TeamColumn({ team, caption, first, draft, dispatch, playersById }: Team
           <Slot
             key={index}
             team={team}
+            position={draft.format === '2v2' ? POSITIONS[index - first] : undefined}
             player={playerAt(draft, index, playersById)}
             active={draft.activeSlot === index}
             onActivate={() => dispatch({ type: 'setActiveSlot', index })}
@@ -48,6 +51,16 @@ function TeamColumn({ team, caption, first, draft, dispatch, playersById }: Team
           />
         ))}
       </div>
+      {draft.format === '2v2' && (
+        <button
+          type="button"
+          className="match-team__swap"
+          aria-label={`Inverser arrière et avant des ${caption.toLowerCase()}`}
+          onClick={() => dispatch({ type: 'swapTeam', team })}
+        >
+          ⇅ Inverser
+        </button>
+      )}
     </div>
   )
 }

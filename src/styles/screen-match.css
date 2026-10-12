@@ -258,3 +258,5 @@
   font-size: var(--fs-label);
   font-weight: 600;
 }
+
+.match-team__swap { margin-top: 6px; background: none; border: 0; color: var(--accent); font-size: 13px; font-weight: 600; padding: 6px 0; cursor: pointer; }

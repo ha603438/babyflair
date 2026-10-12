@@ -385,3 +385,42 @@ export function matchesSinceExport(matches: Match[], lastExportAt: string | unde
   }
   return count
 }
+
+// ---------------------------------------------------------------------------
+// Positions (2v2 only): in each team array, index 0 is the arrière (défense), index 1 the avant (attaque)
+// ---------------------------------------------------------------------------
+
+export type Position = 'arriere' | 'avant'
+export type WinLoss = { wins: number; losses: number }
+export const POSITION_LABEL: { [key in Position]: string } = { arriere: 'Arrière', avant: 'Avant' }
+
+/** The player's position in a 2v2 match, null in a 1v1 or when the player did not play it. */
+export function positionOf(playerId: PlayerId, match: Match): Position | null {
+  const team = teamOf(playerId, match)
+  if (team === null || team.length !== 2) return null
+  if (team[0] === playerId) return 'arriere'
+  return 'avant'
+}
+
+/** Wins and losses per position over the player's 2v2 matches. */
+export function positionRecord(playerId: PlayerId, matches: Match[]): { [key in Position]: WinLoss } {
+  const record = { arriere: { wins: 0, losses: 0 }, avant: { wins: 0, losses: 0 } }
+  for (const match of matches) {
+    const position = positionOf(playerId, match)
+    if (position === null) continue
+    if (outcomeFor(playerId, match) === 'win') record[position].wins += 1
+    else record[position].losses += 1
+  }
+  return record
+}
+
+/** How often each side of the table won: team A plays Blancs, team B plays Noirs. */
+export function sideRecord(matches: Match[]): { blancs: number; noirs: number } {
+  let blancs = 0
+  let noirs = 0
+  for (const match of matches) {
+    if (match.scoreA === match.target) blancs += 1
+    else noirs += 1
+  }
+  return { blancs, noirs }
+}

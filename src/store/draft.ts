@@ -11,6 +11,7 @@ export type DraftAction =
   | { type: 'saved'; matchId: string }
   | { type: 'reset' }
   | { type: 'prefill'; teamA: PlayerId[]; teamB: PlayerId[]; target: Target }
+  | { type: 'swapTeam'; team: 1 | 2 } /* 2v2: swaps arrière and avant of a team */
 
 /** `activeSlot` value meaning "no slot is active" (every required slot is filled). */
 export const NO_ACTIVE_SLOT = -1
@@ -120,6 +121,14 @@ function prefill(draft: Draft, teamA: PlayerId[], teamB: PlayerId[], target: Tar
   return settle({ format, target, slots, activeSlot: draft.activeSlot, score: null, step: 'players' })
 }
 
+function swapTeam(draft: Draft, team: 1 | 2): Draft {
+  if (draft.format !== '2v2') return draft
+  const first = team === 1 ? 0 : 2
+  const slots = draft.slots.slice()
+  ;[slots[first], slots[first + 1]] = [slots[first + 1], slots[first]]
+  return { ...draft, slots }
+}
+
 export function draftReducer(draft: Draft, action: DraftAction): Draft {
   switch (action.type) {
     case 'setFormat':
@@ -142,5 +151,7 @@ export function draftReducer(draft: Draft, action: DraftAction): Draft {
       return initialDraft({ lastFormat: draft.format, lastTarget: draft.target })
     case 'prefill':
       return prefill(draft, action.teamA, action.teamB, action.target)
+    case 'swapTeam':
+      return swapTeam(draft, action.team)
   }
 }

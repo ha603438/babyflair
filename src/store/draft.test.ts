@@ -241,3 +241,13 @@ describe('saved / reset / prefill', () => {
     expect(d.activeSlot).toBe(1)
   })
 })
+
+describe('swapTeam', () => {
+  it('swaps arrière and avant of one team in 2v2, no-op in 1v1', () => {
+    const d = { ...initialDraft({ lastFormat: '2v2', lastTarget: 5 }), slots: ['a', 'b', 'c', 'd'] }
+    expect(draftReducer(d, { type: 'swapTeam', team: 1 }).slots).toEqual(['b', 'a', 'c', 'd'])
+    expect(draftReducer(d, { type: 'swapTeam', team: 2 }).slots).toEqual(['a', 'b', 'd', 'c'])
+    const solo = { ...d, format: '1v1' as const }
+    expect(draftReducer(solo, { type: 'swapTeam', team: 1 })).toBe(solo)
+  })
+})

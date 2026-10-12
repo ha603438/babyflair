@@ -6,6 +6,8 @@ export type SlotProps = {
   active: boolean
   onActivate: () => void
   onClear: () => void
+  /** 2v2: « Arrière » or « Avant », shown above the name. */
+  position?: string
 }
 
 const NAME_MAX_CHARS = 12
@@ -50,13 +52,14 @@ function SlotContent({ player, active }: { player?: Player; active: boolean }) {
  * One roster position of step A. Empty = dashed « + »; active = accent border (pulse while empty);
  * filled = team bar + name + « × ». Tapping the name activates the slot without clearing it (next chip replaces).
  */
-export function Slot({ team, player, active, onActivate, onClear }: SlotProps) {
+export function Slot({ team, player, active, onActivate, onClear, position }: SlotProps) {
   const filled = player !== undefined
   // The empty, non-active slot only shows « + »: give it the same accessible name as the active placeholder.
   const mainLabel = filled ? player.name : 'Choisis un joueur'
   return (
     <div className={classNameOf(team, filled, active)}>
       <button type="button" className="slot__main" aria-label={mainLabel} aria-pressed={active} onClick={onActivate}>
+        {position && <span className="slot__position">{position}</span>}
         <SlotContent player={player} active={active} />
       </button>
       {filled && (
