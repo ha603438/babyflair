@@ -10,6 +10,7 @@ export const CHANGELOG: ChangelogEntry[] = [
     date: '2026-10-13',
     title: "Journal d'activité",
     items: [
+      'Mises à jour fiables : un bandeau « Nouvelle version disponible » apparaît tout seul, et le double-tap sur le blason détecte enfin les nouvelles versions.',
       "Sous la cloche, l'onglet « Journal d'activité » trace qui a modifié, supprimé ou rétabli un match.",
       'Le filtre « Tout » ajoute les matchs saisis.',
     ],

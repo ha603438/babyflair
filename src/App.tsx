@@ -8,7 +8,7 @@ import { Toast } from './components/Toast'
 import { IconButton } from './components/Button'
 import { Help, Settings } from './components/icons'
 import { hrefOf, navigate, useRoute } from './router'
-import { checkForUpdate, UPDATE_TOASTS } from './update'
+import { applyUpdate, checkForUpdate, isUpdateAvailable, UPDATE_TOASTS } from './update'
 import type { Route } from './router'
 import { AppStateProvider, isGateNeeded, useAppState } from './store'
 import type { Format } from './types'
@@ -170,6 +170,31 @@ function AppShell() {
     if (!storageBlocked) return
     showToast({ text: STORAGE_BLOCKED_TEXT })
   }, [storageBlocked, showToast])
+
+  // New version deployed: checked at launch and each time the app comes back to the foreground (at most once a minute).
+  useEffect(() => {
+    if (import.meta.env.DEV) return
+    let lastCheck = 0
+    let offered = false
+    function check(): void {
+      if (offered || document.visibilityState !== 'visible') return
+      const now = Date.now()
+      if (now - lastCheck < 60_000) return
+      lastCheck = now
+      void isUpdateAvailable().then((available) => {
+        if (!available || offered) return
+        offered = true
+        showToast({
+          text: 'Nouvelle version disponible',
+          action: { label: 'Mettre à jour', onClick: () => void applyUpdate() },
+          ttlMs: 15_000,
+        })
+      })
+    }
+    check()
+    document.addEventListener('visibilitychange', check)
+    return () => document.removeEventListener('visibilitychange', check)
+  }, [showToast])
 
   // Tapping the active tab scrolls to top; on « Match » it also resets an empty draft (spec §2).
   function onReselect(tab: TabName) {
