@@ -76,6 +76,12 @@ const SECTIONS: Section[] = [
     text: "Dans le classement, c'est ce que tu as gagné ou perdu sur les 7 derniers jours.",
   },
   {
+    title: 'Les courbes',
+    text:
+      'Sous le classement, « 📈 Courbes » trace les points de chacun, match après match. Touche les noms pour ' +
+      'comparer jusqu’à 8 joueurs, et glisse le doigt sur le graphique pour lire chaque match.',
+  },
+  {
     title: 'Modifier ou supprimer un match',
     text:
       "N'importe qui peut corriger ou supprimer n'importe quel match. Tout le classement est alors recalculé " +

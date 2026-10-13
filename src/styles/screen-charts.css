@@ -1,0 +1,362 @@
+/*
+ * screen-charts.css — Courbes du classement (#/courbes): name chips, the rating chart (src/charts/RatingChart.tsx),
+ * its tooltip and the table view. Series colours come from --series-1..8 (tokens.css); text never takes them.
+ */
+
+/* ---------- series slots: the colour follows the player (slot), never his rank ---------- */
+.series-1 { --series: var(--series-1); }
+.series-2 { --series: var(--series-2); }
+.series-3 { --series: var(--series-3); }
+.series-4 { --series: var(--series-4); }
+.series-5 { --series: var(--series-5); }
+.series-6 { --series: var(--series-6); }
+.series-7 { --series: var(--series-7); }
+.series-8 { --series: var(--series-8); }
+
+.series-dot {
+  display: inline-block;
+  flex: none;
+  width: 10px;
+  height: 10px;
+  border-radius: 50%;
+  background: var(--series);
+}
+
+/* « 📈 Courbes » shares the « Proposer un baby » link style; both sit on one centred row. */
+.call-propose { flex-wrap: wrap; align-items: center; gap: var(--s2); }
+a.call-propose__link { display: inline-flex; align-items: center; }
+
+/* ---------- chips (legend + toggles) ---------- */
+.curve-chips {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: var(--s2);
+  padding-top: var(--s3);
+}
+
+.curve-chip {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  max-width: 100%;
+  min-height: 36px;
+  padding: 0 var(--s3);
+  border: 1px solid var(--border);
+  border-radius: var(--r-pill);
+  background: transparent;
+  color: var(--text-2);
+  font-size: var(--fs-caption);
+  font-weight: 600;
+  line-height: 1.2;
+  user-select: none;
+  -webkit-user-select: none;
+  -webkit-touch-callout: none;
+  transition: background-color var(--t-fast) var(--ease), border-color var(--t-fast) var(--ease);
+}
+
+.curve-chip.is-on {
+  border-color: var(--series);
+  background: var(--surface);
+  background: color-mix(in srgb, var(--series) 12%, var(--surface));
+  color: var(--text);
+}
+
+.curve-chip:active {
+  transform: scale(.97);
+}
+
+.curve-chip__dot {
+  flex: none;
+  width: 10px;
+  height: 10px;
+  border-radius: 50%;
+  background: var(--series);
+}
+
+.curve-chip__name {
+  min-width: 0;
+  max-width: 11em;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.curve-chips__action {
+  min-height: 36px;
+  padding: 0 var(--s2);
+  color: var(--accent);
+  font-size: var(--fs-caption);
+  font-weight: 600;
+}
+
+/* ---------- chart ---------- */
+.curve-chart {
+  padding-top: var(--s3);
+}
+
+.chart-box {
+  position: relative;
+  width: 100%;
+}
+
+.chart-svg {
+  display: block;
+  overflow: visible;
+  border-radius: var(--r-lg);
+  user-select: none;
+  -webkit-user-select: none;
+  -webkit-touch-callout: none;
+}
+
+/* Focusable for the keyboard crosshair: no UA ring after a tap or a click, the --focus ring on keyboard focus. */
+.chart-svg:focus:not(:focus-visible) {
+  outline: none;
+}
+
+.chart-gridline,
+.chart-axis {
+  stroke: var(--border);
+  stroke-width: 1;
+  shape-rendering: crispEdges;
+}
+
+.chart-base {
+  stroke: var(--text-3);
+  stroke-width: 1;
+  stroke-dasharray: 4 3;
+}
+
+.chart-ylabel,
+.chart-xlabel {
+  font-size: 11px;
+  fill: var(--text-3);
+  font-variant-numeric: tabular-nums;
+}
+
+.chart-ylabel--base {
+  fill: var(--text-2);
+  font-weight: 600;
+}
+
+.chart-halo,
+.chart-line {
+  fill: none;
+  stroke-linejoin: round;
+  stroke-linecap: round;
+}
+
+/* 2 px of surface on each side of the line, painted first, so crossings stay readable. */
+.chart-halo {
+  stroke: var(--surface);
+  stroke-width: 6;
+}
+
+.chart-line {
+  stroke: var(--series);
+  stroke-width: 2;
+}
+
+/* After the player's last match: his rating holds until today (dotted, quieter than the line). */
+.chart-rest {
+  stroke: var(--series);
+  stroke-width: 2;
+  stroke-linecap: round;
+  stroke-dasharray: 0 5;
+  opacity: .7;
+}
+
+.chart-dot {
+  fill: var(--series);
+}
+
+/* 8 px dot with a 2 px surface ring (stroke painted under the fill). */
+.chart-end,
+.chart-crossdot {
+  fill: var(--series);
+  stroke: var(--surface);
+  stroke-width: 4;
+  paint-order: stroke;
+}
+
+.chart-leader {
+  stroke: var(--series);
+  stroke-width: 2;
+  stroke-linecap: round;
+}
+
+.chart-connector {
+  stroke: var(--series);
+  stroke-width: 1;
+}
+
+.chart-endlabel {
+  cursor: pointer;
+}
+
+.chart-endname {
+  font-size: 12px;
+  font-weight: 600;
+  fill: var(--text);
+}
+
+.chart-endrating {
+  font-weight: 400;
+  fill: var(--text-2);
+  font-variant-numeric: tabular-nums;
+}
+
+.chart-hit,
+.chart-hitarea {
+  fill: transparent;
+}
+
+/* Horizontal drags scrub the crosshair, vertical ones still scroll the page. */
+.chart-hitarea {
+  cursor: crosshair;
+  touch-action: pan-y;
+}
+
+.chart-crossline {
+  stroke: var(--text-3);
+  stroke-width: 1;
+  shape-rendering: crispEdges;
+}
+
+.chart-empty span {
+  padding: 2px var(--s2);
+  border-radius: var(--r-sm);
+  background: var(--surface);
+}
+
+.chart-empty {
+  position: absolute;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  margin: 0;
+  padding: 0 var(--s3);
+  text-align: center;
+  font-size: var(--fs-caption);
+  line-height: 1.4;
+  color: var(--text-2);
+  pointer-events: none;
+}
+
+/* ---------- tooltip ---------- */
+.chart-tip {
+  position: absolute;
+  top: 4px;
+  left: 0;
+  z-index: 2;
+  max-width: 230px;
+  padding: var(--s2) var(--s3);
+  border: 1px solid var(--border);
+  border-radius: 10px;
+  background: var(--surface);
+  box-shadow: 0 4px 14px rgba(16, 24, 20, .14);
+  pointer-events: none;
+}
+
+@media (prefers-color-scheme: dark) {
+  .chart-tip {
+    box-shadow: 0 6px 18px rgba(0, 0, 0, .5);
+  }
+}
+
+.chart-tip__title {
+  margin: 0 0 var(--s1);
+  font-size: var(--fs-micro);
+  font-weight: 600;
+  color: var(--text-2);
+  white-space: nowrap;
+}
+
+.chart-tip__rows {
+  display: grid;
+  grid-template-columns: 10px minmax(0, 1fr) auto auto;
+  align-items: center;
+  column-gap: 6px;
+  row-gap: 2px;
+  font-size: var(--fs-caption);
+}
+
+.chart-tip__name {
+  min-width: 0;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+  color: var(--text);
+}
+
+.chart-tip__rating {
+  color: var(--text);
+  font-weight: 600;
+  font-variant-numeric: tabular-nums;
+  text-align: right;
+}
+
+.chart-tip__delta {
+  min-width: 28px;
+  text-align: right;
+}
+
+/* ---------- table view ---------- */
+.curve-table-block {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  padding-top: var(--s2);
+}
+
+.curve-table-toggle {
+  min-height: 44px;
+  padding: 0 var(--s3);
+  color: var(--accent);
+  font-size: 14px;
+  font-weight: 600;
+}
+
+.curve-table {
+  width: 100%;
+  border-collapse: collapse;
+  font-size: var(--fs-caption);
+  font-variant-numeric: tabular-nums;
+}
+
+.curve-table th,
+.curve-table td {
+  padding: var(--s2) var(--s1);
+  border-bottom: 1px solid var(--border);
+  text-align: right;
+}
+
+.curve-table thead th {
+  font-size: 11px;
+  font-weight: 600;
+  line-height: 1.25;
+  color: var(--text-2);
+  vertical-align: bottom;
+}
+
+.curve-table th:first-child {
+  text-align: left;
+}
+
+.curve-table tbody th {
+  font-weight: 600;
+  color: var(--text);
+}
+
+.curve-table__name {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+}
+
+.curve-table__empty {
+  margin: 0;
+  padding-block: var(--s2);
+  font-size: var(--fs-caption);
+  color: var(--text-2);
+}

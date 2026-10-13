@@ -78,14 +78,42 @@ function VisitorBadge({ onChooseProfile }: { onChooseProfile: (() => void) | und
   )
 }
 
-/** Under the context strip (also with 0 matches): confirms the notification, or shows the open call if there is one. */
-function ProposeButton({ onPropose, playerCount }: { onPropose: (() => void) | undefined; playerCount: number }) {
-  if (onPropose === undefined || playerCount === 0) return null
+/** « Proposer un baby » (also with 0 matches): confirms the notification, or shows the open call if there is one. */
+function ProposeButton({ onPropose }: { onPropose: (() => void) | undefined }) {
+  if (onPropose === undefined) return null
+  return (
+    <button type="button" className="call-propose__link" onClick={onPropose}>
+      🔔 {CALL_COPY.propose}
+    </button>
+  )
+}
+
+/** « 📈 Courbes » → `#/courbes`, once there is at least one match to draw. */
+function CurvesLink({ matchCount }: { matchCount: number }) {
+  if (matchCount === 0) return null
+  return (
+    <a className="call-propose__link" href={hrefOf({ name: 'courbes' })}>
+      📈 Courbes
+    </a>
+  )
+}
+
+type LinksProps = { onPropose: (() => void) | undefined; playerCount: number; matchCount: number }
+
+// No player yet: nobody to call.
+function proposeAction(onPropose: (() => void) | undefined, playerCount: number): (() => void) | undefined {
+  if (playerCount === 0) return undefined
+  return onPropose
+}
+
+/** Under the context strip, one centred row of discreet links. */
+function ClassementLinks({ onPropose, playerCount, matchCount }: LinksProps) {
+  const propose = proposeAction(onPropose, playerCount)
+  if (propose === undefined && matchCount === 0) return null
   return (
     <div className="content call-propose">
-      <button type="button" className="call-propose__link" onClick={onPropose}>
-        🔔 {CALL_COPY.propose}
-      </button>
+      <ProposeButton onPropose={propose} />
+      <CurvesLink matchCount={matchCount} />
     </div>
   )
 }
@@ -301,7 +329,11 @@ export function ClassementView({ app, replay, installEnv, onPropose, onChoosePro
     <div ref={rootRef} className="lists-screen classement">
       <ContextStrip app={app} replay={replay} />
       <VisitorBadge onChooseProfile={onChooseProfile} />
-      <ProposeButton onPropose={onPropose} playerCount={app.store.players.length} />
+      <ClassementLinks
+        onPropose={onPropose}
+        playerCount={app.store.players.length}
+        matchCount={app.store.matches.length}
+      />
       <HintSlot hint={hint} dispatch={app.dispatch} />
       <Body app={app} replay={replay} highlight={highlight} />
     </div>

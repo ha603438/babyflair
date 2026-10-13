@@ -54,6 +54,7 @@ describe('parseHash', () => {
     ['#/reglages', { name: 'reglages' }],
     ['#/comment-ca-marche', { name: 'comment-ca-marche' }],
     ['#/journal', { name: 'journal' }],
+    ['#/courbes', { name: 'courbes' }],
   ] satisfies Array<[string, Route]>)('parses %j', (hash, expected) => {
     expect(parseHash(hash)).toEqual(expected)
   })
@@ -68,6 +69,7 @@ describe('parseHash', () => {
     '#/reglages/extra',
     '#/comment-ca-marche/extra',
     '#/journal/extra',
+    '#/courbes/extra',
     '#/Match',
     '#//inconnu',
   ])('falls back to classement for %j', (hash) => {
@@ -102,6 +104,7 @@ describe('hrefOf', () => {
     [{ name: 'reglages' }, '#/reglages'],
     [{ name: 'comment-ca-marche' }, '#/comment-ca-marche'],
     [{ name: 'journal' }, '#/journal'],
+    [{ name: 'courbes' }, '#/courbes'],
     [{ name: 'appel', id: 'c 1' }, '#/appel/c%201'],
   ] satisfies Array<[Route, string]>)('builds %j', (route, expected) => {
     expect(hrefOf(route)).toBe(expected)
@@ -123,6 +126,7 @@ describe('hrefOf', () => {
       { name: 'joueur', id: 'a b/c' },
       { name: 'reglages' },
       { name: 'comment-ca-marche' },
+      { name: 'courbes' },
     ]
     for (const route of routes) {
       expect(parseHash(hrefOf(route))).toEqual(route)

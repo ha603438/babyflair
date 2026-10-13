@@ -42,6 +42,16 @@
   --bronze: #e5b48a;
   --on-medal: #2b2200;
 
+  /* chart series (Courbes): categorical slots in fixed order, validated palette — never reorder or recolour */
+  --series-1: #2a78d6;
+  --series-2: #eb6834;
+  --series-3: #1baf7a;
+  --series-4: #eda100;
+  --series-5: #e87ba4;
+  --series-6: #008300;
+  --series-7: #4a3aa7;
+  --series-8: #e34948;
+
   /* overlays */
   --toast-bg: #16211b;
   --toast-text: #ffffff;
@@ -98,6 +108,15 @@
     --pos: #4ade80;
     --neg: #fb7185;
     --warn: #fbbf24;
+
+    --series-1: #3987e5;
+    --series-2: #d95926;
+    --series-3: #199e70;
+    --series-4: #c98500;
+    --series-5: #d55181;
+    --series-6: #008300;
+    --series-7: #9085e9;
+    --series-8: #e66767;
 
     --toast-bg: #eef2f7;
     --toast-text: #0b0f17;

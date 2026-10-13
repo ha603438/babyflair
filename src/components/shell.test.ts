@@ -136,6 +136,8 @@ describe('TabBar', () => {
     expect((reglages.match(/<a [^>]*>/g) ?? [])[3]).toContain('aria-current="page"')
     const rules = render(TabBar, { current: 'comment-ca-marche' })
     expect((rules.match(/<a [^>]*>/g) ?? [])[0]).toContain('aria-current="page"')
+    const curves = render(TabBar, { current: 'courbes' })
+    expect((curves.match(/<a [^>]*>/g) ?? [])[0]).toContain('aria-current="page"')
   })
 })
 

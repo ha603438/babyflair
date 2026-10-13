@@ -22,6 +22,7 @@ import { Joueur } from './screens/Joueur'
 import { Reglages } from './screens/Reglages'
 import { CommentCaMarche } from './screens/CommentCaMarche'
 import { Nouveautes } from './screens/Nouveautes'
+import { Courbes } from './screens/Courbes'
 import { unseenEntries } from './changelog'
 import { CodeGate } from './screens/CodeGate'
 import { Journal } from './screens/Journal'
@@ -62,6 +63,8 @@ function Screen({ route }: { route: Route }): ReactNode {
       return <Nouveautes />
     case 'journal':
       return <Journal />
+    case 'courbes':
+      return <Courbes />
     case 'appel':
       return <Classement />
   }
@@ -155,6 +158,8 @@ function AppHeader({ route }: { route: Route }) {
       return <Header title="Nouveautés" onBrandDoubleTap={onBrandDoubleTap} left={<NewMatchShortcut />} />
     case 'journal':
       return <Header title={JOURNAL_COPY.title} onBrandDoubleTap={onBrandDoubleTap} left={<NewMatchShortcut />} />
+    case 'courbes':
+      return <Header title="Évolution du classement" back />
   }
 }
 

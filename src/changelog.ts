@@ -6,6 +6,15 @@ export type ChangelogEntry = { id: string; date: string; title: string; items: s
 
 export const CHANGELOG: ChangelogEntry[] = [
   {
+    id: '2026-10-13-2',
+    date: '2026-10-13',
+    title: 'Courbes du classement',
+    items: [
+      "« 📈 Courbes » sous le classement : l'évolution des points de chacun, match après match.",
+      'Touche les noms pour afficher ou masquer une courbe (8 maximum) ; glisse le doigt pour lire chaque match.',
+    ],
+  },
+  {
     id: '2026-10-13-1',
     date: '2026-10-13',
     title: "Journal d'activité",

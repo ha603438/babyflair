@@ -30,6 +30,7 @@ function sectionOf(name: Route['name']): TabName {
   if (name === 'joueurs' || name === 'joueur' || name === 'reglages') return 'joueurs'
   if (name === 'journal') return 'nouveautes'
   if (name === 'nouveautes') return 'nouveautes'
+  // classement, appel, courbes, comment-ca-marche
   return 'classement'
 }
 
