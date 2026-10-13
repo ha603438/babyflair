@@ -2,6 +2,7 @@ import { describe, expect, it } from 'vitest'
 
 import type { LeaderboardRow, Match, Player, PlayerDelta, RatingsState, ReplayResult } from './engine'
 import {
+  matchBonus,
   applyMatch,
   compareRows,
   DEFAULT_CONFIG,
@@ -280,5 +281,24 @@ describe('reference_tables', () => {
     expect(margin10).toEqual(expected.margin10)
     const margin5 = Array.from({ length: 5 }, (_, l) => ({ score: `5-${l}`, G: marginMultiplier(5, 5, l) }))
     expect(margin5).toEqual(expected.margin5)
+  })
+})
+
+describe('fanny and comeback bonus', () => {
+  const base = { id: 'm', seq: 1, playedAt: 1, createdAt: 1, teamA: ['a', 'b'], teamB: ['c', 'd'] }
+  it('weights a fanny and a flagged 5-4 comeback, both ways', () => {
+    expect(matchBonus({ ...base, target: 5, scoreA: 5, scoreB: 0 })).toEqual({ kind: 'fanny', multiplier: 1.2 })
+    expect(matchBonus({ ...base, target: 10, scoreA: 0, scoreB: 10 })).toEqual({ kind: 'fanny', multiplier: 1.2 })
+    expect(matchBonus({ ...base, target: 5, scoreA: 5, scoreB: 4, comeback: true })).toEqual({ kind: 'comeback', multiplier: 1.25 })
+    expect(matchBonus({ ...base, target: 5, scoreA: 5, scoreB: 4 })).toEqual({ kind: null, multiplier: 1 })
+    expect(matchBonus({ ...base, target: 5, scoreA: 5, scoreB: 3, comeback: true })).toEqual({ kind: null, multiplier: 1 })
+  })
+  it('makes a comeback pay more than a plain 5-4 and stays zero-sum', () => {
+    const state = Object.fromEntries(['a', 'b', 'c', 'd'].map((id) => [id, { rating: 1000, matches: 20, wins: 10, losses: 10, lastPlayedAt: 0 }]))
+    const plain = applyMatch(state, { ...base, target: 5, scoreA: 5, scoreB: 4 }).deltas
+    const comeback = applyMatch(state, { ...base, target: 5, scoreA: 5, scoreB: 4, comeback: true }).deltas
+    expect(plain.map((d) => d.delta)).toEqual([8.8, 8.8, -8.8, -8.8])
+    expect(comeback.map((d) => d.delta)).toEqual([11, 11, -11, -11])
+    expect(whyFr(comeback[0])).toContain('comeback ×1,25')
   })
 })

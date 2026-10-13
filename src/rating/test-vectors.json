@@ -13,7 +13,9 @@
   "rookieSpan": 20,
   "rankedAfter": 10,
   "inactiveDays": 30,
-  "startRating": 1000
+  "startRating": 1000,
+  "fannyBonus": 1.2,
+  "comebackBonus": 1.25
  },
  "scenarios": [
   {
@@ -109,6 +111,8 @@
       "scoreAgainst": 8,
       "expected": 0.5,
       "margin": 1.2,
+      "bonus": 1,
+      "bonusKind": null,
       "teamSize": 2,
       "share": 0.45,
       "rookieK": 1,
@@ -127,6 +131,8 @@
       "scoreAgainst": 8,
       "expected": 0.5,
       "margin": 1.2,
+      "bonus": 1,
+      "bonusKind": null,
       "teamSize": 2,
       "share": 0.55,
       "rookieK": 1,
@@ -145,6 +151,8 @@
       "scoreAgainst": 10,
       "expected": 0.5,
       "margin": 1.2,
+      "bonus": 1,
+      "bonusKind": null,
       "teamSize": 2,
       "share": 0.5,
       "rookieK": 1,
@@ -163,6 +171,8 @@
       "scoreAgainst": 10,
       "expected": 0.5,
       "margin": 1.2,
+      "bonus": 1,
+      "bonusKind": null,
       "teamSize": 2,
       "share": 0.5,
       "rookieK": 1,
@@ -268,6 +278,8 @@
       "scoreAgainst": 10,
       "expected": 0.5,
       "margin": 1.2,
+      "bonus": 1,
+      "bonusKind": null,
       "teamSize": 2,
       "share": 0.55,
       "rookieK": 1,
@@ -286,6 +298,8 @@
       "scoreAgainst": 10,
       "expected": 0.5,
       "margin": 1.2,
+      "bonus": 1,
+      "bonusKind": null,
       "teamSize": 2,
       "share": 0.45,
       "rookieK": 1,
@@ -304,6 +318,8 @@
       "scoreAgainst": 8,
       "expected": 0.5,
       "margin": 1.2,
+      "bonus": 1,
+      "bonusKind": null,
       "teamSize": 2,
       "share": 0.5,
       "rookieK": 1,
@@ -322,6 +338,8 @@
       "scoreAgainst": 8,
       "expected": 0.5,
       "margin": 1.2,
+      "bonus": 1,
+      "bonusKind": null,
       "teamSize": 2,
       "share": 0.5,
       "rookieK": 1,
@@ -397,6 +415,8 @@
       "scoreAgainst": 6,
       "expected": 0.6400649998028851,
       "margin": 1.4,
+      "bonus": 1,
+      "bonusKind": null,
       "teamSize": 1,
       "share": 1,
       "rookieK": 1,
@@ -415,6 +435,8 @@
       "scoreAgainst": 10,
       "expected": 0.3599350001971149,
       "margin": 1.4,
+      "bonus": 1,
+      "bonusKind": null,
       "teamSize": 1,
       "share": 1,
       "rookieK": 1,
@@ -482,28 +504,28 @@
    "expected": {
     "newState": {
      "a": {
-      "rating": 1012,
+      "rating": 1014.4,
       "matches": 21,
       "wins": 11,
       "losses": 10,
       "lastPlayedAt": 1791806400000
      },
      "b": {
-      "rating": 1012,
+      "rating": 1014.4,
       "matches": 21,
       "wins": 11,
       "losses": 10,
       "lastPlayedAt": 1791806400000
      },
      "c": {
-      "rating": 988,
+      "rating": 985.6,
       "matches": 21,
       "wins": 10,
       "losses": 11,
       "lastPlayedAt": 1791806400000
      },
      "d": {
-      "rating": 988,
+      "rating": 985.6,
       "matches": 21,
       "wins": 10,
       "losses": 11,
@@ -520,14 +542,16 @@
       "scoreAgainst": 0,
       "expected": 0.5,
       "margin": 1.5,
+      "bonus": 1.2,
+      "bonusKind": "fanny",
       "teamSize": 2,
       "share": 0.5,
       "rookieK": 1,
       "matchesBefore": 20,
       "ratingBefore": 1000,
-      "ratingAfter": 1012,
-      "delta": 12,
-      "why": "Victoire 5-0 (en 5) · 50 % de chances · marge ×1,5 · part 50 % → +12,0"
+      "ratingAfter": 1014.4,
+      "delta": 14.4,
+      "why": "Victoire 5-0 (en 5) · 50 % de chances · marge ×1,5 · part 50 % · fanny ×1,2 → +14,4"
      },
      {
       "playerId": "b",
@@ -538,14 +562,16 @@
       "scoreAgainst": 0,
       "expected": 0.5,
       "margin": 1.5,
+      "bonus": 1.2,
+      "bonusKind": "fanny",
       "teamSize": 2,
       "share": 0.5,
       "rookieK": 1,
       "matchesBefore": 20,
       "ratingBefore": 1000,
-      "ratingAfter": 1012,
-      "delta": 12,
-      "why": "Victoire 5-0 (en 5) · 50 % de chances · marge ×1,5 · part 50 % → +12,0"
+      "ratingAfter": 1014.4,
+      "delta": 14.4,
+      "why": "Victoire 5-0 (en 5) · 50 % de chances · marge ×1,5 · part 50 % · fanny ×1,2 → +14,4"
      },
      {
       "playerId": "c",
@@ -556,14 +582,16 @@
       "scoreAgainst": 5,
       "expected": 0.5,
       "margin": 1.5,
+      "bonus": 1.2,
+      "bonusKind": "fanny",
       "teamSize": 2,
       "share": 0.5,
       "rookieK": 1,
       "matchesBefore": 20,
       "ratingBefore": 1000,
-      "ratingAfter": 988,
-      "delta": -12,
-      "why": "Défaite 0-5 (en 5) · 50 % de chances · marge ×1,5 · part 50 % → −12,0"
+      "ratingAfter": 985.6,
+      "delta": -14.4,
+      "why": "Défaite 0-5 (en 5) · 50 % de chances · marge ×1,5 · part 50 % · fanny ×1,2 → −14,4"
      },
      {
       "playerId": "d",
@@ -574,14 +602,16 @@
       "scoreAgainst": 5,
       "expected": 0.5,
       "margin": 1.5,
+      "bonus": 1.2,
+      "bonusKind": "fanny",
       "teamSize": 2,
       "share": 0.5,
       "rookieK": 1,
       "matchesBefore": 20,
       "ratingBefore": 1000,
-      "ratingAfter": 988,
-      "delta": -12,
-      "why": "Défaite 0-5 (en 5) · 50 % de chances · marge ×1,5 · part 50 % → −12,0"
+      "ratingAfter": 985.6,
+      "delta": -14.4,
+      "why": "Défaite 0-5 (en 5) · 50 % de chances · marge ×1,5 · part 50 % · fanny ×1,2 → −14,4"
      }
     ]
    }
@@ -679,6 +709,8 @@
       "scoreAgainst": 9,
       "expected": 0.5,
       "margin": 1.1,
+      "bonus": 1,
+      "bonusKind": null,
       "teamSize": 2,
       "share": 0.5,
       "rookieK": 1,
@@ -697,6 +729,8 @@
       "scoreAgainst": 9,
       "expected": 0.5,
       "margin": 1.1,
+      "bonus": 1,
+      "bonusKind": null,
       "teamSize": 2,
       "share": 0.5,
       "rookieK": 1,
@@ -715,6 +749,8 @@
       "scoreAgainst": 10,
       "expected": 0.5,
       "margin": 1.1,
+      "bonus": 1,
+      "bonusKind": null,
       "teamSize": 2,
       "share": 0.5,
       "rookieK": 1,
@@ -733,6 +769,8 @@
       "scoreAgainst": 10,
       "expected": 0.5,
       "margin": 1.1,
+      "bonus": 1,
+      "bonusKind": null,
       "teamSize": 2,
       "share": 0.5,
       "rookieK": 1,
@@ -838,6 +876,8 @@
       "scoreAgainst": 7,
       "expected": 0.15097955721132328,
       "margin": 1.3,
+      "bonus": 1,
+      "bonusKind": null,
       "teamSize": 2,
       "share": 0.5,
       "rookieK": 1,
@@ -856,6 +896,8 @@
       "scoreAgainst": 7,
       "expected": 0.15097955721132328,
       "margin": 1.3,
+      "bonus": 1,
+      "bonusKind": null,
       "teamSize": 2,
       "share": 0.5,
       "rookieK": 1,
@@ -874,6 +916,8 @@
       "scoreAgainst": 10,
       "expected": 0.8490204427886767,
       "margin": 1.3,
+      "bonus": 1,
+      "bonusKind": null,
       "teamSize": 2,
       "share": 0.5,
       "rookieK": 1,
@@ -892,6 +936,8 @@
       "scoreAgainst": 10,
       "expected": 0.8490204427886767,
       "margin": 1.3,
+      "bonus": 1,
+      "bonusKind": null,
       "teamSize": 2,
       "share": 0.5,
       "rookieK": 1,
@@ -997,6 +1043,8 @@
       "scoreAgainst": 5,
       "expected": 0.5993967967092568,
       "margin": 1.2,
+      "bonus": 1,
+      "bonusKind": null,
       "teamSize": 2,
       "share": 0.55,
       "rookieK": 1,
@@ -1015,6 +1063,8 @@
       "scoreAgainst": 5,
       "expected": 0.5993967967092568,
       "margin": 1.2,
+      "bonus": 1,
+      "bonusKind": null,
       "teamSize": 2,
       "share": 0.45,
       "rookieK": 1,
@@ -1033,6 +1083,8 @@
       "scoreAgainst": 3,
       "expected": 0.40060320329074317,
       "margin": 1.2,
+      "bonus": 1,
+      "bonusKind": null,
       "teamSize": 2,
       "share": 0.5,
       "rookieK": 1,
@@ -1051,6 +1103,8 @@
       "scoreAgainst": 3,
       "expected": 0.40060320329074317,
       "margin": 1.2,
+      "bonus": 1,
+      "bonusKind": null,
       "teamSize": 2,
       "share": 0.5,
       "rookieK": 1,
@@ -1195,6 +1249,8 @@
         "scoreAgainst": 6,
         "expected": 0.5,
         "margin": 1.4,
+        "bonus": 1,
+        "bonusKind": null,
         "teamSize": 2,
         "share": 0.5,
         "rookieK": 3,
@@ -1213,6 +1269,8 @@
         "scoreAgainst": 6,
         "expected": 0.5,
         "margin": 1.4,
+        "bonus": 1,
+        "bonusKind": null,
         "teamSize": 2,
         "share": 0.5,
         "rookieK": 1,
@@ -1231,6 +1289,8 @@
         "scoreAgainst": 10,
         "expected": 0.5,
         "margin": 1.4,
+        "bonus": 1,
+        "bonusKind": null,
         "teamSize": 2,
         "share": 0.5,
         "rookieK": 1,
@@ -1249,6 +1309,8 @@
         "scoreAgainst": 10,
         "expected": 0.5,
         "margin": 1.4,
+        "bonus": 1,
+        "bonusKind": null,
         "teamSize": 2,
         "share": 0.5,
         "rookieK": 1,
@@ -1272,6 +1334,8 @@
         "scoreAgainst": 8,
         "expected": 0.5241583179244865,
         "margin": 1.2,
+        "bonus": 1,
+        "bonusKind": null,
         "teamSize": 2,
         "share": 0.47467728970215656,
         "rookieK": 2.9,
@@ -1290,6 +1354,8 @@
         "scoreAgainst": 8,
         "expected": 0.5241583179244865,
         "margin": 1.2,
+        "bonus": 1,
+        "bonusKind": null,
         "teamSize": 2,
         "share": 0.5253227102978434,
         "rookieK": 1,
@@ -1308,6 +1374,8 @@
         "scoreAgainst": 10,
         "expected": 0.4758416820755135,
         "margin": 1.2,
+        "bonus": 1,
+        "bonusKind": null,
         "teamSize": 2,
         "share": 0.5168901698671006,
         "rookieK": 1,
@@ -1326,6 +1394,8 @@
         "scoreAgainst": 10,
         "expected": 0.4758416820755135,
         "margin": 1.2,
+        "bonus": 1,
+        "bonusKind": null,
         "teamSize": 2,
         "share": 0.48310983013289943,
         "rookieK": 1,
@@ -1349,6 +1419,8 @@
         "scoreAgainst": 5,
         "expected": 0.5700064054627808,
         "margin": 1.3,
+        "bonus": 1,
+        "bonusKind": null,
         "teamSize": 1,
         "share": 1,
         "rookieK": 2.8,
@@ -1367,6 +1439,8 @@
         "scoreAgainst": 2,
         "expected": 0.4299935945372192,
         "margin": 1.3,
+        "bonus": 1,
+        "bonusKind": null,
         "teamSize": 1,
         "share": 1,
         "rookieK": 1,
@@ -3818,268 +3892,268 @@
    "expected": {
     "finalPlayers": {
      "p00": {
-      "rating": 1038.61,
+      "rating": 1036.66,
       "matches": 29,
       "wins": 17,
       "losses": 12,
       "lastPlayedAt": 1791374400000
      },
      "p01": {
-      "rating": 953.92,
+      "rating": 947.694,
       "matches": 23,
       "wins": 10,
       "losses": 13,
       "lastPlayedAt": 1791352800000
      },
      "p02": {
-      "rating": 1001.411,
+      "rating": 997.552,
       "matches": 12,
       "wins": 6,
       "losses": 6,
       "lastPlayedAt": 1791417600000
      },
      "p03": {
-      "rating": 1010.238,
+      "rating": 1014.712,
       "matches": 15,
       "wins": 7,
       "losses": 8,
       "lastPlayedAt": 1791396000000
      },
      "p04": {
-      "rating": 928.95,
+      "rating": 930.255,
       "matches": 14,
       "wins": 5,
       "losses": 9,
       "lastPlayedAt": 1791396000000
      },
      "p05": {
-      "rating": 972.507,
+      "rating": 963.928,
       "matches": 23,
       "wins": 10,
       "losses": 13,
       "lastPlayedAt": 1791439200000
      },
      "p06": {
-      "rating": 948.978,
+      "rating": 957.999,
       "matches": 17,
       "wins": 7,
       "losses": 10,
       "lastPlayedAt": 1791352800000
      },
      "p07": {
-      "rating": 908.036,
+      "rating": 918.608,
       "matches": 15,
       "wins": 5,
       "losses": 10,
       "lastPlayedAt": 1791223200000
      },
      "p08": {
-      "rating": 1013.602,
+      "rating": 1013.715,
       "matches": 28,
       "wins": 14,
       "losses": 14,
       "lastPlayedAt": 1791396000000
      },
      "p09": {
-      "rating": 1124.158,
+      "rating": 1125.252,
       "matches": 20,
       "wins": 14,
       "losses": 6,
       "lastPlayedAt": 1791093600000
      },
      "p10": {
-      "rating": 959.645,
+      "rating": 955.046,
       "matches": 18,
       "wins": 7,
       "losses": 11,
       "lastPlayedAt": 1791288000000
      },
      "p11": {
-      "rating": 878.634,
+      "rating": 883.358,
       "matches": 22,
       "wins": 7,
       "losses": 15,
       "lastPlayedAt": 1791374400000
      },
      "p12": {
-      "rating": 1074.975,
+      "rating": 1073.69,
       "matches": 13,
       "wins": 8,
       "losses": 5,
       "lastPlayedAt": 1791417600000
      },
      "p13": {
-      "rating": 1071.191,
+      "rating": 1077.868,
       "matches": 21,
       "wins": 14,
       "losses": 7,
       "lastPlayedAt": 1791439200000
      },
      "p14": {
-      "rating": 1040.614,
+      "rating": 1032.406,
       "matches": 16,
       "wins": 9,
       "losses": 7,
       "lastPlayedAt": 1791201600000
      },
      "p15": {
-      "rating": 1025.838,
+      "rating": 1022.648,
       "matches": 22,
       "wins": 13,
       "losses": 9,
       "lastPlayedAt": 1791288000000
      },
      "p16": {
-      "rating": 1027.174,
+      "rating": 1032.458,
       "matches": 18,
       "wins": 10,
       "losses": 8,
       "lastPlayedAt": 1791439200000
      },
      "p17": {
-      "rating": 1016.371,
+      "rating": 1015.642,
       "matches": 19,
       "wins": 10,
       "losses": 9,
       "lastPlayedAt": 1791417600000
      },
      "p18": {
-      "rating": 922.906,
+      "rating": 914.673,
       "matches": 13,
       "wins": 4,
       "losses": 9,
       "lastPlayedAt": 1791331200000
      },
      "p19": {
-      "rating": 1105.025,
+      "rating": 1113.784,
       "matches": 14,
       "wins": 9,
       "losses": 5,
       "lastPlayedAt": 1791439200000
      }
     },
-    "sumOfRatings": 20022.783,
-    "ratingsHash": 1178841472,
+    "sumOfRatings": 20027.948,
+    "ratingsHash": 1213978144,
     "leaderboard": {
      "ranked": [
       [
        1,
        "p09",
-       1124.158,
+       1125.252,
        20
       ],
       [
        2,
        "p19",
-       1105.025,
+       1113.784,
        14
       ],
       [
        3,
-       "p12",
-       1074.975,
-       13
-      ],
-      [
-       4,
        "p13",
-       1071.191,
+       1077.868,
        21
       ],
       [
-       5,
-       "p14",
-       1040.614,
-       16
+       4,
+       "p12",
+       1073.69,
+       13
       ],
       [
-       6,
+       5,
        "p00",
-       1038.61,
+       1036.66,
        29
       ],
       [
-       7,
+       6,
        "p16",
-       1027.174,
+       1032.458,
        18
+      ],
+      [
+       7,
+       "p14",
+       1032.406,
+       16
       ],
       [
        8,
        "p15",
-       1025.838,
+       1022.648,
        22
       ],
       [
        9,
        "p17",
-       1016.371,
+       1015.642,
        19
       ],
       [
        10,
-       "p08",
-       1013.602,
-       28
+       "p03",
+       1014.712,
+       15
       ],
       [
        11,
-       "p03",
-       1010.238,
-       15
+       "p08",
+       1013.715,
+       28
       ],
       [
        12,
        "p02",
-       1001.411,
+       997.552,
        12
       ],
       [
        13,
        "p05",
-       972.507,
+       963.928,
        23
       ],
       [
        14,
-       "p10",
-       959.645,
-       18
+       "p06",
+       957.999,
+       17
       ],
       [
        15,
-       "p01",
-       953.92,
-       23
+       "p10",
+       955.046,
+       18
       ],
       [
        16,
-       "p06",
-       948.978,
-       17
+       "p01",
+       947.694,
+       23
       ],
       [
        17,
        "p04",
-       928.95,
+       930.255,
        14
       ],
       [
        18,
-       "p18",
-       922.906,
-       13
+       "p07",
+       918.608,
+       15
       ],
       [
        19,
-       "p07",
-       908.036,
-       15
+       "p18",
+       914.673,
+       13
       ],
       [
        20,
        "p11",
-       878.634,
+       883.358,
        22
       ]
      ],
@@ -4096,15 +4170,17 @@
        "target": 10,
        "scoreFor": 9,
        "scoreAgainst": 10,
-       "expected": 0.399628425381717,
+       "expected": 0.3859275942169546,
        "margin": 1.1,
+       "bonus": 1,
+       "bonusKind": null,
        "teamSize": 2,
        "share": 0.45,
        "rookieK": 1,
        "matchesBefore": 22,
-       "ratingBefore": 978.837,
-       "ratingAfter": 972.507,
-       "delta": -6.33
+       "ratingBefore": 970.041,
+       "ratingAfter": 963.928,
+       "delta": -6.113
       },
       {
        "playerId": "p16",
@@ -4113,15 +4189,17 @@
        "target": 10,
        "scoreFor": 9,
        "scoreAgainst": 10,
-       "expected": 0.399628425381717,
+       "expected": 0.3859275942169546,
        "margin": 1.1,
+       "bonus": 1,
+       "bonusKind": null,
        "teamSize": 2,
        "share": 0.55,
        "rookieK": 1.3,
        "matchesBefore": 17,
-       "ratingBefore": 1037.232,
-       "ratingAfter": 1027.174,
-       "delta": -10.058
+       "ratingBefore": 1042.171,
+       "ratingAfter": 1032.458,
+       "delta": -9.713
       },
       {
        "playerId": "p19",
@@ -4130,15 +4208,17 @@
        "target": 10,
        "scoreFor": 10,
        "scoreAgainst": 9,
-       "expected": 0.6003715746182829,
+       "expected": 0.6140724057830453,
        "margin": 1.1,
+       "bonus": 1,
+       "bonusKind": null,
        "teamSize": 2,
-       "share": 0.4742004033956132,
+       "share": 0.4715757895634543,
        "rookieK": 1.7,
        "matchesBefore": 13,
-       "ratingBefore": 1093.685,
-       "ratingAfter": 1105.025,
-       "delta": 11.34
+       "ratingBefore": 1102.893,
+       "ratingAfter": 1113.784,
+       "delta": 10.891
       },
       {
        "playerId": "p13",
@@ -4147,15 +4227,17 @@
        "target": 10,
        "scoreFor": 10,
        "scoreAgainst": 9,
-       "expected": 0.6003715746182829,
+       "expected": 0.6140724057830453,
        "margin": 1.1,
+       "bonus": 1,
+       "bonusKind": null,
        "teamSize": 2,
-       "share": 0.5257995966043868,
+       "share": 0.5284242104365456,
        "rookieK": 1,
        "matchesBefore": 20,
-       "ratingBefore": 1063.795,
-       "ratingAfter": 1071.191,
-       "delta": 7.396
+       "ratingBefore": 1070.69,
+       "ratingAfter": 1077.868,
+       "delta": 7.178
       }
      ]
     }

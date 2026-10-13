@@ -184,7 +184,7 @@ export function Match() {
   }
 
   if (draft.step === 'score' && teams !== null) {
-    const preview = computePreview(result, store.players, teams, draft.target, draft.score)
+    const preview = computePreview(result, store.players, teams, draft.target, draft.score, draft.comeback === true)
     return (
       <ScorePanel
         draft={draft}

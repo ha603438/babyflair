@@ -23,6 +23,7 @@ export type Match = {
   scoreA: number;
   scoreB: number;
   deletedAt?: number | null; // soft delete: a NUMBER means deleted (ignored by replay, kept for restore)
+  comeback?: boolean; // winners came back from 0-4 to win 5-4 (only meaningful on a 5-4 in a race to 5)
 };
 
 export type Config = {
@@ -38,6 +39,8 @@ export type Config = {
   rankedAfter: number; // matches needed to leave the Rookies section
   inactiveDays: number; // days without a match before a player is listed as Inactive
   startRating: number;
+  fannyBonus: number; // extra multiplier on the match when the loser scored 0 (5-0, 10-0)
+  comebackBonus: number; // extra multiplier on a 5-4 flagged as a comeback
 };
 
 export const DEFAULT_CONFIG: Config = {
@@ -53,6 +56,8 @@ export const DEFAULT_CONFIG: Config = {
   rankedAfter: 10,
   inactiveDays: 30,
   startRating: 1000,
+  fannyBonus: 1.2,
+  comebackBonus: 1.25,
 };
 
 export type PlayerState = { rating: number; matches: number; wins: number; losses: number; lastPlayedAt: number | null };
@@ -66,6 +71,8 @@ export type PlayerDelta = { // everything needed to explain one player's delta i
   scoreAgainst: number;
   expected: number; // the player's TEAM win expectation E_X (0..1)
   margin: number; // G
+  bonus: number; // fanny / comeback multiplier (1 when none)
+  bonusKind: 'fanny' | 'comeback' | null;
   teamSize: 1 | 2;
   share: number; // this player's share of the team delta (1 in a 1v1)
   rookieK: number; // 1 for an established player
@@ -93,6 +100,17 @@ export function expectedScore(gap: number, target: Target, config: Config = DEFA
 
 export function marginMultiplier(target: Target, scoreA: number, scoreB: number, config: Config = DEFAULT_CONFIG): number {
   return 1 + (target - Math.min(scoreA, scoreB)) / config.marginUnit;
+}
+
+export type MatchBonus = { kind: 'fanny' | 'comeback' | null; multiplier: number };
+
+// Fanny (the loser scored 0) or flagged comeback (5-4 in a race to 5): the whole match counts a bit more, for the
+// winners and for the losers alike, so the system stays zero-sum.
+export function matchBonus(match: Pick<Match, 'target' | 'scoreA' | 'scoreB' | 'comeback'>, config: Config = DEFAULT_CONFIG): MatchBonus {
+  const loser = Math.min(match.scoreA, match.scoreB);
+  if (loser === 0) return { kind: 'fanny', multiplier: config.fannyBonus };
+  if (match.comeback === true && match.target === 5 && loser === 4) return { kind: 'comeback', multiplier: config.comebackBonus };
+  return { kind: null, multiplier: 1 };
 }
 
 // k = max(1, K0 - (K0 - 1) * n / SPAN); with the defaults 3 - n/10: x3 on the first match, x2 on the 11th, x1 from the 21st.
@@ -200,7 +218,8 @@ export function applyMatch(
   const eA = expectedScore(rA - rB, match.target, config);
   const aWon = match.scoreA === match.target;
   const g = marginMultiplier(match.target, match.scoreA, match.scoreB, config);
-  const baseA = config.K * g * ((aWon ? 1 : 0) - eA); // per-member base delta of team A; team B gets -baseA
+  const bonus = matchBonus(match, config);
+  const baseA = config.K * g * bonus.multiplier * ((aWon ? 1 : 0) - eA); // per-member base delta of team A; B gets -baseA
   const sides = [
     { team: 'A' as const, ids: match.teamA, opp: rB, won: aWon, expected: eA, base: baseA, f: match.scoreA, a: match.scoreB },
     { team: 'B' as const, ids: match.teamB, opp: rA, won: !aWon, expected: 1 - eA, base: -baseA, f: match.scoreB, a: match.scoreA },
@@ -222,7 +241,7 @@ export function applyMatch(
       };
       deltas.push({
         playerId: id, team: side.team, won: side.won, target: match.target, scoreFor: side.f, scoreAgainst: side.a,
-        expected: side.expected, margin: g, teamSize: side.ids.length as 1 | 2, share: shares[i], rookieK,
+        expected: side.expected, margin: g, bonus: bonus.multiplier, bonusKind: bonus.kind, teamSize: side.ids.length as 1 | 2, share: shares[i], rookieK,
         matchesBefore: before.matches, ratingBefore: before.rating, ratingAfter, delta: round3(ratingAfter - before.rating),
       });
     });
@@ -288,6 +307,11 @@ export function leaderboard(players: Player[], state: RatingsState, now: number,
 }
 
 // French "why" line: "Victoire 10-8 (en 10) · 50 % de chances · marge ×1,2 · part 55 % · débutant ×3,0 → +31,7"
+// 1.2 → « 1,2 », 1.25 → « 1,25 »: two decimals at most, trailing zeros dropped.
+function frTrim(x: number): string {
+  return String(Math.round(x * 100) / 100).replace('.', ',');
+}
+
 export function whyFr(d: PlayerDelta): string {
   const fr = (x: number, digits: number): string => x.toFixed(digits).replace('.', ',');
   const parts = [
@@ -296,6 +320,7 @@ export function whyFr(d: PlayerDelta): string {
     `marge ×${fr(d.margin, 1)}`,
   ];
   if (d.teamSize === 2) parts.push(`part ${Math.round(d.share * 100)} %`);
+  if (d.bonusKind !== null) parts.push(`${d.bonusKind} ×${frTrim(d.bonus)}`);
   if (d.rookieK > 1) parts.push(`débutant ×${fr(d.rookieK, 1)}`);
   const sign = d.delta >= 0 ? '+' : '−';
   return `${parts.join(' · ')} → ${sign}${fr(Math.abs(d.delta), 1)}`;

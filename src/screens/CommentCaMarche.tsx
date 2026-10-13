@@ -59,7 +59,8 @@ const SECTIONS: Section[] = [
     title: 'Fanny et comeback',
     text:
       "Un fanny, c'est gagner sans encaisser un seul but (5-0). Un comeback, c'est gagner 5-4 après avoir été " +
-      "mené 0-4 : coche la case sous le score au moment de l'enregistrer. Ni l'un ni l'autre ne change les points.",
+      "mené 0-4 : coche la case sous le score au moment de l'enregistrer. Les deux comptent un peu plus : ×1,2 pour un " +
+      'fanny, ×1,25 pour un comeback, aussi bien pour les gagnants que pour les perdants.',
   },
   {
     title: 'Inactifs',

@@ -305,8 +305,8 @@ describe('replay', () => {
     const { players, matches, now, rankedIds } = randomHistory()
     const result = expectSameAsEngine(players, matches, now)
     expect(rank(result, players).ranked).toEqual(rankedIds)
-    expect(statsOf(result, 'p09').rating).toBe(1124) // 1124.158 in the vector
-    expect(statsOf(result, 'p11').rating).toBe(879) // 878.634 in the vector
+    expect(statsOf(result, 'p09').rating).toBe(1125) // 1125.252 in the vector
+    expect(statsOf(result, 'p11').rating).toBe(883) // 883.358 in the vector
   })
 
   it('exposes status, rookieProgress and a chronological history per player', () => {

@@ -21,6 +21,7 @@ export function computePreview(
   teams: DraftTeams,
   target: Target,
   score: Score | null,
+  comeback = false,
 ): PreviewData | null {
   try {
     if (score === null) {
@@ -28,7 +29,7 @@ export function computePreview(
       if (!isWhatIf(data)) return null
       return { mode: 'whatif', data }
     }
-    const data = previewMatch(result, players, { teamA: teams.teamA, teamB: teams.teamB, target, score })
+    const data = previewMatch(result, players, { teamA: teams.teamA, teamB: teams.teamB, target, score, comeback })
     if (!isExact(data)) return null
     return { mode: 'exact', data }
   } catch {

@@ -34,7 +34,7 @@ export type { Config, PlayerDelta } from './engine'
 export { useReplay } from './useReplay'
 export type { ReplayView } from './useReplay'
 
-export type PreviewDraft = { teamA: PlayerId[]; teamB: PlayerId[]; target: Target; score?: Score }
+export type PreviewDraft = { teamA: PlayerId[]; teamB: PlayerId[]; target: Target; score?: Score; comeback?: boolean }
 
 const PREVIEW_ID = 'preview'
 // Above any stored seq, so a preview can never collide with a real row; the engine only requires a finite number.
@@ -68,6 +68,7 @@ function toEngineMatch(match: Match): EngineMatch {
     teamB: match.teamB,
     scoreA: match.scoreA,
     scoreB: match.scoreB,
+    comeback: match.comeback === true,
   }
 }
 
@@ -238,5 +239,5 @@ export function previewMatch(result: ReplayResult, players: Player[], draft: Pre
     teamB: draft.teamB,
   }
   if (draft.score === undefined) return whatIf(state, roster, base)
-  return exact(state, roster, { ...base, ...scoresOf(draft.target, draft.score) })
+  return exact(state, roster, { ...base, ...scoresOf(draft.target, draft.score), comeback: draft.comeback === true })
 }

@@ -6,6 +6,15 @@ export type ChangelogEntry = { id: string; date: string; title: string; items: s
 
 export const CHANGELOG: ChangelogEntry[] = [
   {
+    id: '2026-10-13-4',
+    date: '2026-10-13',
+    title: 'Bonus fanny et comeback',
+    items: [
+      'Un fanny compte ×1,2 et un comeback ×1,25 : les gagnants prennent plus, les perdants perdent plus.',
+      'Le classement est recalculé sur tout l’historique.',
+    ],
+  },
+  {
     id: '2026-10-13-3',
     date: '2026-10-13',
     title: 'Classement allégé',
