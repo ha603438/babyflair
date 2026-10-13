@@ -3,6 +3,7 @@ import { useEffect, useState } from 'react'
 import { CHANGELOG, latestChangelogId, unseenEntries } from '../changelog'
 import { fmtDayHeader } from '../format'
 import { useAppState } from '../store'
+import { NotifTabs } from './NotifTabs'
 
 export function Nouveautes() {
   const { store, dispatch } = useAppState()
@@ -16,6 +17,8 @@ export function Nouveautes() {
   }, [latest, store.settings.seenChangelogId, dispatch])
 
   return (
+    <>
+      <NotifTabs current="nouveautes" />
     <div className="content news">
       {CHANGELOG.map((entry) => (
         <section key={entry.id} className={unseen.has(entry.id) ? 'news-entry news-entry--new' : 'news-entry'}>
@@ -29,5 +32,6 @@ export function Nouveautes() {
         </section>
       ))}
     </div>
+    </>
   )
 }

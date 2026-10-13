@@ -201,3 +201,7 @@
 .news-date { margin: 0 0 2px; font-size: 12px; color: var(--text-3); text-transform: uppercase; letter-spacing: .04em; }
 .news-title { margin: 0 0 6px; font-size: 17px; font-weight: 600; }
 .news-list { margin: 0; padding-left: 18px; list-style: disc; font-size: 15px; line-height: 1.45; color: var(--text-2); }
+
+/* Onglet de la cloche : sélecteur Nouveautés / Journal d'activité, puis filtre du journal. */
+.notif-tabs { padding-top: 12px; padding-bottom: 4px; }
+.journal-filter { padding-top: 4px; padding-bottom: 8px; }

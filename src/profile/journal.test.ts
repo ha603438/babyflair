@@ -2,6 +2,7 @@ import { describe, expect, it } from 'vitest'
 import { fmtDayHeader, fmtTime } from '../format'
 import type { Match, MatchEvent, MatchSnapshot, Player, PlayerId } from '../types'
 import {
+  filterEvents,
   actorName,
   authorshipLine,
   eventSnapshot,
@@ -151,5 +152,15 @@ describe('scoreChange with comeback', () => {
     expect(scoreChange(ev(snap(5, 4), snap(5, 4, true)))).toBe('comeback coché')
     expect(scoreChange(ev(snap(5, 4, true), snap(5, 4)))).toBe('comeback décoché')
     expect(scoreChange(ev(snap(5, 4, true), snap(5, 4, true)))).toBeNull()
+  })
+})
+
+describe('filterEvents', () => {
+  const ev = (action: 'created' | 'updated' | 'deleted' | 'restored') =>
+    ({ id: 1, at: '2026-10-13T10:00:00Z', action, matchId: 'm', actorId: null, before: null, after: null })
+  it('keeps modifications, deletions and restorations by default, everything with « Tout »', () => {
+    const all = [ev('created'), ev('updated'), ev('deleted'), ev('restored')]
+    expect(filterEvents(all, 'changes').map((e) => e.action)).toEqual(['updated', 'deleted', 'restored'])
+    expect(filterEvents(all, 'all')).toHaveLength(4)
   })
 })

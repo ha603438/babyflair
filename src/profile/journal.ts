@@ -4,12 +4,15 @@ import { fmtDayHeader, fmtScore, fmtTime } from '../format'
 import { teamLabel } from '../stats'
 import type { Match, MatchEvent, MatchEventAction, MatchId, MatchSnapshot, Player, PlayerId } from '../types'
 
-export const JOURNAL_LIMIT = 100
+export const JOURNAL_LIMIT = 200
 
 export const JOURNAL_COPY = {
-  title: 'Journal',
-  row: 'Journal des modifications',
-  empty: "Aucune modification enregistrée pour l'instant.",
+  title: "Journal d'activité",
+  row: "Journal d'activité",
+  empty: "Aucune activité enregistrée pour l'instant.",
+  emptyChanges: "Aucune modification ni suppression pour l'instant.",
+  filterChanges: 'Modifs et suppressions',
+  filterAll: 'Tout',
   someone: "Quelqu'un",
   loading: 'Chargement…',
 } as const
@@ -144,4 +147,12 @@ export function authorshipLine(match: Match, players: Map<PlayerId, Player>): st
   if (author !== undefined) return `Saisi par ${author}`
   if (editor !== undefined) return `Modifié par ${editor}`
   return null
+}
+
+export type JournalFilter = 'changes' | 'all'
+
+/** « Modifs et suppressions » keeps updates, deletions and restorations; « Tout » also shows the new matches. */
+export function filterEvents(events: MatchEvent[], filter: JournalFilter): MatchEvent[] {
+  if (filter === 'all') return events
+  return events.filter((event) => event.action !== 'created')
 }

@@ -1,9 +1,11 @@
-// Journal des modifications (mode partagé, Réglages › Journal): the last 100 match_events written by the server
+// Journal d'activité (mode partagé, onglet de la cloche): the last 100 match_events written by the server
 // trigger, fetched each time the screen opens, grouped by day like Historique. Formatting is in profile/journal.ts.
 import { useEffect, useMemo, useState } from 'react'
 import { ListRow } from '../components/ListRow'
-import { JOURNAL_COPY, JOURNAL_LIMIT, journalDays } from '../profile/journal'
-import type { JournalRow } from '../profile/journal'
+import { filterEvents, JOURNAL_COPY, JOURNAL_LIMIT, journalDays } from '../profile/journal'
+import type { JournalFilter, JournalRow } from '../profile/journal'
+import { SegmentedControl } from '../components/SegmentedControl'
+import { NotifTabs } from './NotifTabs'
 import type { RemoteApi } from '../remote/api'
 import { hrefOf } from '../router'
 import { useAppState } from '../store'
@@ -68,16 +70,16 @@ function Message({ text }: { text: string }) {
   return <p className="content lists-empty">{text}</p>
 }
 
-type ListProps = { events: MatchEvent[]; players: Player[]; matchIds: MatchId[] }
+type ListProps = { events: MatchEvent[]; players: Player[]; matchIds: MatchId[]; emptyText: string }
 
-function JournalList({ events, players, matchIds }: ListProps) {
+function JournalList({ events, players, matchIds, emptyText }: ListProps) {
   // Captured once per visit: render stays pure, the day headers are fresh each time the screen opens.
   const [now] = useState(() => new Date())
   const days = useMemo(() => {
     const byId = new Map<PlayerId, Player>(players.map((player) => [player.id, player]))
     return journalDays(events, byId, new Set(matchIds), now)
   }, [events, players, matchIds, now])
-  if (days.length === 0) return <Message text={JOURNAL_COPY.empty} />
+  if (days.length === 0) return <Message text={emptyText} />
   return (
     <>
       {days.map((day) => (
@@ -92,15 +94,35 @@ function JournalList({ events, players, matchIds }: ListProps) {
   )
 }
 
+const FILTERS = [
+  { value: 'changes', label: JOURNAL_COPY.filterChanges },
+  { value: 'all', label: JOURNAL_COPY.filterAll },
+] as const satisfies readonly { value: JournalFilter; label: string }[]
+
 export function Journal() {
   const { store, sync } = useAppState()
   const load = useMatchEvents(sync.api)
+  const [filter, setFilter] = useState<JournalFilter>('changes')
   const matchIds = useMemo(() => store.matches.map((match) => match.id), [store.matches])
+  const emptyText = filter === 'changes' ? JOURNAL_COPY.emptyChanges : JOURNAL_COPY.empty
   return (
-    <div className="hist-col">
-      {load.kind === 'loading' && <Message text={JOURNAL_COPY.loading} />}
-      {load.kind === 'error' && <Message text={load.text} />}
-      {load.kind === 'done' && <JournalList events={load.events} players={store.players} matchIds={matchIds} />}
-    </div>
+    <>
+      <NotifTabs current="journal" />
+      <div className="content journal-filter">
+        <SegmentedControl options={FILTERS} value={filter} onChange={setFilter} aria-label="Filtre" />
+      </div>
+      <div className="hist-col">
+        {load.kind === 'loading' && <Message text={JOURNAL_COPY.loading} />}
+        {load.kind === 'error' && <Message text={load.text} />}
+        {load.kind === 'done' && (
+          <JournalList
+            events={filterEvents(load.events, filter)}
+            players={store.players}
+            matchIds={matchIds}
+            emptyText={emptyText}
+          />
+        )}
+      </div>
+    </>
   )
 }

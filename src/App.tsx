@@ -154,7 +154,7 @@ function AppHeader({ route }: { route: Route }) {
     case 'nouveautes':
       return <Header title="Nouveautés" onBrandDoubleTap={onBrandDoubleTap} left={<NewMatchShortcut />} />
     case 'journal':
-      return <Header title={JOURNAL_COPY.title} back />
+      return <Header title={JOURNAL_COPY.title} onBrandDoubleTap={onBrandDoubleTap} left={<NewMatchShortcut />} />
   }
 }
 

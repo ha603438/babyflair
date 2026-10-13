@@ -22,7 +22,7 @@ const CASES: Array<[string, string]> = [
   ['#/joueurs/p1', 'Joueur'],
   ['#/reglages', 'Réglages'],
   ['#/comment-ca-marche', 'Comment ça marche'],
-  ['#/journal', 'Journal'],
+  ['#/journal', "Journal d&#x27;activité"],
 ]
 
 describe('App shell', () => {
@@ -60,7 +60,7 @@ describe('App shell', () => {
     const reglages = renderAt('#/reglages')
     expect(reglages).not.toContain('Mon profil')
     expect(reglages).not.toContain('Journal des modifications')
-    expect(renderAt('#/journal')).toContain("Aucune modification enregistrée pour l&#x27;instant.")
+    expect(renderAt('#/journal')).toContain("Aucune modification ni suppression pour l&#x27;instant.")
   })
 
   it('falls back to Classement on an unknown hash', () => {

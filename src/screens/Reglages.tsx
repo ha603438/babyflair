@@ -1,5 +1,5 @@
 // Réglages (spec §3.8): export / import, rules link, install row, « Tout effacer », footer.
-// Mode partagé: « Mon profil », « Journal des modifications », « Code du bureau » rows, « Déconnecter cet appareil »
+// Mode partagé: « Mon profil », « Code du bureau » rows, « Déconnecter cet appareil »
 // instead of « Tout effacer », sync footer.
 import { useRef, useState } from 'react'
 import type { ChangeEvent } from 'react'
@@ -8,7 +8,6 @@ import { usePush } from '../calls/usePush'
 import { Button } from '../components/Button'
 import { ConfirmDialog } from '../components/ConfirmDialog'
 import { HintCard } from '../components/HintCard'
-import { JOURNAL_COPY } from '../profile/journal'
 import { profileCaption, PROFILE_COPY } from '../profile/profile'
 import type { Profile } from '../profile/profile'
 import { useChooseProfile, useProfile, useWriteGuard } from '../profile/useWriteGuard'
@@ -193,7 +192,6 @@ export function Reglages() {
           caption="Remplace tout par un fichier JSON BabyFlair"
           onClick={() => guard('importer des données', () => fileInput.current?.click())}
         />
-        {shared && <SettingRow title={JOURNAL_COPY.row} chevron href={hrefOf({ name: 'journal' })} />}
       </div>
 
       <SectionHeader title="Application" />

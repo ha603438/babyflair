@@ -6,6 +6,15 @@ export type ChangelogEntry = { id: string; date: string; title: string; items: s
 
 export const CHANGELOG: ChangelogEntry[] = [
   {
+    id: '2026-10-13-1',
+    date: '2026-10-13',
+    title: "Journal d'activité",
+    items: [
+      "Sous la cloche, l'onglet « Journal d'activité » trace qui a modifié, supprimé ou rétabli un match.",
+      'Le filtre « Tout » ajoute les matchs saisis.',
+    ],
+  },
+  {
     id: '2026-10-12-8',
     date: '2026-10-12',
     title: 'Fanny et comebacks',
