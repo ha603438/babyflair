@@ -6,6 +6,12 @@ export type ChangelogEntry = { id: string; date: string; title: string; items: s
 
 export const CHANGELOG: ChangelogEntry[] = [
   {
+    id: '2026-10-13-3',
+    date: '2026-10-13',
+    title: 'Classement allégé',
+    items: ['Le rappel d’export disparaît du classement : l’export reste dans Réglages.'],
+  },
+  {
     id: '2026-10-13-2',
     date: '2026-10-13',
     title: 'Courbes du classement',

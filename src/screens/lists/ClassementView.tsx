@@ -10,7 +10,6 @@ import { HintCard } from '../../components/HintCard'
 import { SectionHeader } from '../../components/SectionHeader'
 import { RankRow } from '../../components/rows'
 import type { RankRowVariant } from '../../components/rows'
-import { plural } from '../../format'
 import { hrefOf, navigate } from '../../router'
 import type { Action } from '../../store'
 import type { PlayerId, Ranking } from '../../types'
@@ -130,10 +129,6 @@ function dismissNotifications(dispatch: Dispatch): void {
   dispatch({ type: 'setSetting', patch: { notifHintDismissedAt: new Date().toISOString() } })
 }
 
-function dismissExport(dispatch: Dispatch): void {
-  dispatch({ type: 'setSetting', patch: { exportHintDismissedAt: new Date().toISOString() } })
-}
-
 function install(): void {
   void promptInstall()
 }
@@ -152,22 +147,12 @@ function hintCard(hint: Hint, dispatch: Dispatch): ReactNode {
       />
     )
   }
-  if (hint.kind === 'notifications') {
-    return (
-      <HintCard
-        title={PUSH_COPY.hintTitle}
-        body={PUSH_COPY.hintBody}
-        primary={{ label: PUSH_COPY.enable, onClick: () => navigate({ name: 'reglages' }) }}
-        onDismiss={() => dismissNotifications(dispatch)}
-      />
-    )
-  }
   return (
     <HintCard
-      title={`${plural(hint.count, 'match')} depuis le dernier export.`}
-      body="Pense à sauvegarder."
-      primary={{ label: 'Exporter', onClick: () => navigate({ name: 'reglages' }) }}
-      onDismiss={() => dismissExport(dispatch)}
+      title={PUSH_COPY.hintTitle}
+      body={PUSH_COPY.hintBody}
+      primary={{ label: PUSH_COPY.enable, onClick: () => navigate({ name: 'reglages' }) }}
+      onDismiss={() => dismissNotifications(dispatch)}
     />
   )
 }
@@ -324,7 +309,7 @@ function useHighlight(nav: ScreenContext['nav'], rootRef: RefObject<HTMLDivEleme
 export function ClassementView({ app, replay, installEnv, onPropose, onChooseProfile }: ClassementViewProps) {
   const rootRef = useRef<HTMLDivElement>(null)
   const highlight = useHighlight(app.nav, rootRef)
-  const hint = pickHint(installEnv, app.store.matches, app.store.settings, replay.now)
+  const hint = pickHint(installEnv, app.store.settings, replay.now)
   return (
     <div ref={rootRef} className="lists-screen classement">
       <ContextStrip app={app} replay={replay} />

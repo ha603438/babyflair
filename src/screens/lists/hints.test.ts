@@ -1,26 +1,12 @@
 import { describe, expect, it } from 'vitest'
-import type { Match, Settings } from '../../types'
-import { exportHint, installHint, isIosUserAgent, isSnoozed, matchesSinceExport, notificationsHint, pickHint } from './hints'
+import type { Settings } from '../../types'
+import { installHint, isIosUserAgent, isSnoozed, notificationsHint, pickHint } from './hints'
 import type { InstallEnv } from './hints'
 
 const now = new Date('2026-10-12T10:00:00Z')
 const DAY = 86_400_000
 const daysAgo = (days: number): string => new Date(now.getTime() - days * DAY).toISOString()
 const settings = (patch: Partial<Settings> = {}): Settings => ({ lastFormat: '2v2', lastTarget: 10, ...patch })
-const match = (i: number, createdDaysAgo: number): Match => ({
-  id: `m${i}`,
-  seq: i,
-  playedAt: daysAgo(createdDaysAgo),
-  createdAt: daysAgo(createdDaysAgo),
-  updatedAt: daysAgo(createdDaysAgo),
-  target: 10,
-  teamA: ['a', 'b'],
-  teamB: ['c', 'd'],
-  scoreA: 10,
-  scoreB: 8,
-})
-const matches = (count: number, createdDaysAgo = 1): Match[] =>
-  Array.from({ length: count }, (_, i) => match(i + 1, createdDaysAgo))
 
 const IOS = 'Mozilla/5.0 (iPhone; CPU iPhone OS 17_0 like Mac OS X) AppleWebKit/605.1.15 Mobile/15E148 Safari/604.1'
 const DESKTOP = 'Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7) AppleWebKit/537.36 Chrome/130.0 Safari/537.36'
@@ -67,8 +53,8 @@ describe('notificationsHint', () => {
     expect(notificationsHint(installed, settings({ notifHintDismissedAt: daysAgo(40) }), now)).toEqual({
       kind: 'notifications',
     })
-    expect(pickHint(installed, matches(40), settings(), now)).toEqual({ kind: 'notifications' })
-    expect(pickHint(env({ userAgent: IOS, pushSupported: true }), matches(40), settings(), now)).toEqual({ kind: 'install-ios' })
+    expect(pickHint(installed, settings(), now)).toEqual({ kind: 'notifications' })
+    expect(pickHint(env({ userAgent: IOS, pushSupported: true }), settings(), now)).toEqual({ kind: 'install-ios' })
   })
 })
 
@@ -90,37 +76,10 @@ describe('installHint', () => {
   })
 })
 
-describe('matchesSinceExport', () => {
-  it('counts every match when never exported', () => {
-    expect(matchesSinceExport(matches(5), undefined)).toBe(5)
-    expect(matchesSinceExport(matches(5), 'garbage')).toBe(5)
-  })
-  it('counts only matches created strictly after the export', () => {
-    const list = [match(1, 10), match(2, 5), match(3, 1)]
-    expect(matchesSinceExport(list, daysAgo(5))).toBe(1)
-    expect(matchesSinceExport(list, daysAgo(0))).toBe(0)
-  })
-})
-
-describe('exportHint', () => {
-  it('nudges after 30 matches since the last export', () => {
-    expect(exportHint(matches(30), settings(), now)).toEqual({ kind: 'export', count: 30 })
-    expect(exportHint(matches(29), settings(), now)).toBeNull()
-  })
-  it('nudges after 30 days with at least one match since', () => {
-    expect(exportHint(matches(1), settings({ lastExportAt: daysAgo(31) }), now)).toEqual({ kind: 'export', count: 1 })
-    expect(exportHint([match(1, 40)], settings({ lastExportAt: daysAgo(31) }), now)).toBeNull()
-    expect(exportHint(matches(5), settings({ lastExportAt: daysAgo(10) }), now)).toBeNull()
-  })
-  it('respects the snooze', () => {
-    expect(exportHint(matches(50), settings({ exportHintDismissedAt: daysAgo(1) }), now)).toBeNull()
-  })
-})
-
 describe('pickHint', () => {
-  it('shows the install hint before the export nudge', () => {
-    expect(pickHint(env({ userAgent: IOS }), matches(50), settings(), now)).toEqual({ kind: 'install-ios' })
-    expect(pickHint(env(), matches(50), settings(), now)).toEqual({ kind: 'export', count: 50 })
-    expect(pickHint(env(), matches(3), settings(), now)).toBeNull()
+  it('shows the install hint first and never an export reminder on Classement', () => {
+    expect(pickHint(env({ userAgent: IOS }), settings(), now)).toEqual({ kind: 'install-ios' })
+    expect(pickHint(env(), settings(), now)).toBeNull()
+    expect(pickHint(env(), settings({ lastExportAt: daysAgo(90) }), now)).toBeNull()
   })
 })
