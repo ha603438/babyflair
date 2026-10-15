@@ -22,6 +22,9 @@ const dayWithYearFormat = new Intl.DateTimeFormat('fr-FR', {
   year: 'numeric',
 })
 const shortDateFormat = new Intl.DateTimeFormat('fr-FR', { weekday: 'short', day: 'numeric', month: 'short' })
+const shortMonthFormat = new Intl.DateTimeFormat('fr-FR', { month: 'short' })
+/** Binds a day to its month (« 3 oct. ») and a month to its year so neither wraps alone. */
+const NBSP = '\u00A0'
 const relativeFormat = new Intl.RelativeTimeFormat('fr', { numeric: 'auto', style: 'short' })
 
 function withTrueMinus(text: string): string {
@@ -108,6 +111,50 @@ export function fmtDateLine(iso: string, target: Target, withTime: boolean): str
   if (date === null) return ''
   if (!withTime) return `${shortDateFormat.format(date)} · en ${target}`
   return `${shortDateFormat.format(date)} · ${timeFormat.format(date)} · en ${target}`
+}
+
+/** « 1er », « 3 »: French writes the first day of a month as an ordinal. */
+function dayOfMonth(date: Date): string {
+  if (date.getDate() === 1) return '1er'
+  return String(date.getDate())
+}
+
+/** « 3 oct. », « 1er sept. » */
+function dayAndMonth(date: Date): string {
+  return `${dayOfMonth(date)}${NBSP}${shortMonthFormat.format(date)}`
+}
+
+/** « 2025 » after a date of another year than `now`; nothing for the current year. */
+function yearSuffix(date: Date, now: Date): string {
+  if (date.getFullYear() === now.getFullYear()) return ''
+  return `${NBSP}${date.getFullYear()}`
+}
+
+function isSameDay(a: Date, b: Date): boolean {
+  return startOfDay(a) === startOfDay(b)
+}
+
+/** « le 3 oct. » (« le 3 oct. 2025 » another year): a day only, never a time of day. */
+export function fmtDayOn(iso: string, now: Date): string {
+  const date = toDate(iso)
+  if (date === null) return ''
+  return `le ${dayAndMonth(date)}${yearSuffix(date, now)}`
+}
+
+/**
+ * Days only, never a time of day: « du 3 au 9 oct. », « du 28 sept. au 4 oct. », « le 3 oct. » when both fall on the
+ * same day; the year is added when it is not the current one (« du 28 déc. 2025 au 3 janv. 2026 »).
+ */
+export function fmtDaySpan(fromIso: string, toIso: string, now: Date): string {
+  const from = toDate(fromIso)
+  const to = toDate(toIso)
+  if (from === null || to === null) return ''
+  if (isSameDay(from, to)) return fmtDayOn(fromIso, now)
+  if (from.getFullYear() !== to.getFullYear()) {
+    return `du ${dayAndMonth(from)}${NBSP}${from.getFullYear()} au ${dayAndMonth(to)}${NBSP}${to.getFullYear()}`
+  }
+  if (from.getMonth() === to.getMonth()) return `du ${dayOfMonth(from)} au ${dayAndMonth(to)}${yearSuffix(to, now)}`
+  return `du ${dayAndMonth(from)} au ${dayAndMonth(to)}${yearSuffix(to, now)}`
 }
 
 export function fmtScore(a: number, b: number): string {

@@ -24,6 +24,7 @@ import { CommentCaMarche } from './screens/CommentCaMarche'
 import { Nouveautes } from './screens/Nouveautes'
 import { Courbes } from './screens/Courbes'
 import { Duo } from './screens/Duo'
+import { TopStats } from './screens/TopStats'
 import { duoTitle } from './duo'
 import { COURBES_TITLE, tabOf } from './screens/lists/modeLabels'
 import { unseenEntries } from './changelog'
@@ -70,6 +71,8 @@ function Screen({ route }: { route: Route }): ReactNode {
       return <Journal />
     case 'courbes':
       return <Courbes />
+    case 'top':
+      return <TopStats />
     case 'appel':
       return <Classement />
   }
@@ -167,6 +170,8 @@ function AppHeader({ route }: { route: Route }) {
       return <Header title={JOURNAL_COPY.title} onBrandDoubleTap={onBrandDoubleTap} left={<NewMatchShortcut />} />
     case 'courbes':
       return <Header title={COURBES_TITLE[tabOf(store.settings)]} back />
+    case 'top':
+      return <Header title="Top stats" back />
   }
 }
 

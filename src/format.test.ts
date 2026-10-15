@@ -3,6 +3,8 @@ import {
   daysSince,
   fmtDateLine,
   fmtDayHeader,
+  fmtDayOn,
+  fmtDaySpan,
   fmtDelta,
   fmtInt,
   fmtMultiplier,
@@ -235,6 +237,36 @@ describe('fmtDateLine', () => {
   it('returns an empty string for an invalid date', () => {
     expect(fmtDateLine('pas une date', 10, true)).toBe('')
     expect(fmtDateLine('pas une date', 10, false)).toBe('')
+  })
+})
+
+describe('fmtDayOn / fmtDaySpan', () => {
+  const now = local(2026, 10, 15)
+
+  it('gives a day only, « 1er » for the first of the month, the year when not the current one', () => {
+    expect(fmtDayOn(iso(local(2026, 10, 3, 18, 42)), now)).toBe(`le 3${NBSP}oct.`)
+    expect(fmtDayOn(iso(local(2026, 9, 1)), now)).toBe(`le 1er${NBSP}sept.`)
+    expect(fmtDayOn(iso(local(2025, 12, 28)), now)).toBe(`le 28${NBSP}déc.${NBSP}2025`)
+    expect(fmtDayOn('pas une date', now)).toBe('')
+  })
+
+  it('spans days within a month, across months and across years', () => {
+    expect(fmtDaySpan(iso(local(2026, 10, 3, 9)), iso(local(2026, 10, 9, 19, 5)), now)).toBe(`du 3 au 9${NBSP}oct.`)
+    expect(fmtDaySpan(iso(local(2026, 9, 28)), iso(local(2026, 10, 4)), now)).toBe(
+      `du 28${NBSP}sept. au 4${NBSP}oct.`,
+    )
+    expect(fmtDaySpan(iso(local(2026, 10, 1)), iso(local(2026, 10, 2)), now)).toBe(`du 1er au 2${NBSP}oct.`)
+    expect(fmtDaySpan(iso(local(2025, 12, 28)), iso(local(2026, 1, 3)), now)).toBe(
+      `du 28${NBSP}déc.${NBSP}2025 au 3${NBSP}janv.${NBSP}2026`,
+    )
+    expect(fmtDaySpan(iso(local(2025, 10, 3)), iso(local(2025, 10, 9)), now)).toBe(`du 3 au 9${NBSP}oct.${NBSP}2025`)
+  })
+
+  it('reads as one day when both ends fall on the same day, and never shows a time of day', () => {
+    const span = fmtDaySpan(iso(local(2026, 10, 3, 8, 15)), iso(local(2026, 10, 3, 19, 45)), now)
+    expect(span).toBe(`le 3${NBSP}oct.`)
+    expect(span).not.toMatch(/\d:\d/)
+    expect(fmtDaySpan('pas une date', iso(now), now)).toBe('')
   })
 })
 

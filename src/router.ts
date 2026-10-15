@@ -16,6 +16,8 @@ export type Route =
   | { name: 'nouveautes' }
   /** Classement › « 📈 Courbes »: rating curves of every player. */
   | { name: 'courbes' }
+  /** Classement › « 🏅 Top stats »: all-time records (src/records.ts). */
+  | { name: 'top' }
   /** Réglages › Journal des modifications (mode partagé). */
   | { name: 'journal' }
   /** Notification click target: Classement with the call's modal open (src/calls/CallWatcher.tsx). */
@@ -66,7 +68,7 @@ function parseAppel(segments: string[]): Route {
   return HOME
 }
 
-type SimpleName = 'reglages' | 'comment-ca-marche' | 'nouveautes' | 'journal' | 'courbes'
+type SimpleName = 'reglages' | 'comment-ca-marche' | 'nouveautes' | 'journal' | 'courbes' | 'top'
 
 function parseSimple(segments: string[], name: SimpleName): Route {
   if (segments.length === 1) return { name }
@@ -99,6 +101,8 @@ export function parseHash(hash: string): Route {
       return parseSimple(segments, 'journal')
     case 'courbes':
       return parseSimple(segments, 'courbes')
+    case 'top':
+      return parseSimple(segments, 'top')
     case 'duo':
       return parseDuo(segments)
     case 'appel':
@@ -138,6 +142,8 @@ export function hrefOf(route: Route): string {
       return '#/journal'
     case 'courbes':
       return '#/courbes'
+    case 'top':
+      return '#/top'
     case 'appel':
       return `#/appel/${encodeURIComponent(route.id)}`
   }

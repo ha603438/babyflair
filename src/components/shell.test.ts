@@ -138,6 +138,8 @@ describe('TabBar', () => {
     expect((rules.match(/<a [^>]*>/g) ?? [])[0]).toContain('aria-current="page"')
     const curves = render(TabBar, { current: 'courbes' })
     expect((curves.match(/<a [^>]*>/g) ?? [])[0]).toContain('aria-current="page"')
+    const top = render(TabBar, { current: 'top' })
+    expect((top.match(/<a [^>]*>/g) ?? [])[0]).toContain('aria-current="page"')
   })
 })
 

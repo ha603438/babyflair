@@ -132,7 +132,23 @@ function CurvesLink({ matchCount }: { matchCount: number }) {
   )
 }
 
-type LinksProps = { onPropose: (() => void) | undefined; playerCount: number; matchCount: number }
+/** « 🏅 Top stats » → `#/top`: all-time records over every match (Mixte), whatever the selected tab. */
+function TopStatsLink({ matchCount }: { matchCount: number }) {
+  if (matchCount === 0) return null
+  return (
+    <a className="call-propose__link" href={hrefOf({ name: 'top' })}>
+      🏅 Top stats
+    </a>
+  )
+}
+
+/** `matchCount`: the selected tab's matches (« 📈 Courbes »); `allMatchCount`: every match (« 🏅 Top stats »). */
+type LinksProps = {
+  onPropose: (() => void) | undefined
+  playerCount: number
+  matchCount: number
+  allMatchCount: number
+}
 
 // No player yet: nobody to call.
 function proposeAction(onPropose: (() => void) | undefined, playerCount: number): (() => void) | undefined {
@@ -141,13 +157,14 @@ function proposeAction(onPropose: (() => void) | undefined, playerCount: number)
 }
 
 /** Under the context strip, one centred row of discreet links. */
-function ClassementLinks({ onPropose, playerCount, matchCount }: LinksProps) {
+function ClassementLinks({ onPropose, playerCount, matchCount, allMatchCount }: LinksProps) {
   const propose = proposeAction(onPropose, playerCount)
-  if (propose === undefined && matchCount === 0) return null
+  if (propose === undefined && matchCount === 0 && allMatchCount === 0) return null
   return (
     <div className="content call-propose">
       <ProposeButton onPropose={propose} />
       <CurvesLink matchCount={matchCount} />
+      <TopStatsLink matchCount={allMatchCount} />
     </div>
   )
 }
@@ -378,6 +395,7 @@ export function ClassementView(props: ClassementViewProps) {
         onPropose={onPropose}
         playerCount={app.store.players.length}
         matchCount={scope.matches.length}
+        allMatchCount={app.store.matches.length}
       />
       <HintSlot hint={hint} dispatch={app.dispatch} />
       <Body app={app} replay={replay} mode={mode} highlight={highlight} />

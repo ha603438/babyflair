@@ -6,6 +6,15 @@ export type ChangelogEntry = { id: string; date: string; title: string; items: s
 
 export const CHANGELOG: ChangelogEntry[] = [
   {
+    id: '2026-10-15-4',
+    date: '2026-10-15',
+    title: 'Top stats',
+    items: [
+      '«\u202F🏅 Top stats\u202F» sous le classement\u202F: les records de tous les temps, invités compris.',
+      'Meilleurs avant et arrière, séries, fanny et comebacks, exploits, records de points, duos et rivalités.',
+    ],
+  },
+  {
     id: '2026-10-15-3',
     date: '2026-10-15',
     title: 'Trois classements',
