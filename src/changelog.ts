@@ -6,6 +6,12 @@ export type ChangelogEntry = { id: string; date: string; title: string; items: s
 
 export const CHANGELOG: ChangelogEntry[] = [
   {
+    id: '2026-10-15-2',
+    date: '2026-10-15',
+    title: 'Filtres dans l’historique',
+    items: ['L’historique se filtre par format (« 2V2 » ou « 1V1 ») et par joueur.'],
+  },
+  {
     id: '2026-10-15-1',
     date: '2026-10-15',
     title: 'Qui est chaud ?',

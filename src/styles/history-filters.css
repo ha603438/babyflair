@@ -1,0 +1,151 @@
+/*
+ * history-filters.css — Historique filter bar (src/screens/historique/HistoryFilterBar.tsx): « 2V2 » / « 1V1 »
+ * toggle chips, the native player <select>, the « Effacer » action and the « Aucun match pour ces filtres » block.
+ * Same 36 px pill shape as the Courbes chips (.curve-chip); the pressed state uses the accent tokens instead of a
+ * series colour. Tokens only, so light and dark follow tokens.css. Not sticky: the day headers keep top: 0.
+ */
+
+/* One line on a 375 px phone: 2 × 46 px chips, the select (≥ 164 px, enough for « Tous les joueurs » at 16 px) and
+   « Effacer » (~52 px). Narrower screens push « Effacer » to a right-aligned second line; the select never pushes
+   the line wider, a long name is cut inside it. */
+.hf-bar {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: var(--s2);
+  padding-top: var(--s3);
+  padding-bottom: var(--s2);
+}
+
+/* ---------- format chips ---------- */
+.hf-chip {
+  flex: none;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  min-width: 44px;
+  min-height: 36px;
+  padding: 0 10px;
+  border: 1px solid var(--border);
+  border-radius: var(--r-pill);
+  background: var(--surface);
+  color: var(--text-2);
+  font-size: var(--fs-caption);
+  font-weight: 600;
+  line-height: 1;
+  letter-spacing: .04em;
+  font-variant-numeric: tabular-nums;
+  user-select: none;
+  -webkit-user-select: none;
+  -webkit-touch-callout: none;
+  transition:
+    background-color var(--t-fast) var(--ease),
+    border-color var(--t-fast) var(--ease),
+    color var(--t-fast) var(--ease);
+}
+
+.hf-chip:active {
+  transform: scale(.97);
+}
+
+.hf-chip[aria-pressed='true'] {
+  border-color: var(--accent);
+  background: var(--accent-soft);
+  color: var(--accent-strong);
+}
+
+/* ---------- player select ---------- */
+/* The label is the pill; the <select> fills it with no UA chrome. The chevron is a clip-path shape in a token colour
+   (not a rotated border: the reduced-motion reset in base.css removes every transform). */
+.hf-select {
+  position: relative;
+  display: flex;
+  flex: 1 1 0;
+  min-width: 10.25rem;
+  max-width: 100%;
+}
+
+.hf-select select {
+  width: 100%;
+  min-width: 0;
+  min-height: 36px;
+  padding: 0 30px 0 var(--s3);
+  border: 1px solid var(--border);
+  border-radius: var(--r-pill);
+  background: var(--surface);
+  color: var(--text);
+  font-size: var(--fs-body); /* 16 px: iOS does not zoom on focus */
+  font-weight: 500;
+  line-height: 1.2;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+  cursor: pointer;
+  appearance: none;
+  -webkit-appearance: none;
+  transition:
+    background-color var(--t-fast) var(--ease),
+    border-color var(--t-fast) var(--ease);
+}
+
+.hf-select select option {
+  background: var(--surface);
+  color: var(--text);
+}
+
+.hf-select::after {
+  content: "";
+  position: absolute;
+  top: 50%;
+  right: 12px;
+  width: 10px;
+  height: 6px;
+  margin-top: -3px;
+  background: var(--text-2);
+  clip-path: polygon(0 22%, 14% 0, 50% 60%, 86% 0, 100% 22%, 50% 100%);
+  pointer-events: none;
+}
+
+.hf-select.is-on select {
+  border-color: var(--accent);
+  background: var(--accent-soft);
+  color: var(--accent-strong);
+  font-weight: 600;
+}
+
+.hf-select.is-on::after {
+  background: var(--accent-strong);
+}
+
+/* ---------- « Effacer » ---------- */
+.hf-clear {
+  flex: none;
+  margin-left: auto;
+  min-height: 36px;
+  padding: 0 var(--s1);
+  color: var(--accent);
+  font-size: var(--fs-caption);
+  font-weight: 600;
+  user-select: none;
+  -webkit-user-select: none;
+}
+
+.hf-clear:active {
+  opacity: .7;
+}
+
+/* ---------- empty filtered list ---------- */
+.hf-empty {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: var(--s3);
+  padding-top: var(--s7);
+  padding-bottom: var(--s4);
+  text-align: center;
+}
+
+.hf-empty__text {
+  font-size: var(--fs-label);
+  line-height: 1.4;
+  color: var(--text-2);
+}
