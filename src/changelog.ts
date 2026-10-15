@@ -6,6 +6,16 @@ export type ChangelogEntry = { id: string; date: string; title: string; items: s
 
 export const CHANGELOG: ChangelogEntry[] = [
   {
+    id: '2026-10-15-8',
+    date: '2026-10-15',
+    title: 'Du flair partout',
+    items: [
+      '«\u202FProposer un baby\u202F» devient «\u202FJe flaire un baby\u202F».',
+      'Le Flair-o-mètre donne les chances de chaque équipe avant de valider un match.',
+      'Les inactifs sont «\u202FPartis prendre l’flair\u202F», les règles s’appellent «\u202FFlair Play\u202F» et le duo le plus fidèle a «\u202FUn flair de famille\u202F».',
+    ],
+  },
+  {
     id: '2026-10-15-7',
     date: '2026-10-15',
     title: 'Onglet Stats',

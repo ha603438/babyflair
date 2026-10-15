@@ -9,7 +9,7 @@ export const CALL_RECRUIT_MS = 5 * 60 * 1000
 export const CALL_FULL_MS = 45 * 60 * 1000
 
 export const CALL_COPY = {
-  propose: 'Proposer un baby',
+  propose: 'Je flaire un baby',
   confirmSend: 'Envoyer la notification à tout le monde ?',
   send: 'Envoyer la notification',
   hot: 'Chaud pour prendre une branlée ?',
@@ -205,10 +205,10 @@ export function nameFor(player: Player, viewerId: PlayerId | undefined): string 
   return `${player.name} ${CALL_COPY.you}`
 }
 
-/** « Alice propose un baby · 2/4 présents ». */
+/** « Alice flaire un baby · 2/4 présents ». */
 export function rosterLine(organizerName: string | undefined, count: number): string {
   const name = organizerName ?? 'Quelqu’un'
-  return `${name} propose un baby · ${Math.min(count, CALL_CAPACITY)}/${CALL_CAPACITY} présents`
+  return `${name} flaire un baby · ${Math.min(count, CALL_CAPACITY)}/${CALL_CAPACITY} présents`
 }
 
 export function canFormTeams(count: number): boolean {

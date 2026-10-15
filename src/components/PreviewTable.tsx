@@ -54,7 +54,8 @@ function WhatIfTable({ teams, expected, target, players, rows }: WhatIfProps) {
   return (
     <>
       <p className="preview__chance">
-        {teams[0].label} : {fmtPercent(expected[0])} de chances · {teams[1].label} : {fmtPercent(expected[1])}
+        <span className="preview__flair">Flair-o-mètre</span> {teams[0].label} : {fmtPercent(expected[0])} ·{' '}
+        {teams[1].label} : {fmtPercent(expected[1])}
       </p>
       <table className="preview__table">
         <colgroup>

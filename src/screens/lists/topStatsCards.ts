@@ -123,7 +123,7 @@ export const TOP_STATS_COPY = {
     empty: `Pas encore de match${NNBSP}: 1 minimum`,
   },
   duo: {
-    title: 'Les Inséparables',
+    title: 'Un flair de famille',
     rule: 'Le plus de matchs ensemble en 2 contre 2',
     empty: `Pas encore de match en 2 contre 2${NNBSP}: 1 minimum`,
   },

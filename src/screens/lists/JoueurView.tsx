@@ -49,7 +49,7 @@ export type JoueurViewProps = {
 const NO_MATCH_TEXT = "Aucun match pour l'instant."
 const CANNOT_DELETE_TEXT =
   'Ce joueur a des matchs enregistrés et ne peut pas être supprimé. ' +
-  'Sans match pendant 30 jours, il passe en Inactifs.'
+  'Sans match pendant 30 jours, il part prendre l’flair (inactifs).'
 const DELETE_BODY = "Ce joueur n'a aucun match, rien ne sera recalculé."
 /** Starting rating, only used as a fallback when the engine has no entry for a player (contract says it always has). */
 const START_RATING = 1000

@@ -63,7 +63,7 @@ describe('Classement links', () => {
   it('keeps « 🔔 Proposer un baby » as the only link, without Courbes nor Hall of Flair', () => {
     const html = renderClassement(PLAYERS, MATCHES, noop)
     const row = html.split('class="content call-propose"')[1]?.split('</div>')[0] ?? ''
-    expect(row).toContain('🔔 Proposer un baby')
+    expect(row).toContain('🔔 Je flaire un baby')
     expect(row.match(/class="call-propose__link"/g)).toHaveLength(1)
     expect(html).not.toContain('href="#/courbes"')
     expect(html).not.toContain('href="#/top"')

@@ -108,7 +108,7 @@ export function ModeBody(props: ModeBodyProps) {
       />
       <ModeSection
         {...props}
-        title="Inactifs"
+        title="Partis prendre l’flair"
         subtitle="sans match depuis 30 jours"
         ids={mode.ranking.inactive}
         variant="inactive"

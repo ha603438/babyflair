@@ -228,7 +228,12 @@ export function Reglages() {
 
       <SectionHeader title="Application" />
       <div className="settings-group">
-        <SettingRow title="Comment ça marche" chevron href={hrefOf({ name: 'comment-ca-marche' })} />
+        <SettingRow
+          title="Flair Play"
+          caption="Les règles et le calcul des points"
+          chevron
+          href={hrefOf({ name: 'comment-ca-marche' })}
+        />
         {shared && (
           <SettingRow
             title="Code du bureau"

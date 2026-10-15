@@ -24,7 +24,7 @@ export const PUSH_COPY = {
   enabled: 'Notifications activées',
   disabled: 'Notifications désactivées',
   hintTitle: 'Active les notifications',
-  hintBody: 'Pour être prévenu quand quelqu’un propose un baby.',
+  hintBody: 'Pour être prévenu quand quelqu’un flaire un baby.',
 } as const
 
 export function isIos(userAgent: string): boolean {

@@ -292,7 +292,7 @@ function Body({ app, replay, mode, highlight }: BodyProps) {
         highlight={highlight}
       />
       <RankSection
-        title="Inactifs"
+        title="Partis prendre l’flair"
         subtitle="sans match depuis 30 jours"
         ids={ranking.inactive}
         variant="inactive"

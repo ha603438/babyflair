@@ -310,6 +310,13 @@
   color: var(--text-2);
 }
 
+/* « Flair-o-mètre » : the label in front of the two teams' chances. */
+.preview__flair {
+  margin-right: var(--s1);
+  font-weight: 700;
+  color: var(--accent);
+}
+
 .preview__table {
   width: 100%;
   border-collapse: collapse;

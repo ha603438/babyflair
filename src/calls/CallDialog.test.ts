@@ -58,7 +58,7 @@ describe('CallDialog', () => {
   it('lets a player answer « Chauuud 🔥 » or « Non je fais semblant de bosser », without a name picker', () => {
     const html = render({})
     expect(html).toContain('Chaud pour prendre une branlée ?')
-    expect(html).toContain('Alice propose un baby · 1/4 présents')
+    expect(html).toContain('Alice flaire un baby · 1/4 présents')
     expect(html).toContain('Chauuud 🔥')
     expect(html).toContain('Non je fais semblant de bosser')
     expect(html).not.toContain('Déjà inscrit')
@@ -71,7 +71,7 @@ describe('CallDialog', () => {
     expect(namesUnder(html, 'Chauds · 2/4')).toEqual(['Alice', 'Chloe'])
     expect(namesUnder(html, 'Pas chauds')).toEqual(['Dan'])
     expect(namesUnder(html, 'Pas encore répondu')).toEqual(['Bob (toi)', 'Emile'])
-    expect(html).toContain('Alice propose un baby · 2/4 présents')
+    expect(html).toContain('Alice flaire un baby · 2/4 présents')
   })
 
   it('hides « Pas chauds » and « Pas encore répondu » when nobody is in them', () => {
@@ -108,7 +108,7 @@ describe('CallDialog', () => {
 
   it('shows a visitor the roster and « Choisir mon profil pour répondre » instead', () => {
     const html = render({ viewerId: undefined })
-    expect(html).toContain('Alice propose un baby · 1/4 présents')
+    expect(html).toContain('Alice flaire un baby · 1/4 présents')
     expect(html).toContain('Choisir mon profil pour répondre')
     expect(html).not.toContain('Chauuud')
     expect(html).not.toContain('(toi)')

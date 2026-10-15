@@ -120,7 +120,7 @@ function AppHeader({ route }: { route: Route }) {
           title="Classement"
           left={<NewMatchShortcut />}
           right={
-            <IconButton label="Comment ça marche" href={hrefOf({ name: 'comment-ca-marche' })}>
+            <IconButton label="Flair Play, les règles" href={hrefOf({ name: 'comment-ca-marche' })}>
               <Help />
             </IconButton>
           }
@@ -158,7 +158,7 @@ function AppHeader({ route }: { route: Route }) {
     case 'reglages':
       return <Header title="Réglages" back />
     case 'comment-ca-marche':
-      return <Header title="Comment ça marche" back />
+      return <Header title="Flair Play" back />
     case 'nouveautes':
       return <Header title="Nouveautés" onBrandDoubleTap={onBrandDoubleTap} left={<NewMatchShortcut />} />
     case 'journal':

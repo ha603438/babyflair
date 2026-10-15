@@ -71,9 +71,9 @@ const SECTIONS: Section[] = [
       'fanny, ×1,25 pour un comeback, aussi bien pour les gagnants que pour les perdants.',
   },
   {
-    title: 'Inactifs',
+    title: 'Partis prendre l’flair',
     text:
-      'Sans match pendant 30 jours, tu passes dans la section Inactifs, sans perdre aucun point. Un match ' +
+      'Sans match pendant 30 jours, tu pars prendre l’flair (la section des inactifs), sans perdre aucun point. Un match ' +
       'suffit pour revenir.',
   },
   {
@@ -114,9 +114,9 @@ const SECTIONS: Section[] = [
       'changer dans Réglages › Mon profil.',
   },
   {
-    title: 'Proposer un baby',
+    title: 'Je flaire un baby',
     text:
-      'Depuis le classement, « Proposer un baby » envoie, au nom de ton profil, une notification à tous les ' +
+      'Depuis le classement, « Je flaire un baby » envoie, au nom de ton profil, une notification à tous les ' +
       'téléphones qui ont activé les notifications dans Réglages. Chacun répond « Chauuud 🔥 » ou « Non je fais ' +
       'semblant de bosser » ; dès que 4 joueurs sont là, « Former les équipes » compose les équipes les plus ' +
       'équilibrées selon le classement, tire les postes et les couleurs au sort, et ouvre le match. L’appel liste ' +

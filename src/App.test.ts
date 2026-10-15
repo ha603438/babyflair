@@ -21,7 +21,7 @@ const CASES: Array<[string, string]> = [
   ['#/joueurs', 'Joueurs'],
   ['#/joueurs/p1', 'Joueur'],
   ['#/reglages', 'Réglages'],
-  ['#/comment-ca-marche', 'Comment ça marche'],
+  ['#/comment-ca-marche', 'Flair Play'],
   ['#/journal', "Journal d&#x27;activité"],
   ['#/stats', 'Stats'],
   ['#/courbes', 'Stats'],
@@ -46,7 +46,7 @@ describe('App shell', () => {
     expect(html).toContain('Pas encore de joueurs')
     expect(html).toContain('href="#/match"')
     expect(html).toContain('aria-current="page"')
-    expect(html).toContain('aria-label="Comment ça marche"')
+    expect(html).toContain('aria-label="Flair Play, les règles"')
   })
 
   it('renders Classement with the call dialog on a notification link (#/appel/:id)', () => {
@@ -59,7 +59,7 @@ describe('App shell', () => {
   it('local mode: no profile gate, no visitor badge, no « Proposer un baby », no profile or journal rows', () => {
     expect(renderAt('#/')).not.toContain('Qui es-tu ?')
     expect(renderAt('#/')).not.toContain('Mode invité')
-    expect(renderAt('#/')).not.toContain('Proposer un baby')
+    expect(renderAt('#/')).not.toContain('Je flaire un baby')
     const reglages = renderAt('#/reglages')
     expect(reglages).not.toContain('Mon profil')
     expect(reglages).not.toContain('Journal des modifications')

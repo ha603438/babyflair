@@ -94,7 +94,7 @@ describe('Hall of Flair page', () => {
       'Le Hold-up',
       'Le Jackpot',
       'Accro au baby',
-      'Les Inséparables',
+      'Un flair de famille',
       'Meilleurs ennemis',
       'Le Clasico',
     ])
@@ -109,7 +109,7 @@ describe('Hall of Flair page', () => {
     expect(cardOf(html, 'Le Phénix')).toContain(`Pas encore de comeback${NNBSP}: 1 minimum`)
     expect(cardOf(html, 'Le Phénix')).not.toContain('class="podium"')
     const solo = renderPage([match(1, 3, ['alice'], ['bob'], 10, 5)])
-    expect(cardOf(solo, 'Les Inséparables')).toContain(`Pas encore de match en 2 contre 2${NNBSP}: 1 minimum`)
+    expect(cardOf(solo, 'Un flair de famille')).toContain(`Pas encore de match en 2 contre 2${NNBSP}: 1 minimum`)
     expect(cardOf(solo, 'Le Clasico')).toContain(
       `<p class="record-empty">Pas encore de match en 2 contre 2${NNBSP}: 1 minimum</p>`,
     )
@@ -137,7 +137,7 @@ describe('Hall of Flair page', () => {
 
   it('links duo records to the duo page and match records to the match', () => {
     const html = renderPage(MATCHES)
-    const duo = cardOf(html, 'Les Inséparables')
+    const duo = cardOf(html, 'Un flair de famille')
     expect(duo).toContain('href="#/duo/alice+bob"')
     expect(duo).toContain('<span class="podium-name">Alice &amp; Bob</span>')
     expect(duo).toContain('href="#/duo/chloe+dan"')

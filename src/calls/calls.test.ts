@@ -217,8 +217,8 @@ describe('openCallFor', () => {
 
 describe('copy', () => {
   it('rosterLine and notifyToast', () => {
-    expect(rosterLine('Alice', 2)).toBe('Alice propose un baby · 2/4 présents')
-    expect(rosterLine(undefined, 5)).toBe('Quelqu’un propose un baby · 4/4 présents')
+    expect(rosterLine('Alice', 2)).toBe('Alice flaire un baby · 2/4 présents')
+    expect(rosterLine(undefined, 5)).toBe('Quelqu’un flaire un baby · 4/4 présents')
     expect(hotListCaption(2)).toBe('Chauds · 2/4')
     expect(hotListCaption(5)).toBe('Chauds · 4/4')
     const bob: Player = { id: 'bob', name: 'Bob', isGuest: false, createdAt: 'x' }
