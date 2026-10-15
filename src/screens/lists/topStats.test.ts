@@ -7,7 +7,7 @@ import { topRecords } from '../../records'
 import type { Match, Player, RankingTab, Store } from '../../types'
 import { TopStatsView } from './TopStatsView'
 
-// Server-rendered checks of the Hall of Flair page (`#/top`) and its entry on Classement (vitest runs in node, no DOM).
+// Server-rendered checks of the Hall of Flair page (`#/top`, Stats tab) and of its route (vitest runs in node, no DOM).
 // The records themselves are unit-tested in src/records.test.ts.
 
 const NNBSP = ' '
@@ -203,28 +203,25 @@ describe('Hall of Flair page', () => {
   })
 })
 
-describe('Hall of Flair entry and route', () => {
-  it('links « 🏅 Hall of Flair » from Classement next to « 📈 Courbes » once there is a match', () => {
-    const html = renderApp('#/', storeOf(MATCHES))
-    expect(html).toContain('href="#/top"')
-    expect(html).toContain('🏅 Hall of Flair')
-    expect(html.indexOf('href="#/courbes"')).toBeLessThan(html.indexOf('href="#/top"'))
-    expect(renderApp('#/', storeOf([]))).not.toContain('href="#/top"')
+describe('Hall of Flair in the Stats tab', () => {
+  it('is no longer linked from Classement, whatever the tab', () => {
+    for (const tab of [undefined, '1v1'] as const) {
+      const html = renderApp('#/', storeOf(MATCHES, tab))
+      expect(html).not.toContain('href="#/top"')
+      expect(html).not.toContain('🏅 Hall of Flair')
+      expect(html).not.toContain('href="#/courbes"')
+    }
   })
 
-  it('stays on the 1V1 tab without 1v1 match: the records cover every match', () => {
-    const html = renderApp('#/', storeOf(MATCHES.filter((m) => m.teamA.length === 2), '1v1'))
-    expect(html).not.toContain('href="#/courbes"')
-    expect(html).toContain('href="#/top"')
-  })
-
-  it('opens as a pushed screen titled « Hall of Flair », the Classement tab staying active', () => {
+  it('opens as the « Hall of Flair » segment: header « Stats », segments above the records, Stats tab active', () => {
     const html = renderApp('#/top', storeOf(MATCHES))
-    expect(html).toContain('>Hall of Flair</h1>')
-    expect(html).toContain('aria-label="Retour"')
+    expect(html).toContain('>Stats</h1>')
+    expect(html).not.toContain('aria-label="Retour"')
+    expect(html).toMatch(/aria-checked="true"[^>]*>Hall of Flair<\/button>/)
+    expect(html.indexOf('stats-tabs')).toBeLessThan(html.indexOf('top-stats__intro'))
     expect(html).toContain('<h3 class="record-title">Le Sniper</h3>')
     const tabs = html.match(/<a [^>]*class="tab[^"]*"[^>]*>/g) ?? []
-    expect(tabs[0]).toContain('aria-current="page"')
+    expect(tabs[3]).toContain('aria-current="page"')
     expect(html.match(/aria-current="page"/g)).toHaveLength(1)
   })
 })

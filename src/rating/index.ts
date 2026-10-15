@@ -190,6 +190,36 @@ export function rank(result: ReplayResult, players: Player[]): Ranking {
   return ranking
 }
 
+// Each player's engine state with only the matches played before `until` (ms): the history is in replay order and
+// carries the 0.001-rounded ratingAfter the engine stored, so the state is exact. No match yet → no entry (the
+// leaderboard then uses a fresh state).
+function stateBefore(result: ReplayResult, until: number): RatingsState {
+  const state: RatingsState = {}
+  for (const stats of result.byPlayer.values()) {
+    const points = stats.history.filter((point) => Date.parse(point.playedAt) < until)
+    const last = points.at(-1)
+    if (last === undefined) continue
+    const wins = points.filter((point) => point.delta > 0).length
+    state[stats.playerId] = {
+      rating: last.ratingAfter,
+      matches: points.length,
+      wins,
+      losses: points.length - wins,
+      lastPlayedAt: Date.parse(last.playedAt),
+    }
+  }
+  return state
+}
+
+/**
+ * The 1st of the main ranking counting only the matches played before `until` (ms), its sections (ranked after 10
+ * matches, inactive after 30 days) judged at `at` (ms) exactly like the Classement; null when nobody is ranked.
+ */
+export function leaderBefore(result: ReplayResult, players: Player[], until: number, at: number): PlayerId | null {
+  const board = leaderboard(players.map(toEnginePlayer), stateBefore(result, until), at)
+  return board.ranked[0]?.player.id ?? null
+}
+
 type PreviewBase = Omit<EngineMatch, 'scoreA' | 'scoreB'>
 
 function latestPlayedAt(result: ReplayResult): number {

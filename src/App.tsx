@@ -25,8 +25,8 @@ import { Nouveautes } from './screens/Nouveautes'
 import { Courbes } from './screens/Courbes'
 import { Duo } from './screens/Duo'
 import { TopStats } from './screens/TopStats'
+import { Recap } from './screens/Recap'
 import { duoTitle } from './duo'
-import { COURBES_TITLE, tabOf } from './screens/lists/modeLabels'
 import { unseenEntries } from './changelog'
 import { CodeGate } from './screens/CodeGate'
 import { Journal } from './screens/Journal'
@@ -69,6 +69,8 @@ function Screen({ route }: { route: Route }): ReactNode {
       return <Nouveautes />
     case 'journal':
       return <Journal />
+    case 'stats':
+      return <Recap />
     case 'courbes':
       return <Courbes />
     case 'top':
@@ -78,7 +80,6 @@ function Screen({ route }: { route: Route }): ReactNode {
   }
 }
 
-/** Header per route (spec §2 table). Pushed screens get the back chevron; tab roots get at most one icon button. */
 /** « ＋ Match » in the tab-root headers: the shortest way to record a match from anywhere. */
 function NewMatchShortcut() {
   const { draft, draftDispatch } = useAppState()
@@ -93,6 +94,16 @@ function NewMatchShortcut() {
   )
 }
 
+/** Stats tab roots (Récap, Courbes, Hall of Flair): the gear to Réglages, where the players are managed. */
+function SettingsLink() {
+  return (
+    <IconButton label="Réglages" href={hrefOf({ name: 'reglages' })}>
+      <Settings />
+    </IconButton>
+  )
+}
+
+/** Header per route (spec §2 table). Pushed screens get the back chevron; tab roots get at most one icon button. */
 function AppHeader({ route }: { route: Route }) {
   const { store, draft, draftDispatch, toast } = useAppState()
   const showToast = toast.show
@@ -137,26 +148,10 @@ function AppHeader({ route }: { route: Route }) {
     case 'match-detail':
       return <Header title="Match" back />
     case 'joueurs':
-      return (
-        <Header
-          onBrandDoubleTap={onBrandDoubleTap}
-          title="Joueurs"
-          left={<NewMatchShortcut />}
-          right={
-            <IconButton label="Réglages" href={hrefOf({ name: 'reglages' })}>
-              <Settings />
-            </IconButton>
-          }
-        />
-      )
+      return <Header title="Joueurs" back />
     case 'joueur': {
       const player = store.players.find((p) => p.id === route.id)
-      return (
-        <Header
-          title={player?.name ?? 'Joueur'}
-          back
-        />
-      )
+      return <Header title={player?.name ?? 'Joueur'} back />
     }
     case 'duo':
       return <Header title={duoTitle(route.id, store.players)} back />
@@ -168,10 +163,17 @@ function AppHeader({ route }: { route: Route }) {
       return <Header title="Nouveautés" onBrandDoubleTap={onBrandDoubleTap} left={<NewMatchShortcut />} />
     case 'journal':
       return <Header title={JOURNAL_COPY.title} onBrandDoubleTap={onBrandDoubleTap} left={<NewMatchShortcut />} />
+    case 'stats':
     case 'courbes':
-      return <Header title={COURBES_TITLE[tabOf(store.settings)]} back />
     case 'top':
-      return <Header title="Hall of Flair" back />
+      return (
+        <Header
+          title="Stats"
+          onBrandDoubleTap={onBrandDoubleTap}
+          left={<NewMatchShortcut />}
+          right={<SettingsLink />}
+        />
+      )
   }
 }
 

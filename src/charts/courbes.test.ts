@@ -7,7 +7,7 @@ import { AppStateProvider } from '../store'
 import type { Match, Player, Store } from '../types'
 import { Courbes } from '../screens/Courbes'
 
-// Server-rendered smoke tests of the Courbes screen and its entry on Classement (vitest runs in node, no DOM):
+// Server-rendered smoke tests of the Courbes screen and its place in the Stats tab (vitest runs in node, no DOM):
 // interactions are covered by the pure helpers in curves.test.ts and layout.test.ts.
 
 const PLAYERS: Player[] = [
@@ -95,20 +95,46 @@ describe('Courbes screen', () => {
   })
 })
 
-describe('Courbes entry and route', () => {
-  it('links « 📈 Courbes » from Classement once there is a match', () => {
+/** The checked option of the radiogroup labelled `label` (« Stats » segments or « Classement » selector). */
+function checkedIn(html: string, label: string): string | undefined {
+  const group = html.split(`aria-label="${label}"`)[1]?.split('</div>')[0] ?? ''
+  return /role="radio" aria-checked="true"[^>]*>([^<]*)</.exec(group)?.[1]
+}
+
+describe('Courbes in the Stats tab', () => {
+  it('is no longer linked from Classement', () => {
     const html = renderApp('#/', storeOf(PLAYERS, MATCHES))
-    expect(html).toContain('href="#/courbes"')
-    expect(html).toContain('📈 Courbes')
-    expect(renderApp('#/', storeOf(PLAYERS, []))).not.toContain('href="#/courbes"')
+    expect(html).not.toContain('href="#/courbes"')
+    expect(html).not.toContain('📈 Courbes')
   })
 
-  it('opens as a pushed screen with its title and keeps the Classement tab active', () => {
+  it('opens as the « Courbes » segment of the Stats tab: brand header, segments, Stats tab active', () => {
     const html = renderApp('#/courbes', storeOf(PLAYERS, MATCHES))
-    expect(html).toContain('>Évolution du classement</h1>')
-    expect(html).toContain('aria-label="Retour"')
+    expect(html).toContain('>Stats</h1>')
+    expect(html).not.toContain('aria-label="Retour"')
+    expect(checkedIn(html, 'Stats')).toBe('Courbes')
+    for (const label of ['Récap', 'Courbes', 'Hall of Flair']) expect(html).toContain(`>${label}</button>`)
+    expect(html.indexOf('stats-tabs')).toBeLessThan(html.indexOf('courbes-mode'))
     const tabs = html.match(/<a [^>]*class="tab[^"]*"[^>]*>/g) ?? []
-    expect(tabs[0]).toContain('aria-current="page"')
+    expect(tabs[3]).toContain('aria-current="page"')
     expect(html.match(/aria-current="page"/g)).toHaveLength(1)
+  })
+
+  it('has a compact « Mixte » | « 2V2 » | « 1V1 » selector above the chips, on the remembered ranking', () => {
+    const html = render(createElement(Courbes), storeOf(PLAYERS, MATCHES))
+    expect(html).toContain('class="content courbes-mode"')
+    expect(checkedIn(html, 'Classement')).toBe('Mixte')
+    for (const label of ['Mixte', '2V2', '1V1']) expect(html).toContain(`>${label}</button>`)
+    expect(html.indexOf('courbes-mode')).toBeLessThan(html.indexOf('curve-chips'))
+    const store = storeOf(PLAYERS, MATCHES)
+    const duos: Store = { ...store, settings: { ...store.settings, classementTab: '2v2' } }
+    expect(checkedIn(render(createElement(Courbes), duos), 'Classement')).toBe('2V2')
+  })
+
+  it('keeps the selector above the empty state, so a ranking without matches can be left', () => {
+    const html = render(createElement(Courbes), storeOf(PLAYERS, []))
+    expect(html).toContain('Pas encore de courbe')
+    expect(html).toContain('class="content courbes-mode"')
+    expect(html.indexOf('courbes-mode')).toBeLessThan(html.indexOf('Pas encore de courbe'))
   })
 })

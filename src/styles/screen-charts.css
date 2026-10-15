@@ -22,10 +22,6 @@
   background: var(--series);
 }
 
-/* « 📈 Courbes » shares the « Proposer un baby » link style; both sit on one centred row. */
-.call-propose { flex-wrap: wrap; align-items: center; gap: var(--s1); }
-a.call-propose__link { display: inline-flex; align-items: center; }
-
 /* ---------- chips (legend + toggles) ---------- */
 .curve-chips {
   display: flex;

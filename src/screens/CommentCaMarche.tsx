@@ -85,11 +85,19 @@ const SECTIONS: Section[] = [
     text: "Dans le classement, c'est ce que tu as gagné ou perdu sur les 7 derniers jours.",
   },
   {
-    title: 'Les courbes',
+    title: "L'onglet Stats",
     text:
-      'Sous le classement, « 📈 Courbes » trace les points de chacun, match après match. Touche les noms pour ' +
-      'comparer jusqu’à 8 joueurs, et glisse le doigt sur le graphique pour lire chaque match. Juste à côté, ' +
-      '« 🏅 Hall of Flair » rassemble les records de tous les temps.',
+      `Toutes les stats sont dans l’onglet Stats. «${NNBSP}Récap${NNBSP}» résume les derniers jours de ` +
+      `matchs${NNBSP}: joueur et duo du jour, hold-up, fanny, comebacks, nouveau n°1… «${NNBSP}Courbes${NNBSP}» ` +
+      `trace les points de chacun, match après match, en Mixte, 2V2 ou 1V1${NNBSP}: touche les noms pour comparer ` +
+      'jusqu’à 8 joueurs, et glisse le doigt sur le graphique pour lire chaque match. ' +
+      `«${NNBSP}Hall of Flair${NNBSP}» rassemble les records de tous les temps.`,
+  },
+  {
+    title: 'Les joueurs',
+    text:
+      'Pour ajouter un collègue ou retrouver la liste de tous les joueurs, passe par Réglages › Joueurs (la roue ' +
+      'crantée en haut de l’onglet Stats).',
   },
   {
     title: 'Modifier ou supprimer un match',

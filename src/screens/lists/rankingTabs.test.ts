@@ -87,9 +87,9 @@ describe('Classement tabs', () => {
     expect(html).toContain('Pas encore classés · classés après 3 matchs')
     expect(html).toContain('1/3 matchs avant d&#x27;être classé')
     expect(html).toContain('badge--medal')
-    // The strip counts the 2v2 matches and the classés duos; « Proposer » / « Courbes » stay.
+    // The strip counts the 2v2 matches and the classés duos; the curves live in the Stats tab now.
     expect(html).toContain('4 matchs · 2 classés')
-    expect(html).toContain('href="#/courbes"')
+    expect(html).not.toContain('href="#/courbes"')
     expect(html).not.toContain('href="#/joueurs/alice"')
   })
 
@@ -163,10 +163,15 @@ describe('Player page', () => {
   })
 })
 
+/** The checked option of the Mixte | 2V2 | 1V1 selector (the Stats segments come first on #/courbes). */
+function checkedMode(html: string): string | undefined {
+  return checkedTab(html.split('class="content courbes-mode"')[1] ?? '')
+}
+
 describe('Courbes per tab', () => {
   it('draws the duos when « 2V2 » is selected', () => {
     const html = renderApp('#/courbes', storeOf(MATCHES, '2v2'))
-    expect(html).toContain('>Évolution des duos</h1>')
+    expect(checkedMode(html)).toBe('2V2')
     expect(html).toContain('<span class="curve-chip__name">Alice &amp; Bob</span>')
     expect(html).not.toContain('<span class="curve-chip__name">Alice</span>')
     expect(html).toContain('aria-label="Évolution du classement de 3 duos"')
@@ -174,11 +179,11 @@ describe('Courbes per tab', () => {
 
   it('draws the 1v1 players when « 1V1 » is selected, the main ranking otherwise', () => {
     const solo = renderApp('#/courbes', storeOf(MATCHES, '1v1'))
-    expect(solo).toContain('>Évolution en 1V1</h1>')
+    expect(checkedMode(solo)).toBe('1V1')
     expect(solo).toContain('<span class="curve-chip__name">Chloé</span>')
     expect(solo).not.toContain('<span class="curve-chip__name">Dan</span>')
     const mixte = renderApp('#/courbes', storeOf(MATCHES))
-    expect(mixte).toContain('>Évolution du classement</h1>')
+    expect(checkedMode(mixte)).toBe('Mixte')
     expect(mixte).toContain('<span class="curve-chip__name">Dan</span>')
   })
 })

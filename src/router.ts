@@ -14,9 +14,11 @@ export type Route =
   | { name: 'reglages' }
   | { name: 'comment-ca-marche' }
   | { name: 'nouveautes' }
-  /** Classement › « 📈 Courbes »: rating curves of every player. */
+  /** Stats tab, « Récap » segment (its default): the last days with matches and their highlights (src/recap.ts). */
+  | { name: 'stats' }
+  /** Stats tab, « Courbes » segment: rating curves of every player. */
   | { name: 'courbes' }
-  /** Classement › « 🏅 Hall of Flair »: all-time records (src/records.ts). */
+  /** Stats tab, « Hall of Flair » segment: all-time records (src/records.ts). */
   | { name: 'top' }
   /** Réglages › Journal des modifications (mode partagé). */
   | { name: 'journal' }
@@ -68,7 +70,7 @@ function parseAppel(segments: string[]): Route {
   return HOME
 }
 
-type SimpleName = 'reglages' | 'comment-ca-marche' | 'nouveautes' | 'journal' | 'courbes' | 'top'
+type SimpleName = 'reglages' | 'comment-ca-marche' | 'nouveautes' | 'journal' | 'stats' | 'courbes' | 'top'
 
 function parseSimple(segments: string[], name: SimpleName): Route {
   if (segments.length === 1) return { name }
@@ -99,6 +101,8 @@ export function parseHash(hash: string): Route {
       return parseSimple(segments, 'nouveautes')
     case 'journal':
       return parseSimple(segments, 'journal')
+    case 'stats':
+      return parseSimple(segments, 'stats')
     case 'courbes':
       return parseSimple(segments, 'courbes')
     case 'top':
@@ -140,6 +144,8 @@ export function hrefOf(route: Route): string {
       return '#/nouveautes'
     case 'journal':
       return '#/journal'
+    case 'stats':
+      return '#/stats'
     case 'courbes':
       return '#/courbes'
     case 'top':

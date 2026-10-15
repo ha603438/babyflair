@@ -1,5 +1,5 @@
-// Réglages (spec §3.8): export / import, rules link, install row, « Tout effacer », footer.
-// Mode partagé: « Mon profil », « Code du bureau » rows, « Déconnecter cet appareil »
+// Réglages (spec §3.8): « Joueurs » (add one, the whole list), export / import, rules link, install row,
+// « Tout effacer », footer. Mode partagé: « Mon profil », « Code du bureau » rows, « Déconnecter cet appareil »
 // instead of « Tout effacer », sync footer.
 import { useRef, useState } from 'react'
 import type { ChangeEvent } from 'react'
@@ -29,7 +29,9 @@ import {
 } from '../io'
 import { hrefOf, navigate } from '../router'
 import { useAppState } from '../store'
+import type { Player } from '../types'
 import { promptInstall, useInstallEnv } from './lists/install'
+import { playerCountText } from './lists/labels'
 
 const IOS_HINT_TITLE = "Installe BabyFlair sur l'écran d'accueil"
 const IOS_HINT_BODY =
@@ -101,6 +103,30 @@ function ProfileGroup({ profile, onChange }: { profile: Profile; onChange: () =>
               {PROFILE_COPY.change}
             </Button>
           }
+        />
+      </div>
+    </>
+  )
+}
+
+/** « 12 joueurs · 2 invités » under « Tous les joueurs »; nothing before the first one. */
+function playersCaption(players: Player[]): string | undefined {
+  if (players.length === 0) return undefined
+  return playerCountText(players)
+}
+
+/** The players (formerly a tab): add one (write guard: a visitor picks a profile first), or open the whole list. */
+function PlayersGroup({ players, onAdd }: { players: Player[]; onAdd: () => void }) {
+  return (
+    <>
+      <SectionHeader title="Joueurs" />
+      <div className="settings-group">
+        <SettingRow title="Ajouter un joueur" onClick={onAdd} />
+        <SettingRow
+          title="Tous les joueurs"
+          caption={playersCaption(players)}
+          chevron
+          href={hrefOf({ name: 'joueurs' })}
         />
       </div>
     </>
@@ -181,6 +207,10 @@ export function Reglages() {
   return (
     <div className="settings-col">
       {shared && <ProfileGroup profile={profile} onChange={chooseProfile} />}
+      <PlayersGroup
+        players={store.players}
+        onAdd={() => guard('ajouter un joueur', () => navigate({ name: 'joueurs', add: true }))}
+      />
       <SectionHeader title="Données" />
       <div className="settings-group">
         <SettingRow

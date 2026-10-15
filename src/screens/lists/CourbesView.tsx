@@ -11,22 +11,38 @@ import {
 } from '../../charts/curves'
 import type { Curve, Slots } from '../../charts/curves'
 import { EmptyState } from '../../components/EmptyState'
+import { SegmentedControl } from '../../components/SegmentedControl'
 import { fmtInt } from '../../format'
-import type { PlayerId } from '../../types'
+import type { PlayerId, RankingTab } from '../../types'
 import type { ReplayData, ScreenContext } from './context'
-import { CURVE_WORDING } from './modeLabels'
+import { CURVE_WORDING, TAB_OPTIONS } from './modeLabels'
 import type { CurveWording } from './modeLabels'
 
-// Courbes du classement (`#/courbes`): name chips (legend + toggles), the rating chart and its table view. The
-// visible set lives in component state only; until the user touches it, it follows the current top 3. It follows the
-// selected Classement tab: `replay` is then the 2V2 / 1V1 ranking, whose « players » are the duos (« A & B ») or the
-// players with a 1v1 match.
+// Courbes du classement (`#/courbes`, Stats tab): a compact « Mixte » | « 2V2 » | « 1V1 » selector, name chips
+// (legend + toggles), the rating chart and its table view. The visible set lives in component state only; until the
+// user touches it, it follows the current top 3. The selector shares the Classement tab (Settings.classementTab):
+// `replay` is then the 2V2 / 1V1 ranking, whose « players » are the duos (« A & B ») or the players with a 1v1 match.
 
 export type CourbesViewProps = {
   app: Pick<ScreenContext, 'toast'>
   replay: ReplayData
   /** Player or duo copy (chart label, table column, 8-curve cap, empty state); the Mixte wording when absent. */
   wording?: CurveWording
+  /** Selected ranking (« Mixte » when absent); the selector shows only with `onTabChange`. */
+  tab?: RankingTab
+  onTabChange?: (tab: RankingTab) => void
+}
+
+type ModeProps = { tab: RankingTab; onChange: ((tab: RankingTab) => void) | undefined }
+
+/** Kept above the empty state too, so a ranking without matches can be left. */
+function ModeSelector({ tab, onChange }: ModeProps) {
+  if (onChange === undefined) return null
+  return (
+    <div className="content courbes-mode">
+      <SegmentedControl options={TAB_OPTIONS} value={tab} onChange={onChange} aria-label="Classement" />
+    </div>
+  )
 }
 
 type ChipProps = { name: string; slot: number | undefined; onToggle: () => void }
@@ -130,7 +146,9 @@ function TableSection({ curves, column }: { curves: Curve[]; column: string }) {
   )
 }
 
-export function CourbesView({ app, replay, wording = CURVE_WORDING.mixte }: CourbesViewProps) {
+type BodyProps = Pick<CourbesViewProps, 'app' | 'replay'> & { wording: CurveWording }
+
+function CurvesBody({ app, replay, wording }: BodyProps) {
   const data = useMemo(() => buildChartData(replay.result.byPlayer, replay.matches), [replay.result, replay.matches])
   const order = useMemo(() => chipOrder(replay.ranking, data.series), [replay.ranking, data.series])
   const top = useMemo(() => defaultVisible(replay.ranking, data.series), [replay.ranking, data.series])
@@ -157,7 +175,7 @@ export function CourbesView({ app, replay, wording = CURVE_WORDING.mixte }: Cour
     return <EmptyState title="Pas encore de courbe" body={wording.emptyBody} />
   }
   return (
-    <div className="lists-screen courbes">
+    <>
       <Chips
         order={order}
         visible={visible}
@@ -177,6 +195,17 @@ export function CourbesView({ app, replay, wording = CURVE_WORDING.mixte }: Cour
         </div>
       </div>
       <TableSection curves={curves} column={wording.column} />
+    </>
+  )
+}
+
+export function CourbesView(props: CourbesViewProps) {
+  const { app, replay, wording = CURVE_WORDING.mixte, tab = 'mixte', onTabChange } = props
+  // Keyed by tab: the chosen curves of one ranking mean nothing in another (the selector itself stays mounted).
+  return (
+    <div className="lists-screen courbes">
+      <ModeSelector tab={tab} onChange={onTabChange} />
+      <CurvesBody key={tab} app={app} replay={replay} wording={wording} />
     </div>
   )
 }

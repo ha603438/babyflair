@@ -15,6 +15,7 @@ import { Button, IconButton } from './Button'
 import { ConfirmDialog } from './ConfirmDialog'
 import { Header } from './Header'
 import { InlinePlayerForm, normalizePlayerName, validatePlayerName } from './InlinePlayerForm'
+import type { Route } from '../router'
 import { TabBar } from './TabBar'
 import { Toast } from './Toast'
 import * as icons from './icons'
@@ -59,7 +60,7 @@ describe('Button', () => {
 describe('icons', () => {
   const names = [
     'Plus', 'Close', 'Check', 'ChevronLeft', 'ChevronRight', 'Pencil', 'Trash', 'Help',
-    'Settings', 'Share', 'Download', 'Upload', 'Trophy', 'List', 'Clock', 'People',
+    'Settings', 'Share', 'Download', 'Upload', 'Trophy', 'List', 'Clock', 'BarChart',
   ] as const
 
   it('exports the 16 icons as 24px currentColor stroke-2 decorative SVGs', () => {
@@ -110,6 +111,13 @@ describe('Header', () => {
   })
 })
 
+/** Index of the tab marked aria-current (-1 when none), checking that only one is. */
+function activeTab(current: Route['name']): number {
+  const html = render(TabBar, { current })
+  expect(html.match(/aria-current="page"/g) ?? []).toHaveLength(1)
+  return (html.match(/<a [^>]*>/g) ?? []).findIndex((link) => link.includes('aria-current="page"'))
+}
+
 describe('TabBar', () => {
   it('renders the 5 tabs in order as links with hrefOf and aria-current on the active one', () => {
     const html = render(TabBar, { current: 'historique' })
@@ -118,7 +126,7 @@ describe('TabBar', () => {
     expect(links[0]).toContain('href="#/"')
     expect(links[1]).toContain('href="#/match"')
     expect(links[2]).toContain('href="#/historique"')
-    expect(links[3]).toContain('href="#/joueurs"')
+    expect(links[3]).toContain('href="#/stats"')
     expect(links[4]).toContain('href="#/nouveautes"')
     expect(links[2]).toContain('aria-current="page"')
     expect(links[2]).toContain('tab-active')
@@ -126,20 +134,33 @@ describe('TabBar', () => {
     expect(html).toContain('>Classement<')
     expect(html).toContain('>Match<')
     expect(html).toContain('>Historique<')
-    expect(html).toContain('>Joueurs<')
+    expect(html).toContain('>Stats<')
+    expect(html).not.toContain('>Joueurs<')
+    expect(html).not.toContain('href="#/joueurs"')
+  })
+
+  it('draws the Stats tab with the bar chart icon', () => {
+    const html = render(TabBar, { current: 'stats' })
+    const stats = html.split('<a ')[4] ?? ''
+    expect(stats).toContain('<path d="M18 20V10M12 20V4M6 20v-6"></path>')
+    expect(stats).toContain('stroke-width="2"')
+  })
+
+  it('lights the Stats tab on its three segments, the tab link always leading back to « Récap »', () => {
+    for (const name of ['stats', 'courbes', 'top'] as const) expect(activeTab(name)).toBe(3)
+    const links = render(TabBar, { current: 'courbes' }).match(/<a [^>]*>/g) ?? []
+    expect(links[3]).toContain('href="#/stats"')
   })
 
   it('keeps the section tab active on pushed screens', () => {
-    const detail = render(TabBar, { current: 'match-detail' })
-    expect((detail.match(/<a [^>]*>/g) ?? [])[2]).toContain('aria-current="page"')
-    const reglages = render(TabBar, { current: 'reglages' })
-    expect((reglages.match(/<a [^>]*>/g) ?? [])[3]).toContain('aria-current="page"')
-    const rules = render(TabBar, { current: 'comment-ca-marche' })
-    expect((rules.match(/<a [^>]*>/g) ?? [])[0]).toContain('aria-current="page"')
-    const curves = render(TabBar, { current: 'courbes' })
-    expect((curves.match(/<a [^>]*>/g) ?? [])[0]).toContain('aria-current="page"')
-    const top = render(TabBar, { current: 'top' })
-    expect((top.match(/<a [^>]*>/g) ?? [])[0]).toContain('aria-current="page"')
+    expect(activeTab('match-detail')).toBe(2)
+    expect(activeTab('reglages')).toBe(3)
+    expect(activeTab('comment-ca-marche')).toBe(0)
+    expect(activeTab('journal')).toBe(4)
+  })
+
+  it('keeps Classement active on the players list, a player profile and a duo page', () => {
+    for (const name of ['joueurs', 'joueur', 'duo'] as const) expect(activeTab(name)).toBe(0)
   })
 })
 

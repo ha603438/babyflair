@@ -70,7 +70,7 @@ function ClassementTabs({ tab, onChange }: { tab: RankingTab; onChange: ((tab: R
   )
 }
 
-/** What the strip, the Blancs / Noirs line and « 📈 Courbes » count: every match, or the selected format's. */
+/** What the strip and the Blancs / Noirs line count: every match, or the selected format's. */
 type Scope = { matches: Match[]; rankedCount: number }
 
 function scopeOf(app: ScreenContext, replay: ReplayData, mode: ModeReplay | null): Scope {
@@ -113,41 +113,12 @@ function VisitorBadge({ onChooseProfile }: { onChooseProfile: (() => void) | und
 }
 
 /** « Proposer un baby » (also with 0 matches): confirms the notification, or shows the open call if there is one. */
-function ProposeButton({ onPropose }: { onPropose: (() => void) | undefined }) {
-  if (onPropose === undefined) return null
+function ProposeButton({ onPropose }: { onPropose: () => void }) {
   return (
     <button type="button" className="call-propose__link" onClick={onPropose}>
       🔔 {CALL_COPY.propose}
     </button>
   )
-}
-
-/** « 📈 Courbes » → `#/courbes`, once there is at least one match to draw. */
-function CurvesLink({ matchCount }: { matchCount: number }) {
-  if (matchCount === 0) return null
-  return (
-    <a className="call-propose__link" href={hrefOf({ name: 'courbes' })}>
-      📈 Courbes
-    </a>
-  )
-}
-
-/** « 🏅 Hall of Flair » → `#/top`: all-time records over every match (Mixte), whatever the selected tab. */
-function TopStatsLink({ matchCount }: { matchCount: number }) {
-  if (matchCount === 0) return null
-  return (
-    <a className="call-propose__link" href={hrefOf({ name: 'top' })}>
-      🏅 Hall of Flair
-    </a>
-  )
-}
-
-/** `matchCount`: the selected tab's matches (« 📈 Courbes »); `allMatchCount`: every match (« 🏅 Hall of Flair »). */
-type LinksProps = {
-  onPropose: (() => void) | undefined
-  playerCount: number
-  matchCount: number
-  allMatchCount: number
 }
 
 // No player yet: nobody to call.
@@ -156,15 +127,13 @@ function proposeAction(onPropose: (() => void) | undefined, playerCount: number)
   return onPropose
 }
 
-/** Under the context strip, one centred row of discreet links. */
-function ClassementLinks({ onPropose, playerCount, matchCount, allMatchCount }: LinksProps) {
+/** Under the context strip, one discreet centred link: « 🔔 Proposer un baby » (the stats live in the Stats tab). */
+function ClassementLinks({ onPropose, playerCount }: { onPropose: (() => void) | undefined; playerCount: number }) {
   const propose = proposeAction(onPropose, playerCount)
-  if (propose === undefined && matchCount === 0 && allMatchCount === 0) return null
+  if (propose === undefined) return null
   return (
     <div className="content call-propose">
       <ProposeButton onPropose={propose} />
-      <CurvesLink matchCount={matchCount} />
-      <TopStatsLink matchCount={allMatchCount} />
     </div>
   )
 }
@@ -391,12 +360,7 @@ export function ClassementView(props: ClassementViewProps) {
       <ClassementTabs tab={tab} onChange={tabsChange(app, onTabChange)} />
       <ContextStrip scope={scope} now={replay.now} />
       <VisitorBadge onChooseProfile={onChooseProfile} />
-      <ClassementLinks
-        onPropose={onPropose}
-        playerCount={app.store.players.length}
-        matchCount={scope.matches.length}
-        allMatchCount={app.store.matches.length}
-      />
+      <ClassementLinks onPropose={onPropose} playerCount={app.store.players.length} />
       <HintSlot hint={hint} dispatch={app.dispatch} />
       <Body app={app} replay={replay} mode={mode} highlight={highlight} />
     </div>

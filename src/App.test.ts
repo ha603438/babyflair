@@ -23,8 +23,9 @@ const CASES: Array<[string, string]> = [
   ['#/reglages', 'Réglages'],
   ['#/comment-ca-marche', 'Comment ça marche'],
   ['#/journal', "Journal d&#x27;activité"],
-  ['#/courbes', 'Évolution du classement'],
-  ['#/top', 'Hall of Flair'],
+  ['#/stats', 'Stats'],
+  ['#/courbes', 'Stats'],
+  ['#/top', 'Stats'],
 ]
 
 describe('App shell', () => {
@@ -63,6 +64,34 @@ describe('App shell', () => {
     expect(reglages).not.toContain('Mon profil')
     expect(reglages).not.toContain('Journal des modifications')
     expect(renderAt('#/journal')).toContain("Aucune modification ni suppression pour l&#x27;instant.")
+  })
+
+  it('opens the players list as a pushed screen (back chevron), the Classement tab staying active', () => {
+    const html = renderAt('#/joueurs')
+    expect(html).toContain('<h1 class="header-title">Joueurs</h1>')
+    expect(html).toContain('aria-label="Retour"')
+    expect(html).not.toContain('header-wordmark')
+    const tabs = html.match(/<a [^>]*class="tab[^"]*"[^>]*>/g) ?? []
+    expect(tabs[0]).toContain('aria-current="page"')
+  })
+
+  it('renders the three Stats segments as tab roots: brand header « Stats », gear to Réglages, no back chevron', () => {
+    for (const hash of ['#/stats', '#/courbes', '#/top']) {
+      const html = renderAt(hash)
+      expect(html).toContain('class="header header-root"')
+      expect(html).toContain('<h1 class="header-title">Stats</h1>')
+      expect(html).toContain('aria-label="Nouveau match"')
+      expect(html).toContain('href="#/reglages" aria-label="Réglages"')
+      expect(html).not.toContain('aria-label="Retour"')
+      const tabs = html.match(/<a [^>]*class="tab[^"]*"[^>]*>/g) ?? []
+      expect(tabs[3]).toContain('href="#/stats"')
+      expect(tabs[3]).toContain('aria-current="page"')
+    }
+  })
+
+  it('shows the Récap empty state on #/stats without any match', () => {
+    const html = renderAt('#/stats')
+    expect(html).toContain('Pas encore de récap')
   })
 
   it('falls back to Classement on an unknown hash', () => {

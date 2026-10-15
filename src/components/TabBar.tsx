@@ -1,9 +1,9 @@
 import type { ReactNode } from 'react'
 import type { Route } from '../router'
 import { hrefOf } from '../router'
-import { Bell, Clock, List, People, Trophy } from './icons'
+import { BarChart, Bell, Clock, List, Trophy } from './icons'
 
-export type TabName = 'classement' | 'match' | 'historique' | 'joueurs' | 'nouveautes'
+export type TabName = 'classement' | 'match' | 'historique' | 'stats' | 'nouveautes'
 
 export type TabBarProps = {
   current: Route['name']
@@ -19,18 +19,19 @@ const TABS: Tab[] = [
   { name: 'classement', label: 'Classement', route: { name: 'classement' }, icon: <Trophy /> },
   { name: 'match', label: 'Match', route: { name: 'match' }, icon: <List /> },
   { name: 'historique', label: 'Historique', route: { name: 'historique' }, icon: <Clock /> },
-  { name: 'joueurs', label: 'Joueurs', route: { name: 'joueurs' }, icon: <People /> },
+  { name: 'stats', label: 'Stats', route: { name: 'stats' }, icon: <BarChart /> },
   { name: 'nouveautes', label: 'Nouveautés', route: { name: 'nouveautes' }, icon: <Bell /> },
 ]
 
-// Pushed screens keep their section's tab highlighted so the user always knows where « back » leads.
+// Pushed screens keep their section's tab highlighted so the user always knows where « back » leads. The three Stats
+// segments (Récap, Courbes, Hall of Flair) are its roots; Réglages opens from the Stats header.
 function sectionOf(name: Route['name']): TabName {
   if (name === 'match' || name === 'match-edit') return 'match'
   if (name === 'historique' || name === 'match-detail') return 'historique'
-  if (name === 'joueurs' || name === 'joueur' || name === 'reglages') return 'joueurs'
+  if (name === 'stats' || name === 'courbes' || name === 'top' || name === 'reglages') return 'stats'
   if (name === 'journal') return 'nouveautes'
   if (name === 'nouveautes') return 'nouveautes'
-  // classement, appel, courbes, top, comment-ca-marche
+  // classement, appel, joueurs, joueur, duo, comment-ca-marche
   return 'classement'
 }
 

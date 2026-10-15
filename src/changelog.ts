@@ -6,6 +6,17 @@ export type ChangelogEntry = { id: string; date: string; title: string; items: s
 
 export const CHANGELOG: ChangelogEntry[] = [
   {
+    id: '2026-10-15-7',
+    date: '2026-10-15',
+    title: 'Onglet Stats',
+    items: [
+      'Nouvel onglet Stats\u202F: «\u202FRécap\u202F» des derniers jours, «\u202FCourbes\u202F» ' +
+        'et «\u202FHall of Flair\u202F».',
+      'Les joueurs passent dans Réglages\u202F: «\u202FAjouter un joueur\u202F» et «\u202FTous les joueurs\u202F».',
+      'Le classement s’allège\u202F: il ne garde que «\u202FProposer un baby\u202F».',
+    ],
+  },
+  {
     id: '2026-10-15-6',
     date: '2026-10-15',
     title: 'Le Château de cartes',

@@ -2,7 +2,7 @@ import { MODE_RANKED_AFTER } from '../../rating/modes'
 import type { Format, RankingTab } from '../../types'
 
 // French copy of the three Classement tabs (« Mixte » | « 2V2 » | « 1V1 ») and of the screens that follow the
-// selected tab (Courbes). The 2V2 and 1V1 rankings come from src/rating/modes.ts.
+// selected tab (Courbes, which has the same selector). The 2V2 and 1V1 rankings come from src/rating/modes.ts.
 
 export const DEFAULT_TAB: RankingTab = 'mixte'
 
@@ -43,13 +43,6 @@ export const MODE_OBSERVATION: Record<Format, string> = {
 }
 
 export const MODE_ROOKIES_SUBTITLE = `classés après ${MODE_RANKED_AFTER} matchs`
-
-/** Pushed header of `#/courbes`, which follows the selected Classement tab. */
-export const COURBES_TITLE: Record<RankingTab, string> = {
-  mixte: 'Évolution du classement',
-  '2v2': 'Évolution des duos',
-  '1v1': 'Évolution en 1V1',
-}
 
 /** What one curve stands for: a player, or a duo in the 2V2 tab. */
 export type CurveWording = { noun: string; column: string; cap: string; emptyBody: string }

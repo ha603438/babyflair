@@ -1,0 +1,147 @@
+/*
+ * screen-stats.css — Stats tab: the « Récap » | « Courbes » | « Hall of Flair » segments, the compact ranking selector
+ * of Courbes and the Récap day cards (#/stats). Cards and the type scale from base.css, the segmented control from
+ * entry.css, .pos / .neg from base.css; colours are tokens only, so light and dark both work.
+ */
+
+/* ---------- segments: same spacing as the bell's tabs (.notif-tabs) ---------- */
+.stats-tabs { padding-top: 12px; padding-bottom: 4px; }
+
+/* Three segments on a 320–375 px phone: tighter side padding so « Hall of Flair » fits its third. */
+.stats-tabs .segmented__option { padding-inline: var(--s2); }
+
+/* ---------- Courbes: « Mixte » | « 2V2 » | « 1V1 », compact and centred above the chips ---------- */
+.courbes-mode {
+  display: flex;
+  justify-content: center;
+  padding-top: var(--s3);
+}
+
+.courbes-mode .segmented {
+  width: 100%;
+  max-width: 280px;
+  height: 36px;
+}
+
+.courbes-mode .segmented__option {
+  font-size: var(--fs-caption);
+}
+
+/* ---------- Récap: one card per day ---------- */
+.recap-days {
+  display: grid;
+  gap: var(--s3);
+  padding-top: var(--s3);
+}
+
+.recap-day {
+  min-width: 0;
+  padding: var(--s3) var(--s4) var(--s2);
+}
+
+.recap-day__title {
+  font-size: var(--fs-h2);
+  font-weight: 700;
+  line-height: 1.25;
+}
+
+/* « 12 matchs · 9 joueurs · 2 fanny » */
+.recap-day__summary {
+  margin-top: 2px;
+  font-size: var(--fs-caption);
+  line-height: 1.4;
+  color: var(--text-2);
+  font-variant-numeric: tabular-nums;
+}
+
+.recap-lines {
+  margin-top: var(--s1);
+  padding: 0;
+  list-style: none;
+}
+
+.recap-lines > li + li {
+  border-top: 1px solid var(--border);
+}
+
+/* Emoji column, then label / subject / detail, then the value. 44 px tap target; a pressed line bleeds 8 px into the
+   card padding so its background does not touch the text. */
+.recap-line {
+  display: grid;
+  grid-template-columns: 24px minmax(0, 1fr) auto;
+  align-items: center;
+  column-gap: var(--s3);
+  min-height: 44px;
+  margin-inline: calc(-1 * var(--s2));
+  padding: var(--s2);
+  border-radius: var(--r-sm);
+  color: inherit;
+  text-decoration: none;
+  user-select: none;
+  -webkit-user-select: none;
+  -webkit-touch-callout: none;
+  transition: background-color var(--t-fast);
+}
+
+.recap-line:active {
+  background: var(--surface-2);
+}
+
+.recap-line__emoji {
+  font-size: 20px;
+  line-height: 1;
+  text-align: center;
+}
+
+.recap-line__body {
+  display: flex;
+  flex-direction: column;
+  min-width: 0;
+}
+
+/* « Joueur du jour »: small uppercase caption above the name. */
+.recap-line__label {
+  font-size: var(--fs-micro);
+  font-weight: 600;
+  line-height: 1.4;
+  text-transform: uppercase;
+  letter-spacing: .04em;
+  color: var(--text-3);
+}
+
+/* The player, the duo, or a whole match line (« A & B 5–0 C & D »), which wraps instead of being cut. */
+.recap-line__subject {
+  font-size: var(--fs-label);
+  font-weight: 600;
+  line-height: 1.3;
+  overflow-wrap: anywhere;
+  font-variant-numeric: tabular-nums;
+}
+
+.recap-line__detail {
+  font-size: var(--fs-caption);
+  line-height: 1.4;
+  color: var(--text-2);
+  font-variant-numeric: tabular-nums;
+}
+
+.recap-line__value {
+  font-size: var(--fs-label);
+  font-weight: 700;
+  line-height: 1.3;
+  font-variant-numeric: tabular-nums;
+  white-space: nowrap;
+}
+
+/* « Jours précédents »: a discreet text button under the last card, like « Proposer un baby ». */
+.recap-more {
+  justify-self: center;
+  min-height: 44px;
+  padding: 0 var(--s4);
+  border: 0;
+  background: none;
+  color: var(--accent);
+  font-size: var(--fs-label);
+  font-weight: 600;
+  cursor: pointer;
+}
