@@ -97,6 +97,11 @@ export const TOP_STATS_COPY = {
     rule: `Le plus de comebacks${NNBSP}: gagner 5-4 après avoir été mené 0-4`,
     empty: `Pas encore de comeback${NNBSP}: 1 minimum`,
   },
+  comebacksTaken: {
+    title: 'Le Château de cartes',
+    rule: `Le plus de comebacks subis${NNBSP}: mené 4-0, perdu 4-5`,
+    empty: `Pas encore de comeback${NNBSP}: 1 minimum`,
+  },
   peak: {
     title: 'Altitude record',
     rule: 'Le plus haut total de points jamais atteint',
@@ -253,6 +258,7 @@ export function topStatsSections(records: TopRecords, players: Players, now: Dat
         cardOf('fannyGiven', records.fannyGiven, count('fanny mis', 'fanny mis')),
         cardOf('fannyTaken', records.fannyTaken, count('fanny encaissé', 'fanny encaissés')),
         cardOf('comebacks', records.comebacks, count('comeback')),
+        cardOf('comebacksTaken', records.comebacksTaken, count('comeback subi', 'comebacks subis')),
       ],
     },
     {

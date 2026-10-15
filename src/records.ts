@@ -60,6 +60,7 @@ export type TopRecords = {
   fannyGiven: Podium<CountLine>
   fannyTaken: Podium<CountLine>
   comebacks: Podium<CountLine>
+  comebacksTaken: Podium<CountLine>
   peak: Podium<PeakLine>
   exploit: Podium<ExploitLine>
   gain: Podium<GainLine>
@@ -280,14 +281,25 @@ function streakRanking(context: Context): Ranking<StreakLine> {
 }
 
 // ---------------------------------------------------------------------------
-// Counts: fannys given / conceded, comebacks made, matches played (at least 1)
+// Counts: fannys given / conceded, comebacks made / conceded, matches played (at least 1)
 // ---------------------------------------------------------------------------
 
 type Counts = {
   fannyGiven: Map<PlayerId, number>
   fannyTaken: Map<PlayerId, number>
   comebacks: Map<PlayerId, number>
+  comebacksTaken: Map<PlayerId, number>
   played: Map<PlayerId, number>
+}
+
+function emptyCounts(): Counts {
+  return {
+    fannyGiven: new Map(),
+    fannyTaken: new Map(),
+    comebacks: new Map(),
+    comebacksTaken: new Map(),
+    played: new Map(),
+  }
 }
 
 function bump(counts: Map<PlayerId, number>, ids: PlayerId[]): void {
@@ -295,7 +307,7 @@ function bump(counts: Map<PlayerId, number>, ids: PlayerId[]): void {
 }
 
 function countAll(matches: Match[]): Counts {
-  const counts: Counts = { fannyGiven: new Map(), fannyTaken: new Map(), comebacks: new Map(), played: new Map() }
+  const counts = emptyCounts()
   for (const match of matches) {
     const [[winners], [losers]] = sidesOf(match)
     bump(counts.played, [...winners, ...losers])
@@ -303,7 +315,10 @@ function countAll(matches: Match[]): Counts {
       bump(counts.fannyGiven, winners)
       bump(counts.fannyTaken, losers)
     }
-    if (isComeback(match)) bump(counts.comebacks, winners)
+    if (isComeback(match)) {
+      bump(counts.comebacks, winners)
+      bump(counts.comebacksTaken, losers)
+    }
   }
   return counts
 }
@@ -567,6 +582,7 @@ export function topRecords(players: Player[], matches: Match[], result: ReplayRe
     fannyGiven: podium(countLines(counts.fannyGiven), countRanking(context)),
     fannyTaken: podium(countLines(counts.fannyTaken), countRanking(context)),
     comebacks: podium(countLines(counts.comebacks), countRanking(context)),
+    comebacksTaken: podium(countLines(counts.comebacksTaken), countRanking(context)),
     peak: podium(peakLines(result), peakRanking(context)),
     exploit: podium(exploitLines(ordered, result), exploitRanking(context)),
     gain: podium(gainLines(ordered, result), gainRanking(context)),

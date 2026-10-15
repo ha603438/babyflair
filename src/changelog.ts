@@ -6,6 +6,12 @@ export type ChangelogEntry = { id: string; date: string; title: string; items: s
 
 export const CHANGELOG: ChangelogEntry[] = [
   {
+    id: '2026-10-15-6',
+    date: '2026-10-15',
+    title: 'Le Château de cartes',
+    items: ['Nouveau record au Hall of Flair\u202F: le plus de comebacks subis (mené 4-0, perdu 4-5).'],
+  },
+  {
     id: '2026-10-15-5',
     date: '2026-10-15',
     title: 'Hall of Flair',

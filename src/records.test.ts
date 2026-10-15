@@ -367,7 +367,7 @@ describe('Fanny et comebacks', () => {
     ])
   })
 
-  it('counts comebacks made: 5-4 in 5 with the box ticked only', () => {
+  it('counts comebacks made and conceded: 5-4 in 5 with the box ticked only', () => {
     const matches = [
       game(['alice'], ['bob'], { target: 5, loserGoals: 4, comeback: true }),
       game(['alice', 'chloe'], ['bob', 'dan'], { target: 5, loserGoals: 4, comeback: true, winnerSide: 'B' }),
@@ -375,9 +375,14 @@ describe('Fanny et comebacks', () => {
       // A stray flag on another score is not a comeback.
       game(['eve'], ['bob'], { target: 10, loserGoals: 4, comeback: true }),
     ]
-    expect(ranksOf(recordsOf(matches).comebacks, (l) => [l.playerId, l.count])).toEqual([
+    const records = recordsOf(matches)
+    expect(ranksOf(records.comebacks, (l) => [l.playerId, l.count])).toEqual([
       [1, ['alice', 2]],
       [2, ['chloe', 1]],
+    ])
+    expect(ranksOf(records.comebacksTaken, (l) => [l.playerId, l.count])).toEqual([
+      [1, ['bob', 2]],
+      [2, ['dan', 1]],
     ])
   })
 
@@ -386,6 +391,7 @@ describe('Fanny et comebacks', () => {
     expect(records.fannyGiven.places).toEqual([])
     expect(records.fannyTaken.places).toEqual([])
     expect(records.comebacks.places).toEqual([])
+    expect(records.comebacksTaken.places).toEqual([])
   })
 })
 

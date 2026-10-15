@@ -79,7 +79,7 @@ describe('Hall of Flair page', () => {
     expect(html).toContain('Tous les matchs depuis le début (5 matchs), invités compris.')
     const headers = [...html.matchAll(/<span class="section-header-title">([^<]*)<\/span>/g)].map((m) => m[1])
     expect(headers).toEqual(['Les spécialistes', 'Séries', 'Fanny et comebacks', 'Coups d’éclat', 'Fidélités et rivalités'])
-    expect(html.match(/<section class="card record">/g)).toHaveLength(14)
+    expect(html.match(/<section class="card record">/g)).toHaveLength(15)
     const titles = [...html.matchAll(/<h3 class="record-title">([^<]*)<\/h3>/g)].map((m) => m[1])
     expect(titles).toEqual([
       'Le Sniper',
@@ -89,6 +89,7 @@ describe('Hall of Flair page', () => {
       'Roi du fanny',
       'Abonné au fanny',
       'Le Phénix',
+      'Le Château de cartes',
       'Altitude record',
       'Le Hold-up',
       'Le Jackpot',
