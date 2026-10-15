@@ -8,20 +8,27 @@ import { EmptyState } from '../../components/EmptyState'
 import type { EmptyStateAction } from '../../components/EmptyState'
 import { HintCard } from '../../components/HintCard'
 import { SectionHeader } from '../../components/SectionHeader'
+import { SegmentedControl } from '../../components/SegmentedControl'
 import { RankRow } from '../../components/rows'
 import type { RankRowVariant } from '../../components/rows'
+import { teamDuoId } from '../../duo'
+import type { ModeReplay } from '../../rating/modes'
 import { hrefOf, navigate } from '../../router'
 import type { Action } from '../../store'
-import type { PlayerId, Ranking } from '../../types'
+import type { Match, PlayerId, Ranking, RankingTab } from '../../types'
 import type { ReplayData, ScreenContext } from './context'
 import { pickHint } from './hints'
 import type { Hint, InstallEnv } from './hints'
 import { promptInstall } from './install'
 import { contextStripText, latestMatch } from './labels'
+import { useShowsTimes } from '../../profile/useShowsTimes'
+import { TAB_OPTIONS } from './modeLabels'
+import { ModeBody } from './ModeRanking'
 import { sideRecord } from '../../stats'
 
-// Classement screen body (spec §3.1): context strip, one HintCard, observation card, ranked list, rookie and
-// inactive sections, empty states and the post-match highlight. Engine data arrives through `replay`.
+// Classement screen body (spec §3.1): the « Mixte » | « 2V2 » | « 1V1 » tabs, context strip, one HintCard,
+// observation card, ranked list, rookie and inactive sections, empty states and the post-match highlight. Engine data
+// arrives through `replay` (Mixte) and `mode` (the 2V2 / 1V1 replay of the selected tab).
 
 export type ClassementViewProps = {
   app: ScreenContext
@@ -31,6 +38,11 @@ export type ClassementViewProps = {
   onPropose?: () => void
   /** Mode invité: the « Mode invité · Choisir mon profil » badge; absent → no badge. */
   onChooseProfile?: () => void
+  /** Selected tab (remembered on the phone); « Mixte » when absent. */
+  tab?: RankingTab
+  onTabChange?: (tab: RankingTab) => void
+  /** Ranking of the selected 2V2 / 1V1 tab; null (or absent) on « Mixte ». */
+  mode?: ModeReplay | null
 }
 
 const INSTALL_TITLE = "Installe BabyFlair sur l'écran d'accueil"
@@ -42,21 +54,44 @@ const OBSERVATION_TEXT = 'Tout le monde est encore en observation : 10 matchs ch
 const MIN_PLAYERS_FOR_MATCH = 2
 
 type Dispatch = (action: Action) => void
-type Highlight = ReadonlySet<PlayerId>
+/** Player ids, plus the duo ids of the two teams of a 2v2 (duo ids contain a '+', so they never collide). */
+type Highlight = ReadonlySet<string>
+
+// ---------------------------------------------------------------------------
+// Tabs
+// ---------------------------------------------------------------------------
+
+function ClassementTabs({ tab, onChange }: { tab: RankingTab; onChange: ((tab: RankingTab) => void) | undefined }) {
+  if (onChange === undefined) return null
+  return (
+    <div className="content classement-tabs">
+      <SegmentedControl options={TAB_OPTIONS} value={tab} onChange={onChange} aria-label="Classement" />
+    </div>
+  )
+}
+
+/** What the strip, the Blancs / Noirs line and « 📈 Courbes » count: every match, or the selected format's. */
+type Scope = { matches: Match[]; rankedCount: number }
+
+function scopeOf(app: ScreenContext, replay: ReplayData, mode: ModeReplay | null): Scope {
+  if (mode === null) return { matches: app.store.matches, rankedCount: replay.ranking.ranked.length }
+  return { matches: mode.matches, rankedCount: mode.ranking.ranked.length }
+}
 
 // ---------------------------------------------------------------------------
 // Context strip
 // ---------------------------------------------------------------------------
 
-function ContextStrip({ app, replay }: { app: ScreenContext; replay: ReplayData }) {
-  const { matches } = app.store
+function ContextStrip({ scope, now }: { scope: Scope; now: Date }) {
+  const withTime = useShowsTimes()
+  const { matches } = scope
   const latest = latestMatch(matches)
   if (latest === undefined) return null
   const sides = sideRecord(matches)
   return (
     <>
       <a className="ctx-strip" href={hrefOf({ name: 'historique' })}>
-        {contextStripText(matches.length, replay.ranking.ranked.length, latest.playedAt, replay.now)}
+        {contextStripText(matches.length, scope.rankedCount, latest.playedAt, now, withTime)}
       </a>
       <p className="side-line">
         <span className="side-line__white">Blancs {sides.blancs} V</span> · <span className="side-line__black">Noirs {sides.noirs} V</span>
@@ -250,9 +285,12 @@ function NoPlayersYet() {
   )
 }
 
-function Body({ app, replay, highlight }: { app: ScreenContext; replay: ReplayData; highlight: Highlight }) {
+type BodyProps = { app: ScreenContext; replay: ReplayData; mode: ModeReplay | null; highlight: Highlight }
+
+function Body({ app, replay, mode, highlight }: BodyProps) {
   const { players, matches } = app.store
   if (players.length === 0) return <NoPlayersYet />
+  if (mode !== null) return <ModeBody mode={mode} now={replay.now} highlight={highlight} />
   const { ranking } = replay
   return (
     <>
@@ -283,10 +321,23 @@ function Body({ app, replay, highlight }: { app: ScreenContext; replay: ReplayDa
 // Highlight after a match (navigation payload `highlightIds`)
 // ---------------------------------------------------------------------------
 
-// Rows render as <a href="#/joueurs/:id">; the first match in DOM order is the highest-ranked highlighted player.
+// The navigation payload is [...teamA, ...teamB] (src/screens/Match.tsx): in a 2v2, the two duos of the match.
+function highlightOf(ids: PlayerId[]): Highlight {
+  if (ids.length !== 4) return new Set(ids)
+  const duos = [teamDuoId(ids.slice(0, 2)), teamDuoId(ids.slice(2))].filter((id): id is string => id !== null)
+  return new Set([...ids, ...duos])
+}
+
+function hrefOfEntity(id: string): string {
+  if (id.includes('+')) return hrefOf({ name: 'duo', id })
+  return hrefOf({ name: 'joueur', id })
+}
+
+// Rows render as <a href="#/joueurs/:id"> (or #/duo/:id in 2V2); the first match in DOM order is the highest-ranked
+// highlighted row.
 function scrollToFirstHighlighted(root: HTMLElement | null, highlight: Highlight): void {
   if (root === null) return
-  const hrefs = new Set([...highlight].map((id) => hrefOf({ name: 'joueur', id })))
+  const hrefs = new Set([...highlight].map(hrefOfEntity))
   const rows = Array.from(root.querySelectorAll<HTMLAnchorElement>('a.row'))
   const first = rows.find((row) => hrefs.has(row.getAttribute('href') ?? ''))
   if (first === undefined || typeof first.scrollIntoView !== 'function') return
@@ -295,7 +346,7 @@ function scrollToFirstHighlighted(root: HTMLElement | null, highlight: Highlight
 
 /** Reads the navigation payload once on mount: those rows get `.row--flash` and the first one is scrolled to. */
 function useHighlight(nav: ScreenContext['nav'], rootRef: RefObject<HTMLDivElement | null>): Highlight {
-  const [highlight] = useState<Highlight>(() => new Set(nav.get().highlightIds ?? []))
+  const [highlight] = useState<Highlight>(() => highlightOf(nav.get().highlightIds ?? []))
   useEffect(() => {
     const payload = nav.take()
     // Only highlightIds is ours; rankBefore belongs to the Match result view and goes back untouched.
@@ -306,21 +357,30 @@ function useHighlight(nav: ScreenContext['nav'], rootRef: RefObject<HTMLDivEleme
   return highlight
 }
 
-export function ClassementView({ app, replay, installEnv, onPropose, onChooseProfile }: ClassementViewProps) {
+/** No player yet: no tabs (and no ranking to switch to). */
+function tabsChange(app: ScreenContext, onTabChange: ((tab: RankingTab) => void) | undefined) {
+  if (app.store.players.length === 0) return undefined
+  return onTabChange
+}
+
+export function ClassementView(props: ClassementViewProps) {
+  const { app, replay, installEnv, onPropose, onChooseProfile, tab = 'mixte', onTabChange, mode = null } = props
   const rootRef = useRef<HTMLDivElement>(null)
   const highlight = useHighlight(app.nav, rootRef)
   const hint = pickHint(installEnv, app.store.settings, replay.now)
+  const scope = scopeOf(app, replay, mode)
   return (
     <div ref={rootRef} className="lists-screen classement">
-      <ContextStrip app={app} replay={replay} />
+      <ClassementTabs tab={tab} onChange={tabsChange(app, onTabChange)} />
+      <ContextStrip scope={scope} now={replay.now} />
       <VisitorBadge onChooseProfile={onChooseProfile} />
       <ClassementLinks
         onPropose={onPropose}
         playerCount={app.store.players.length}
-        matchCount={app.store.matches.length}
+        matchCount={scope.matches.length}
       />
       <HintSlot hint={hint} dispatch={app.dispatch} />
-      <Body app={app} replay={replay} highlight={highlight} />
+      <Body app={app} replay={replay} mode={mode} highlight={highlight} />
     </div>
   )
 }

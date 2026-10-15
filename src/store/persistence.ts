@@ -1,6 +1,6 @@
 import { parseCallResponse } from '../calls/calls'
 import { isComebackScore } from '../stats'
-import type { Call, CallPlayer, Match, Player, Settings, Store } from '../types'
+import type { Call, CallPlayer, Match, Player, RankingTab, Settings, Store } from '../types'
 import { backfillSeq, DEFAULT_SETTINGS, initialStore, nextSeqOf } from './reducer'
 
 export const STORAGE_KEY = 'babyflair.v1'
@@ -83,6 +83,11 @@ function arrayOf(value: unknown): unknown[] {
   return value
 }
 
+function readClassementTab(value: unknown): RankingTab | undefined {
+  if (value === 'mixte' || value === '2v2' || value === '1v1') return value
+  return undefined
+}
+
 export function normaliseSettings(value: unknown): Settings {
   if (!isRecord(value)) return DEFAULT_SETTINGS
   const lastFormat = value.lastFormat === '1v1' || value.lastFormat === '2v2' ? value.lastFormat : '2v2'
@@ -102,6 +107,8 @@ export function normaliseSettings(value: unknown): Settings {
   if (value.pushEnabled === true) settings.pushEnabled = true
   const notifHintDismissedAt = optionalIso(value.notifHintDismissedAt)
   if (notifHintDismissedAt !== undefined) settings.notifHintDismissedAt = notifHintDismissedAt
+  const classementTab = readClassementTab(value.classementTab)
+  if (classementTab !== undefined) settings.classementTab = classementTab
   return settings
 }
 

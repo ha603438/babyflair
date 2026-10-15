@@ -1,4 +1,4 @@
-import { daysSince, fmtInt, fmtOrdinal, fmtPercent, fmtRelative, plural } from '../../format'
+import { daysSince, fmtInt, fmtOrdinal, fmtPercent, fmtRelative, fmtRelativeDay, plural } from '../../format'
 import { rankIndexOf } from '../../stats'
 import type { Match, MatchId, Player, PlayerId, PlayerStats, Ranking } from '../../types'
 
@@ -22,9 +22,20 @@ export function latestMatch(matches: Match[]): Match | undefined {
   return latest
 }
 
-/** « 48 matchs · 12 classés · dernier match il y a 5 min » */
-export function contextStripText(matchCount: number, rankedCount: number, lastPlayedAt: string, now: Date): string {
-  const last = fmtRelative(lastPlayedAt, now)
+function lastPlayedText(lastPlayedAt: string, now: Date, withTime: boolean): string {
+  if (withTime) return fmtRelative(lastPlayedAt, now)
+  return fmtRelativeDay(lastPlayedAt, now)
+}
+
+/** « 48 matchs · 12 classés · dernier match il y a 5 min » (« … aujourd’hui » without times, profile/times.ts) */
+export function contextStripText(
+  matchCount: number,
+  rankedCount: number,
+  lastPlayedAt: string,
+  now: Date,
+  withTime: boolean,
+): string {
+  const last = lastPlayedText(lastPlayedAt, now, withTime)
   return `${plural(matchCount, 'match')} · ${plural(rankedCount, 'classé')} · dernier match ${last}`
 }
 
@@ -36,14 +47,37 @@ export function playerCountText(players: Player[]): string {
   return `${base} · ${plural(guests, 'invité')}`
 }
 
-/** « 3e sur 12 » / « Pas encore classé · 4/10 matchs » / « Inactif · dernier match il y a 42 j » */
-export function heroCaption(stats: PlayerStats, ranking: Ranking, now: Date): string {
+/** Matches before entering the main ranking (the 2V2 and 1V1 rankings use 3, see src/rating/modes.ts). */
+export const RANKED_AFTER = 10
+
+/**
+ * « 3e sur 12 » / « Pas encore classé · 4/10 matchs » / « Inactif · dernier match il y a 42 j ». `rankedAfter` is the
+ * threshold of the ranking the stats come from (3 on the duo page).
+ */
+export function heroCaption(
+  stats: PlayerStats,
+  ranking: Ranking,
+  now: Date,
+  rankedAfter: number = RANKED_AFTER,
+): string {
   const rank = rankIndexOf(ranking, stats.playerId)
   if (rank !== null) return `${fmtOrdinal(rank)} sur ${fmtInt(ranking.ranked.length)}`
   if (stats.status === 'inactive' && stats.lastPlayedAt !== undefined) {
     return `Inactif · dernier match il y a ${fmtInt(daysSince(stats.lastPlayedAt, now))} j`
   }
-  return `Pas encore classé · ${fmtInt(stats.rookieProgress)}/10 matchs`
+  return `Pas encore classé · ${fmtInt(stats.rookieProgress)}/${fmtInt(rankedAfter)} matchs`
+}
+
+function modeStanding(stats: PlayerStats, ranking: Ranking): string {
+  const rank = rankIndexOf(ranking, stats.playerId)
+  if (rank !== null) return fmtOrdinal(rank)
+  if (stats.status === 'inactive') return 'inactif'
+  return 'pas encore classé'
+}
+
+/** Player page, under the hero caption: « 1V1 : 1 032 · 2e » (or « · pas encore classé » / « · inactif »). */
+export function modeLineText(label: string, stats: PlayerStats, ranking: Ranking): string {
+  return `${label} : ${fmtInt(stats.rating)} · ${modeStanding(stats, ranking)}`
 }
 
 /** The last 30 `ratingAfter` values, oldest first. */
@@ -57,6 +91,11 @@ export function sparklineCaption(points: number[]): string {
   const min = Math.min(...points)
   const max = Math.max(...points)
   return `${plural(points.length, 'dernier match', 'derniers matchs')} · min ${fmtInt(min)} · max ${fmtInt(max)}`
+}
+
+/** « 3 V · 1 D » */
+export function recordText(record: { wins: number; losses: number }): string {
+  return `${record.wins} V · ${record.losses} D`
 }
 
 /** « 60 % » (0 % before the first match). */

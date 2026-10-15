@@ -18,6 +18,14 @@ const SECTIONS: Section[] = [
       'accents).',
   },
   {
+    title: 'Trois classements',
+    text:
+      'Le classement principal, « Mixte », compte tous les matchs, en 1 contre 1 comme en 2 contre 2. Les onglets ' +
+      '« 2V2 » et « 1V1 » en donnent deux autres, calculés de la même façon : en 2V2, chaque duo est noté comme une ' +
+      'seule équipe, avec ses propres points ; en 1V1, seuls les matchs en 1 contre 1 comptent. Dans ces deux-là, ' +
+      'on est classé après 3 matchs.',
+  },
+  {
     title: 'Les points',
     text:
       'Plus le résultat était improbable, plus ça bouge : 16 points de base pour un match à 50/50. Chaque but ' +

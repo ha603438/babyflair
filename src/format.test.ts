@@ -9,6 +9,7 @@ import {
   fmtOrdinal,
   fmtPercent,
   fmtRelative,
+  fmtRelativeDay,
   fmtScore,
   fmtTime,
   plural,
@@ -131,6 +132,21 @@ describe('fmtTime', () => {
 
   it('returns an empty string for an invalid date', () => {
     expect(fmtTime('pas une date')).toBe('')
+  })
+})
+
+describe('fmtRelativeDay', () => {
+  const now = local(2026, 10, 11, 12, 0)
+
+  it('names the calendar day, never hours or minutes', () => {
+    const rtf = new Intl.RelativeTimeFormat('fr', { numeric: 'auto', style: 'short' })
+    expect(fmtRelativeDay(iso(local(2026, 10, 11, 11, 55)), now)).toBe(rtf.format(0, 'day'))
+    expect(fmtRelativeDay(iso(local(2026, 10, 10, 23, 0)), now)).toBe(rtf.format(-1, 'day'))
+    expect(fmtRelativeDay(iso(local(2026, 10, 7, 9, 0)), now)).toBe(rtf.format(-4, 'day'))
+  })
+
+  it('returns an empty string for an invalid date', () => {
+    expect(fmtRelativeDay('pas une date', now)).toBe('')
   })
 })
 

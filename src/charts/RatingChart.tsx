@@ -34,6 +34,8 @@ export type RatingChartProps = {
   matches: ChartMatch[]
   /** Tap on an end label: hide that player's curve. */
   onHide: (playerId: PlayerId) => void
+  /** What one curve stands for in the chart's accessible name: « joueur » (default) or « duo » (2V2 tab). */
+  noun?: string
 }
 
 /** What the crosshair shows: the hovered match and one reading per visible player. */
@@ -348,7 +350,7 @@ function useCrosshair(boxRef: RefObject<HTMLDivElement | null>) {
   return [hover, setHover] as const
 }
 
-export function RatingChart({ curves, matches, onHide }: RatingChartProps) {
+export function RatingChart({ curves, matches, onHide, noun = 'joueur' }: RatingChartProps) {
   const boxRef = useRef<HTMLDivElement>(null)
   const svgRef = useRef<SVGSVGElement>(null)
   const width = useWidth(boxRef)
@@ -389,7 +391,7 @@ export function RatingChart({ curves, matches, onHide }: RatingChartProps) {
         height={CHART_HEIGHT}
         viewBox={`0 0 ${width} ${CHART_HEIGHT}`}
         role="img"
-        aria-label={`Évolution du classement de ${plural(curves.length, 'joueur')}`}
+        aria-label={`Évolution du classement de ${plural(curves.length, noun)}`}
         tabIndex={0}
         onKeyDown={onKeyDown}
         onBlur={() => setHover(null)}

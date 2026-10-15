@@ -6,6 +6,16 @@ export type ChangelogEntry = { id: string; date: string; title: string; items: s
 
 export const CHANGELOG: ChangelogEntry[] = [
   {
+    id: '2026-10-15-3',
+    date: '2026-10-15',
+    title: 'Trois classements',
+    items: [
+      'Le classement a trois onglets : « Mixte » (le classement principal), « 2V2 » (les duos) et « 1V1 ».',
+      'Chaque duo a sa fiche : points, positions, fanny et comebacks, bête noire, derniers matchs.',
+      'Duos et 1V1 : classé après 3 matchs.',
+    ],
+  },
+  {
     id: '2026-10-15-2',
     date: '2026-10-15',
     title: 'Filtres dans l’historique',

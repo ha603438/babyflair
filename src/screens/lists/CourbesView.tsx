@@ -14,13 +14,20 @@ import { EmptyState } from '../../components/EmptyState'
 import { fmtInt } from '../../format'
 import type { PlayerId } from '../../types'
 import type { ReplayData, ScreenContext } from './context'
+import { CURVE_WORDING } from './modeLabels'
+import type { CurveWording } from './modeLabels'
 
 // Courbes du classement (`#/courbes`): name chips (legend + toggles), the rating chart and its table view. The
-// visible set lives in component state only; until the user touches it, it follows the current top 3.
+// visible set lives in component state only; until the user touches it, it follows the current top 3. It follows the
+// selected Classement tab: `replay` is then the 2V2 / 1V1 ranking, whose « players » are the duos (« A & B ») or the
+// players with a 1v1 match.
 
-export type CourbesViewProps = { app: Pick<ScreenContext, 'toast'>; replay: ReplayData }
-
-const CAP_TEXT = "8 courbes maximum : masque un joueur d'abord"
+export type CourbesViewProps = {
+  app: Pick<ScreenContext, 'toast'>
+  replay: ReplayData
+  /** Player or duo copy (chart label, table column, 8-curve cap, empty state); the Mixte wording when absent. */
+  wording?: CurveWording
+}
 
 type ChipProps = { name: string; slot: number | undefined; onToggle: () => void }
 
@@ -83,14 +90,14 @@ function TableRow({ curve }: { curve: Curve }) {
   )
 }
 
-function CurveTable({ curves }: { curves: Curve[] }) {
+function CurveTable({ curves, column }: { curves: Curve[]; column: string }) {
   if (curves.length === 0) return <p className="curve-table__empty">Aucune courbe affichée.</p>
   const rows = [...curves].sort((a, b) => summarize(b.series).current - summarize(a.series).current)
   return (
     <table className="curve-table">
       <thead>
         <tr>
-          <th scope="col">Joueur</th>
+          <th scope="col">{column}</th>
           <th scope="col">Classement actuel</th>
           <th scope="col">Plus haut</th>
           <th scope="col">Plus bas</th>
@@ -111,19 +118,19 @@ function tableLabel(open: boolean): string {
   return 'Voir en tableau'
 }
 
-function TableSection({ curves }: { curves: Curve[] }) {
+function TableSection({ curves, column }: { curves: Curve[]; column: string }) {
   const [open, setOpen] = useState(false)
   return (
     <div className="content curve-table-block">
       <button type="button" className="curve-table-toggle" aria-expanded={open} onClick={() => setOpen(!open)}>
         {tableLabel(open)}
       </button>
-      {open && <CurveTable curves={curves} />}
+      {open && <CurveTable curves={curves} column={column} />}
     </div>
   )
 }
 
-export function CourbesView({ app, replay }: CourbesViewProps) {
+export function CourbesView({ app, replay, wording = CURVE_WORDING.mixte }: CourbesViewProps) {
   const data = useMemo(() => buildChartData(replay.result.byPlayer, replay.matches), [replay.result, replay.matches])
   const order = useMemo(() => chipOrder(replay.ranking, data.series), [replay.ranking, data.series])
   const top = useMemo(() => defaultVisible(replay.ranking, data.series), [replay.ranking, data.series])
@@ -140,14 +147,14 @@ export function CourbesView({ app, replay }: CourbesViewProps) {
     }
     const next = assignSlot(visible, id)
     if (next === null) {
-      app.toast.show({ text: CAP_TEXT })
+      app.toast.show({ text: wording.cap })
       return
     }
     setChosen(next)
   }
 
   if (data.matches.length === 0) {
-    return <EmptyState title="Pas encore de courbe" body="Enregistre un match pour voir l'évolution du classement." />
+    return <EmptyState title="Pas encore de courbe" body={wording.emptyBody} />
   }
   return (
     <div className="lists-screen courbes">
@@ -161,10 +168,15 @@ export function CourbesView({ app, replay }: CourbesViewProps) {
       />
       <div className="content curve-chart">
         <div className="card">
-          <RatingChart curves={curves} matches={data.matches} onHide={(id) => setChosen(releaseSlot(visible, id))} />
+          <RatingChart
+            curves={curves}
+            matches={data.matches}
+            onHide={(id) => setChosen(releaseSlot(visible, id))}
+            noun={wording.noun}
+          />
         </div>
       </div>
-      <TableSection curves={curves} />
+      <TableSection curves={curves} column={wording.column} />
     </div>
   )
 }

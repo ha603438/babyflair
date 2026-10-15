@@ -5,6 +5,8 @@ export type PlayerId = string
 export type MatchId = string
 export type Target = 5 | 10
 export type Format = '1v1' | '2v2'
+/** Classement tabs: « Mixte » (every match, the main ranking), « 2V2 » (duos) and « 1V1 » (1v1 matches only). */
+export type RankingTab = 'mixte' | Format
 export type Team = 'A' | 'B'
 
 export type Player = { id: PlayerId; name: string; isGuest: boolean; createdAt: string }
@@ -49,6 +51,8 @@ export type Settings = {
   /** This phone holds a push subscription on the server (Réglages › Notifications). */
   pushEnabled?: boolean
   notifHintDismissedAt?: string
+  /** Classement tab last chosen on this phone (absent = « Mixte »). Local only, never synced. */
+  classementTab?: RankingTab
 }
 
 // Appels à jouer (« Proposer un baby »): shared through the server only; local mode keeps both arrays empty.
@@ -136,7 +140,7 @@ export type PlayerStats = {
   losses: number
   lastPlayedAt?: string
   status: PlayerStatus
-  /** 0..10 */
+  /** 0..rankedAfter (10 in the main ranking, 3 in the 2V2 and 1V1 rankings) */
   rookieProgress: number
   history: HistoryPoint[]
 }

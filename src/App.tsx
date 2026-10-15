@@ -23,6 +23,9 @@ import { Reglages } from './screens/Reglages'
 import { CommentCaMarche } from './screens/CommentCaMarche'
 import { Nouveautes } from './screens/Nouveautes'
 import { Courbes } from './screens/Courbes'
+import { Duo } from './screens/Duo'
+import { duoTitle } from './duo'
+import { COURBES_TITLE, tabOf } from './screens/lists/modeLabels'
 import { unseenEntries } from './changelog'
 import { CodeGate } from './screens/CodeGate'
 import { Journal } from './screens/Journal'
@@ -55,6 +58,8 @@ function Screen({ route }: { route: Route }): ReactNode {
       return <Joueurs add={route.add === true} />
     case 'joueur':
       return <Joueur id={route.id} />
+    case 'duo':
+      return <Duo id={route.id} />
     case 'reglages':
       return <Reglages />
     case 'comment-ca-marche':
@@ -150,6 +155,8 @@ function AppHeader({ route }: { route: Route }) {
         />
       )
     }
+    case 'duo':
+      return <Header title={duoTitle(route.id, store.players)} back />
     case 'reglages':
       return <Header title="Réglages" back />
     case 'comment-ca-marche':
@@ -159,7 +166,7 @@ function AppHeader({ route }: { route: Route }) {
     case 'journal':
       return <Header title={JOURNAL_COPY.title} onBrandDoubleTap={onBrandDoubleTap} left={<NewMatchShortcut />} />
     case 'courbes':
-      return <Header title="Évolution du classement" back />
+      return <Header title={COURBES_TITLE[tabOf(store.settings)]} back />
   }
 }
 

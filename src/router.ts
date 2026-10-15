@@ -9,6 +9,8 @@ export type Route =
   | { name: 'match-detail'; id: MatchId }
   | { name: 'joueurs'; add?: boolean }
   | { name: 'joueur'; id: PlayerId }
+  /** Duo page (2V2 ranking): `id` is the two player ids joined with '+' (src/duo.ts), in any order. */
+  | { name: 'duo'; id: string }
   | { name: 'reglages' }
   | { name: 'comment-ca-marche' }
   | { name: 'nouveautes' }
@@ -54,6 +56,11 @@ function parseJoueurs(segments: string[], params: URLSearchParams): Route {
   return { name: 'joueurs' }
 }
 
+function parseDuo(segments: string[]): Route {
+  if (segments.length === 2) return { name: 'duo', id: segments[1] }
+  return HOME
+}
+
 function parseAppel(segments: string[]): Route {
   if (segments.length === 2) return { name: 'appel', id: segments[1] }
   return HOME
@@ -92,6 +99,8 @@ export function parseHash(hash: string): Route {
       return parseSimple(segments, 'journal')
     case 'courbes':
       return parseSimple(segments, 'courbes')
+    case 'duo':
+      return parseDuo(segments)
     case 'appel':
       return parseAppel(segments)
     default:
@@ -116,6 +125,9 @@ export function hrefOf(route: Route): string {
       return '#/joueurs'
     case 'joueur':
       return `#/joueurs/${encodeURIComponent(route.id)}`
+    case 'duo':
+      // Each id is encoded on its own so the '+' between them stays readable: #/duo/<idA>+<idB>.
+      return `#/duo/${route.id.split('+').map(encodeURIComponent).join('+')}`
     case 'reglages':
       return '#/reglages'
     case 'comment-ca-marche':

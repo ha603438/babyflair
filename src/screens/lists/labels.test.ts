@@ -1,14 +1,16 @@
 import { describe, expect, it } from 'vitest'
-import { fmtInt, fmtPercent, fmtRelative } from '../../format'
+import { fmtInt, fmtPercent, fmtRelative, fmtRelativeDay } from '../../format'
 import type { Match, Player, PlayerStats, Ranking } from '../../types'
 import {
   contextStripText,
   hasTwoVsTwo,
   heroCaption,
   latestMatch,
+  modeLineText,
   partnerText,
   playerCountText,
   recentMatchIds,
+  recordText,
   sparklineCaption,
   sparklinePoints,
   streakText,
@@ -55,8 +57,15 @@ describe('latestMatch', () => {
 describe('texts', () => {
   it('builds the context strip', () => {
     const last = daysAgo(0.01)
-    expect(contextStripText(48, 12, last, now)).toBe(`48 matchs · 12 classés · dernier match ${fmtRelative(last, now)}`)
-    expect(contextStripText(1, 1, last, now)).toBe(`1 match · 1 classé · dernier match ${fmtRelative(last, now)}`)
+    expect(contextStripText(48, 12, last, now, true)).toBe(
+      `48 matchs · 12 classés · dernier match ${fmtRelative(last, now)}`,
+    )
+    expect(contextStripText(1, 1, last, now, true)).toBe(`1 match · 1 classé · dernier match ${fmtRelative(last, now)}`)
+  })
+  it('says only the day of the last match without times', () => {
+    const today = new Date(now.getTime() - 5 * 60_000).toISOString()
+    expect(contextStripText(2, 1, today, now, false)).toBe(`2 matchs · 1 classé · dernier match ${fmtRelativeDay(today, now)}`)
+    expect(contextStripText(2, 1, today, now, false)).not.toMatch(/min|\bh\b/)
   })
   it('counts players and guests', () => {
     expect(playerCountText([player('a', 'A')])).toBe('1 joueur')
@@ -124,5 +133,25 @@ describe('hasTwoVsTwo', () => {
     expect(hasTwoVsTwo('a', only1v1)).toBe(false)
     expect(hasTwoVsTwo('a', with2v2)).toBe(true)
     expect(hasTwoVsTwo('zz', with2v2)).toBe(false)
+  })
+})
+
+describe('2V2 / 1V1 labels', () => {
+  it('captions a hero with the threshold of its ranking', () => {
+    const rookie = stats({ playerId: 'r', status: 'rookie', rookieProgress: 2 })
+    expect(heroCaption(rookie, ranking, now, 3)).toBe('Pas encore classé · 2/3 matchs')
+    expect(heroCaption(stats(), ranking, now, 3)).toBe('3e sur 4')
+  })
+  it('builds the discreet 1V1 line of the player page', () => {
+    expect(modeLineText('1V1', stats({ rating: 1032 }), ranking)).toBe(`1V1 : ${fmtInt(1032)} · 3e`)
+    expect(modeLineText('1V1', stats({ playerId: 'r', status: 'rookie' }), ranking)).toBe(
+      `1V1 : ${fmtInt(1026)} · pas encore classé`,
+    )
+    expect(modeLineText('1V1', stats({ playerId: 'i', status: 'inactive' }), ranking)).toBe(
+      `1V1 : ${fmtInt(1026)} · inactif`,
+    )
+  })
+  it('formats a win / loss record', () => {
+    expect(recordText({ wins: 3, losses: 1 })).toBe('3 V · 1 D')
   })
 })

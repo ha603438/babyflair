@@ -85,6 +85,13 @@ export function fmtRelative(iso: string, now: Date): string {
   return relativeFormat.format(-Math.floor(elapsed / DAY_MS), 'day')
 }
 
+/** « aujourd’hui » / « hier » / « il y a 4 j »: calendar days only, never hours or minutes (profile/times.ts). */
+export function fmtRelativeDay(iso: string, now: Date): string {
+  const date = toDate(iso)
+  if (date === null) return ''
+  return relativeFormat.format(-Math.max(0, calendarDaysBetween(date, now)), 'day')
+}
+
 export function fmtDayHeader(iso: string, now: Date): string {
   const date = toDate(iso)
   if (date === null) return ''

@@ -18,6 +18,7 @@ import type {
   Target,
 } from '../types'
 import type {
+  Config,
   Leaderboard,
   LeaderboardRow,
   Match as EngineMatch,
@@ -123,12 +124,14 @@ function toMatchResult(result: EngineMatchResult): MatchResult {
   }
 }
 
-export function replay(players: Player[], matches: Match[], opts: { now: Date }): ReplayResult {
+// `config` defaults to the engine's; the 2V2 / 1V1 rankings (./modes.ts) only change its section threshold.
+export function replay(players: Player[], matches: Match[], opts: { now: Date; config?: Config }): ReplayResult {
+  const config = opts.config ?? DEFAULT_CONFIG
   const roster = players.map(toEnginePlayer)
-  const engineResult = engineReplay(roster, matches.map(toEngineMatch))
+  const engineResult = engineReplay(roster, matches.map(toEngineMatch), config)
   const playedAtOf = new Map<MatchId, string>(matches.map((m) => [m.id, m.playedAt]))
   const histories = collectHistories(engineResult.matches, playedAtOf)
-  const statusOf = statusByPlayer(leaderboard(roster, engineResult.players, opts.now.getTime()))
+  const statusOf = statusByPlayer(leaderboard(roster, engineResult.players, opts.now.getTime(), config))
 
   const byPlayer = new Map<PlayerId, PlayerStats>()
   for (const player of players) {
@@ -144,7 +147,7 @@ export function replay(players: Player[], matches: Match[], opts: { now: Date })
       // kept as the stored string rather than re-serialised.
       lastPlayedAt: history.at(-1)?.playedAt,
       status: must(statusOf.get(player.id), `status of ${player.id}`),
-      rookieProgress: Math.min(state.matches, DEFAULT_CONFIG.rankedAfter),
+      rookieProgress: Math.min(state.matches, config.rankedAfter),
       history,
     })
   }

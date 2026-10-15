@@ -3,45 +3,48 @@ import type { ReactNode } from 'react'
 import { Badge } from '../../components/Badge'
 import { Button, IconButton } from '../../components/Button'
 import { ConfirmDialog } from '../../components/ConfirmDialog'
-import { Delta } from '../../components/Delta'
 import { InlinePlayerForm } from '../../components/InlinePlayerForm'
 import type { PlayerFormValue } from '../../components/InlinePlayerForm'
 import { Pencil } from '../../components/icons'
 import { SectionHeader } from '../../components/SectionHeader'
-import { Sparkline } from '../../components/Sparkline'
 import { HistoryRow } from '../../components/rows'
+import { duoId } from '../../duo'
 import type { Guard } from '../../profile/useWriteGuard'
 import { fmtInt, fmtPercent } from '../../format'
+import type { ModeReplay } from '../../rating/modes'
 import { back, hrefOf, navigate } from '../../router'
 import { playerHasMatches } from '../../store'
-import {
-  bestAlly,
-  currentStreak,
-  fannyComebackRecord,
-  favouritePartner,
-  nemesis,
-  positionRecord,
-  sevenDayDelta,
-} from '../../stats'
+import { bestAlly, currentStreak, fannyComebackRecord, favouritePartner, nemesis, positionRecord } from '../../stats'
 import type { Rivalry } from '../../stats'
 import type { Match, MatchId, Player, PlayerId, PlayerStats } from '../../types'
 import type { ReplayData, ScreenContext } from './context'
 import {
   hasTwoVsTwo,
   heroCaption,
+  modeLineText,
   partnerText,
   recentMatchIds,
-  sparklineCaption,
-  sparklinePoints,
+  recordText,
   streakText,
   winRateText,
 } from './labels'
+import { SparklineCard, Tile, Trend } from './profileParts'
 
-// Joueur screen body (spec §3.7): hero card (with the « Renommer » pencil and the inline rename form), sparkline,
-// stat tiles, favourite partner, last matches and the danger zone. Unknown id → redirect to the list.
+// Joueur screen body (spec §3.7): hero card (with the « Renommer » pencil and the inline rename form, and the 1V1
+// rating line when the player has 1v1 matches), sparkline, stat tiles, favourite partner (a link to the duo page),
+// last matches and the danger zone. Unknown id → redirect to the list.
 
-/** `guard`: renaming and deleting are writes, refused to a visitor (src/profile/useWriteGuard.ts). */
-export type JoueurViewProps = { app: ScreenContext; replay: ReplayData; id: PlayerId; guard: Guard }
+/**
+ * `guard`: renaming and deleting are writes, refused to a visitor (src/profile/useWriteGuard.ts). `oneVsOne`: the 1V1
+ * ranking, only replayed when the player has a 1v1 match (absent or null → no 1V1 line).
+ */
+export type JoueurViewProps = {
+  app: ScreenContext
+  replay: ReplayData
+  id: PlayerId
+  guard: Guard
+  oneVsOne?: ModeReplay | null
+}
 
 const NO_MATCH_TEXT = "Aucun match pour l'instant."
 const CANNOT_DELETE_TEXT =
@@ -68,12 +71,6 @@ function leaveToList(): void {
 // Hero card / rename form
 // ---------------------------------------------------------------------------
 
-function Trend({ stats, now }: { stats: PlayerStats; now: Date }) {
-  const trend = sevenDayDelta(stats, now)
-  if (trend === null) return null
-  return <Delta value={trend} size={13} suffix="sur 7 j" />
-}
-
 function GuestBadge({ player }: { player: Player }) {
   if (!player.isGuest) return null
   return (
@@ -83,14 +80,28 @@ function GuestBadge({ player }: { player: Player }) {
   )
 }
 
-type HeroProps = { player: Player; stats: PlayerStats; replay: ReplayData; onEdit: () => void }
+/** « 1V1 : 1 032 · 2e », discreet, under the caption; nothing without a 1v1 match. */
+function OneVsOneLine({ playerId, oneVsOne }: { playerId: PlayerId; oneVsOne: ModeReplay | null }) {
+  const stats = oneVsOne?.result.byPlayer.get(playerId)
+  if (oneVsOne === null || stats === undefined || stats.played === 0) return null
+  return <p className="hero-mode">{modeLineText('1V1', stats, oneVsOne.ranking)}</p>
+}
 
-function Hero({ player, stats, replay, onEdit }: HeroProps) {
+type HeroProps = {
+  player: Player
+  stats: PlayerStats
+  replay: ReplayData
+  oneVsOne: ModeReplay | null
+  onEdit: () => void
+}
+
+function Hero({ player, stats, replay, oneVsOne, onEdit }: HeroProps) {
   return (
     <section className="card card-pad hero">
       <div className="hero-main">
         <div className="hero-rating t-display">{fmtInt(stats.rating)}</div>
         <p className="hero-caption">{heroCaption(stats, replay.ranking, replay.now)}</p>
+        <OneVsOneLine playerId={player.id} oneVsOne={oneVsOne} />
         <GuestBadge player={player} />
       </div>
       <div className="hero-side">
@@ -129,25 +140,6 @@ function RenameForm({ player, players, onSubmit, onCancel }: RenameProps) {
 // Sparkline, stats, partner
 // ---------------------------------------------------------------------------
 
-function SparklineCard({ stats }: { stats: PlayerStats }) {
-  const points = sparklinePoints(stats)
-  return (
-    <section className="card card-pad">
-      <Sparkline points={points} />
-      <p className="spark-caption">{sparklineCaption(points)}</p>
-    </section>
-  )
-}
-
-function Tile({ label, value }: { label: string; value: string }) {
-  return (
-    <div className="tile">
-      <span className="tile-label">{label}</span>
-      <span className="tile-value t-num">{value}</span>
-    </div>
-  )
-}
-
 function Streak({ stats, matches }: { stats: PlayerStats; matches: Map<MatchId, Match> }) {
   const text = streakText(currentStreak(stats, matches))
   if (text === null) return null
@@ -166,10 +158,6 @@ function StatsCard({ stats, matches }: { stats: PlayerStats; matches: Map<MatchI
       <Streak stats={stats} matches={matches} />
     </section>
   )
-}
-
-function recordText(record: { wins: number; losses: number }): string {
-  return `${record.wins} V · ${record.losses} D`
 }
 
 function PositionsCard({ playerId, matches }: { playerId: PlayerId; matches: Match[] }) {
@@ -257,8 +245,10 @@ function PartnerCard({ playerId, matches, players }: PartnerProps) {
     </>
   )
   if (partner === null) return <section className="card card-pad partner">{body}</section>
+  // The pair's own page (2V2 ranking) rather than the partner's.
+  const href = hrefOf({ name: 'duo', id: duoId(playerId, partner.partnerId) })
   return (
-    <a className="card card-pad partner partner--link" href={hrefOf({ name: 'joueur', id: partner.partnerId })}>
+    <a className="card card-pad partner partner--link" href={href}>
       {body}
     </a>
   )
@@ -327,14 +317,21 @@ function DangerZone({ canDelete, onAsk }: { canDelete: boolean; onAsk: () => voi
 
 type HeroAreaProps = HeroProps & RenameProps & { editing: boolean }
 
-function HeroArea({ editing, player, players, stats, replay, onEdit, onSubmit, onCancel }: HeroAreaProps) {
+function HeroArea({ editing, player, players, stats, replay, oneVsOne, onEdit, onSubmit, onCancel }: HeroAreaProps) {
   if (editing) return <RenameForm player={player} players={players} onSubmit={onSubmit} onCancel={onCancel} />
-  return <Hero player={player} stats={stats} replay={replay} onEdit={onEdit} />
+  return <Hero player={player} stats={stats} replay={replay} oneVsOne={oneVsOne} onEdit={onEdit} />
 }
 
-type PageProps = { app: ScreenContext; replay: ReplayData; player: Player; onLeave: () => void; guard: Guard }
+type PageProps = {
+  app: ScreenContext
+  replay: ReplayData
+  player: Player
+  oneVsOne: ModeReplay | null
+  onLeave: () => void
+  guard: Guard
+}
 
-function PlayerPage({ app, replay, player, onLeave, guard }: PageProps) {
+function PlayerPage({ app, replay, player, oneVsOne, onLeave, guard }: PageProps) {
   const { store, dispatch, toast } = app
   const stats = replay.result.byPlayer.get(player.id) ?? emptyStats(player.id)
   const [editing, setEditing] = useState(false)
@@ -364,6 +361,7 @@ function PlayerPage({ app, replay, player, onLeave, guard }: PageProps) {
           players={store.players}
           stats={stats}
           replay={replay}
+          oneVsOne={oneVsOne}
           onEdit={() => guard('renommer ce joueur', () => setEditing(true))}
           onSubmit={(value) => guard('renommer ce joueur', () => rename(value))}
           onCancel={() => setEditing(false)}
@@ -387,7 +385,7 @@ function PlayerPage({ app, replay, player, onLeave, guard }: PageProps) {
   )
 }
 
-export function JoueurView({ app, replay, id, guard }: JoueurViewProps) {
+export function JoueurView({ app, replay, id, guard, oneVsOne = null }: JoueurViewProps) {
   const player = replay.players.get(id)
   // Set right before deletePlayer so the "player vanished" redirect does not fight the history.back().
   const leaving = useRef(false)
@@ -406,5 +404,15 @@ export function JoueurView({ app, replay, id, guard }: JoueurViewProps) {
 
   if (player === undefined) return null
   // Keyed by player: moving to a partner's page must not carry over the edit / confirm state.
-  return <PlayerPage key={player.id} app={app} replay={replay} player={player} onLeave={markLeaving} guard={guard} />
+  return (
+    <PlayerPage
+      key={player.id}
+      app={app}
+      replay={replay}
+      player={player}
+      oneVsOne={oneVsOne}
+      onLeave={markLeaving}
+      guard={guard}
+    />
+  )
 }

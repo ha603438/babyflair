@@ -242,3 +242,36 @@
 .rivalries { display: flex; flex-direction: column; gap: 12px; }
 .rivalry { display: block; color: inherit; text-decoration: none; }
 .rivalries .partner-value, .partner .partner-value { white-space: normal; overflow: visible; text-overflow: clip; }
+
+/* ---------- Classement tabs: « Mixte » | « 2V2 » | « 1V1 » (same spacing as the bell's tabs) ---------- */
+.classement-tabs { padding-top: 12px; padding-bottom: 4px; }
+
+/* Joueur: « 1V1 : 1 032 · 2e », discreet, under the hero caption. */
+.hero-mode {
+  margin-top: 2px;
+  font-size: var(--fs-caption);
+  line-height: 1.4;
+  color: var(--text-3);
+}
+
+/* ---------- Duo page (#/duo/…) ---------- */
+/* The two names under the caption, each a link to the player's page. */
+.hero-names {
+  margin-top: var(--s1);
+  font-size: var(--fs-label);
+  line-height: 1.4;
+  color: var(--text-2);
+}
+
+.hero-names a {
+  display: inline-block;
+  padding-block: 6px;
+  font-weight: 600;
+  color: var(--accent);
+}
+
+/* Derniers matchs: each row sits in a wrapper naming the duo's side (its names take the accent). The wrapper makes
+   every row a :last-child, so the inset divider is drawn back on all but the last wrapper. */
+.duo-hr:not(:last-child) .row-divider::after { display: block; }
+.duo-hr--a .hr-team--a .hr-name,
+.duo-hr--b .hr-team--b .hr-name { color: var(--accent); }

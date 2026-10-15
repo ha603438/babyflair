@@ -268,3 +268,13 @@ describe('comeback', () => {
     expect(store !== null && 'comeback' in store.matches[4]).toBe(false)
   })
 })
+
+describe('normaliseSettings · classementTab', () => {
+  it('keeps a known Classement tab and drops anything else', () => {
+    expect(normaliseSettings({ classementTab: '2v2' }).classementTab).toBe('2v2')
+    expect(normaliseSettings({ classementTab: '1v1' }).classementTab).toBe('1v1')
+    expect(normaliseSettings({ classementTab: 'mixte' }).classementTab).toBe('mixte')
+    expect(normaliseSettings({ classementTab: '3v3' }).classementTab).toBeUndefined()
+    expect(normaliseSettings({}).classementTab).toBeUndefined()
+  })
+})
