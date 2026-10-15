@@ -157,9 +157,14 @@ export function chipStateOf(draft: Pick<Draft, 'slots' | 'format'>, playerId: Pl
   return 'team2'
 }
 
-/** Result view caption (§9 « Résultat »): « aujourd'hui · 12:42 · en 10 » (« hier · … » if the view outlived the day). */
-export function resultDateLine(playedAt: string, target: Target, now: Date): string {
-  return `${lowerFirst(fmtDayHeader(playedAt, now))} · ${fmtTime(playedAt)} · en ${target}`
+/**
+ * Result view caption (§9 « Résultat »): « aujourd'hui · 12:42 · en 10 » (« hier · … » if the view outlived the day),
+ * « aujourd'hui · en 10 » without the time of day (profile/times.ts).
+ */
+export function resultDateLine(playedAt: string, target: Target, now: Date, withTime: boolean): string {
+  const day = lowerFirst(fmtDayHeader(playedAt, now))
+  if (!withTime) return `${day} · en ${target}`
+  return `${day} · ${fmtTime(playedAt)} · en ${target}`
 }
 
 /** 1-based ranks of the given players among the ranked list; rookies and inactive players are simply absent. */

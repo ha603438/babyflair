@@ -140,3 +140,9 @@ export function useAppState(): AppState {
   if (value === null) throw new Error('useAppState must be used inside <AppStateProvider>')
   return value
 }
+
+/** Same state, or null outside the provider (shared components rendered alone in tests). */
+// oxlint-disable-next-line react/only-export-components
+export function useOptionalAppState(): AppState | null {
+  return useContext(AppStateContext)
+}

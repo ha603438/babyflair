@@ -10,6 +10,7 @@ import { ConfirmDialog } from '../components/ConfirmDialog'
 import { HintCard } from '../components/HintCard'
 import { profileCaption, PROFILE_COPY } from '../profile/profile'
 import type { Profile } from '../profile/profile'
+import { showsTimes } from '../profile/times'
 import { useChooseProfile, useProfile, useWriteGuard } from '../profile/useWriteGuard'
 import { SectionHeader } from '../components/SectionHeader'
 import { SettingRow } from '../components/rows'
@@ -110,6 +111,7 @@ export function Reglages() {
   const { store, dispatch, toast, sync } = useAppState()
   const push = usePush()
   const profile = useProfile()
+  const showTime = showsTimes(profile)
   const chooseProfile = useChooseProfile()
   const guard = useWriteGuard()
   const shared = sync.mode === 'shared'
@@ -218,7 +220,7 @@ export function Reglages() {
         <SettingRow title={clearCopy.row} danger onClick={() => setPending({ kind: 'clear' })} />
       </div>
 
-      <p className="settings-footer">{settingsFooter(store, footerSync)}</p>
+      <p className="settings-footer">{settingsFooter(store, footerSync, showTime)}</p>
 
       <input
         ref={fileInput}

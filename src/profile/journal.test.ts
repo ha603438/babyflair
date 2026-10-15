@@ -83,7 +83,7 @@ describe('match summary', () => {
 
 describe('journal rows and days', () => {
   it('builds a row, linkable while the match exists', () => {
-    const row = journalRow(event(), PLAYERS, new Set(['m1']))
+    const row = journalRow(event(), PLAYERS, new Set(['m1']), true)
     expect(row).toEqual({
       id: 1,
       at: '2026-10-12T10:42:00.000Z',
@@ -94,8 +94,12 @@ describe('journal rows and days', () => {
       matchId: 'm1',
       linkable: true,
     })
-    expect(journalRow(event(), PLAYERS, new Set()).linkable).toBe(false)
-    expect(journalRow(event({ after: null }), PLAYERS, new Set()).summary).toBeNull()
+    expect(journalRow(event(), PLAYERS, new Set(), true).linkable).toBe(false)
+    expect(journalRow(event({ after: null }), PLAYERS, new Set(), true).summary).toBeNull()
+  })
+
+  it('leaves the time out of the row when asked', () => {
+    expect(journalRow(event(), PLAYERS, new Set(['m1']), false).time).toBe('')
   })
 
   it('groups consecutive events of a local day, newest first', () => {
@@ -105,13 +109,14 @@ describe('journal rows and days', () => {
       event({ id: 2, at: '2026-10-12T11:00:00.000Z' }),
       event({ id: 1, at: '2026-10-08T11:00:00.000Z' }),
     ]
-    const days = journalDays(events, PLAYERS, new Set(), now)
+    const days = journalDays(events, PLAYERS, new Set(), now, true)
     expect(days.map((day) => day.rows.map((row) => row.id))).toEqual([[3, 2], [1]])
     expect(days.map((day) => day.label)).toEqual([
       fmtDayHeader('2026-10-12T12:00:00.000Z', now),
       fmtDayHeader('2026-10-08T11:00:00.000Z', now),
     ])
-    expect(journalDays([], PLAYERS, new Set(), now)).toEqual([])
+    expect(journalDays([], PLAYERS, new Set(), now, true)).toEqual([])
+    expect(journalDays(events, PLAYERS, new Set(), now, false)[0].rows[0].time).toBe('')
   })
 })
 

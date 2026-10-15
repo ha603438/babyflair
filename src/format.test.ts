@@ -208,12 +208,17 @@ describe('fmtDayHeader', () => {
 
 describe('fmtDateLine', () => {
   it('joins short date, time and target with middle dots', () => {
-    expect(fmtDateLine(iso(local(2026, 10, 5, 12, 42)), 10)).toBe('lun. 5 oct. · 12:42 · en 10')
-    expect(fmtDateLine(iso(local(2026, 10, 7, 9, 5)), 5)).toBe('mer. 7 oct. · 09:05 · en 5')
+    expect(fmtDateLine(iso(local(2026, 10, 5, 12, 42)), 10, true)).toBe('lun. 5 oct. · 12:42 · en 10')
+    expect(fmtDateLine(iso(local(2026, 10, 7, 9, 5)), 5, true)).toBe('mer. 7 oct. · 09:05 · en 5')
+  })
+
+  it('leaves the time of day out when asked', () => {
+    expect(fmtDateLine(iso(local(2026, 10, 5, 12, 42)), 10, false)).toBe('lun. 5 oct. · en 10')
   })
 
   it('returns an empty string for an invalid date', () => {
-    expect(fmtDateLine('pas une date', 10)).toBe('')
+    expect(fmtDateLine('pas une date', 10, true)).toBe('')
+    expect(fmtDateLine('pas une date', 10, false)).toBe('')
   })
 })
 

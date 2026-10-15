@@ -10,11 +10,21 @@ import type { Match, Store } from './types'
 
 export const APP_VERSION = '1.0.0'
 
-/** « 12 oct. 11:52 » : la date du build, injectée par Vite ; sert à vérifier qu'un téléphone est à jour. */
-export function buildLabel(buildDate: string = typeof __BUILD_DATE__ === 'string' ? __BUILD_DATE__ : ''): string {
+const BUILD_DAY = new Intl.DateTimeFormat('fr-FR', { day: 'numeric', month: 'short' })
+const BUILD_DAY_TIME = new Intl.DateTimeFormat('fr-FR', { day: 'numeric', month: 'short', hour: '2-digit', minute: '2-digit' })
+
+/**
+ * « 12 oct. 11:52 » (« 12 oct. » without the time of day, profile/times.ts) : la date du build, injectée par Vite ;
+ * sert à vérifier qu'un téléphone est à jour.
+ */
+export function buildLabel(
+  buildDate: string = typeof __BUILD_DATE__ === 'string' ? __BUILD_DATE__ : '',
+  withTime = false,
+): string {
   const time = Date.parse(buildDate)
   if (Number.isNaN(time)) return APP_VERSION
-  return new Intl.DateTimeFormat('fr-FR', { day: 'numeric', month: 'short', hour: '2-digit', minute: '2-digit' }).format(time)
+  if (!withTime) return BUILD_DAY.format(time)
+  return BUILD_DAY_TIME.format(time)
 }
 export const EXPORT_MIME = 'application/json'
 
@@ -177,10 +187,11 @@ function footerStorage(sync: FooterSync | undefined): string {
  * « BabyFlair 1.0.0 · 12 joueurs · 148 matchs · données sur cet appareil uniquement », or in shared mode
  * « … · données partagées · dernière synchro il y a 2 min ».
  */
-export function settingsFooter(store: Counts, sync?: FooterSync): string {
+export function settingsFooter(store: Counts, sync?: FooterSync, withTime = false): string {
   const players = plural(store.players.length, 'joueur')
   const matches = plural(store.matches.length, 'match')
-  return `BabyFlair · version du ${buildLabel()} · ${players} · ${matches} · ${footerStorage(sync)}`
+  const version = buildLabel(undefined, withTime)
+  return `BabyFlair · version du ${version} · ${players} · ${matches} · ${footerStorage(sync)}`
 }
 
 export type StandaloneEnv = {

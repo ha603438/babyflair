@@ -1,6 +1,7 @@
 import type { MouseEventHandler, ReactNode } from 'react'
 import type { Match, MatchResult, Player, PlayerId, PlayerStats } from '../types'
 import { daysSince, fmtInt, fmtPercent, fmtScore, fmtTime, plural } from '../format'
+import { useShowsTimes } from '../profile/useShowsTimes'
 import { sevenDayDelta, teamLabel } from '../stats'
 import { Badge } from './Badge'
 import { Delta } from './Delta'
@@ -189,15 +190,18 @@ function TeamSide({ ids, side, winner, players, deltas, emphasisId }: TeamSidePr
  * line with their delta. The whole row is the link to the match detail (no chevron).
  */
 export function HistoryRow({ match, result, players, href, emphasisId }: HistoryRowProps) {
+  const showTime = useShowsTimes()
   const aWon = match.scoreA === match.target
   const deltas = new Map((result?.perPlayer ?? []).map((entry) => [entry.playerId, entry.delta]))
   const label = `${teamLabel(match.teamA, players)} ${fmtScore(match.scoreA, match.scoreB)} ${teamLabel(match.teamB, players)}`
   return (
     <a className="row row-divider row--tap row--history" href={href} aria-label={label}>
       <div className="hr-meta">
-        <time className="hr-time" dateTime={match.playedAt}>
-          {fmtTime(match.playedAt)}
-        </time>
+        {showTime && (
+          <time className="hr-time" dateTime={match.playedAt}>
+            {fmtTime(match.playedAt)}
+          </time>
+        )}
         {match.target === 5 && <span className="pill">en 5</span>}
         <MatchPills match={match} />
         {isEdited(match) && <span className="hr-edited">modifié</span>}

@@ -90,16 +90,23 @@ export function scoreChange(event: MatchEvent): string | null {
   return parts.join(' · ')
 }
 
+/** Empty without the time of day (profile/times.ts): the row then has no leading time. */
+function timeOf(iso: string, withTime: boolean): string {
+  if (!withTime) return ''
+  return fmtTime(iso)
+}
+
 export function journalRow(
   event: MatchEvent,
   players: Map<PlayerId, Player>,
   existing: ReadonlySet<MatchId>,
+  withTime: boolean,
 ): JournalRow {
   const snapshot = eventSnapshot(event)
   return {
     id: event.id,
     at: event.at,
-    time: fmtTime(event.at),
+    time: timeOf(event.at, withTime),
     title: eventTitle(event, players),
     summary: snapshot === null ? null : snapshotLine(snapshot, players),
     change: scoreChange(event),
@@ -119,11 +126,12 @@ export function journalDays(
   players: Map<PlayerId, Player>,
   existing: ReadonlySet<MatchId>,
   now: Date,
+  withTime: boolean,
 ): JournalDay[] {
   const days: JournalDay[] = []
   for (const event of events) {
     const key = localDayKey(event.at)
-    const row = journalRow(event, players, existing)
+    const row = journalRow(event, players, existing, withTime)
     const last = days[days.length - 1]
     if (last !== undefined && last.key === key) {
       last.rows.push(row)

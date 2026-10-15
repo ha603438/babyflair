@@ -4,6 +4,7 @@ import { Button } from '../components/Button'
 import { ConfirmDialog } from '../components/ConfirmDialog'
 import { MatchSummary } from '../components/MatchSummary'
 import { fmtDateLine } from '../format'
+import { useShowsTimes } from '../profile/useShowsTimes'
 import { useWriteGuard } from '../profile/useWriteGuard'
 import { useReplay } from '../rating/useReplay'
 import { back, hrefOf, navigate } from '../router'
@@ -28,6 +29,7 @@ function emptyResult(matchId: MatchId): MatchResult {
 export function MatchDetail({ id }: { id: MatchId }) {
   const { store, dispatch, toast } = useAppState()
   const { result, players } = useReplay()
+  const showTime = useShowsTimes()
   const guard = useWriteGuard()
   const [confirming, setConfirming] = useState(false)
   const leaving = useRef(false)
@@ -69,7 +71,7 @@ export function MatchDetail({ id }: { id: MatchId }) {
         result={result.byMatch.get(id) ?? emptyResult(id)}
         players={players}
         byPlayer={result.byPlayer}
-        dateLine={fmtDateLine(match.playedAt, match.target)}
+        dateLine={fmtDateLine(match.playedAt, match.target, showTime)}
       />
       <div className="md-actions">
         <Button

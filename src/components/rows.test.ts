@@ -202,7 +202,8 @@ describe('HistoryRow', () => {
   it('shows Blancs left, the score, Noirs right, one line per player with its delta, and no chevron', () => {
     const html = historyRow()
     expect(html.startsWith('<a class="row row-divider row--tap row--history" href="#/historique/m1"')).toBe(true)
-    expect(html).toMatch(/<time class="hr-time" datetime="[^"]+">\d{2}:\d{2}<\/time>/i)
+    // No profile outside the app: the time of day stays hidden (profile/times.ts).
+    expect(html).not.toContain('hr-time')
     // team A (Chloé, Dan) on the left, team B (Alice, Bob) on the right, every name in full
     const order = ['Chloé', 'Dan', 'Alice', 'Bob'].map((n) => html.indexOf(`class="hr-name">${n}<`))
     expect(order.every((i) => i >= 0)).toBe(true)

@@ -95,9 +95,11 @@ export function fmtDayHeader(iso: string, now: Date): string {
   return dayWithYearFormat.format(date)
 }
 
-export function fmtDateLine(iso: string, target: Target): string {
+/** « lun. 5 oct. · 12:42 · en 10 », or « lun. 5 oct. · en 10 » without the time of day (profile/times.ts). */
+export function fmtDateLine(iso: string, target: Target, withTime: boolean): string {
   const date = toDate(iso)
   if (date === null) return ''
+  if (!withTime) return `${shortDateFormat.format(date)} · en ${target}`
   return `${shortDateFormat.format(date)} · ${timeFormat.format(date)} · en ${target}`
 }
 

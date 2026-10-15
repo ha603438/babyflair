@@ -3,6 +3,7 @@ import { Button } from '../components/Button'
 import { EmptyState } from '../components/EmptyState'
 import { Check } from '../components/icons'
 import { MatchSummary } from '../components/MatchSummary'
+import { useShowsTimes } from '../profile/useShowsTimes'
 import { useWriteGuard } from '../profile/useWriteGuard'
 import { useReplay } from '../rating/useReplay'
 import { navigate } from '../router'
@@ -58,7 +59,7 @@ function ResultView(props: ResultViewProps) {
   const { match, result, ranking, playersById, now, rankBefore } = props
   const matchResult = result.byMatch.get(match.id)
   const rankAfter = rankMapOf(ranking, [...match.teamA, ...match.teamB])
-  const dateLine = resultDateLine(match.playedAt, match.target, now)
+  const dateLine = resultDateLine(match.playedAt, match.target, now, useShowsTimes())
   return (
     <div className="match-screen match-screen--done">
       <div className="content match-result">

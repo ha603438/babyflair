@@ -290,13 +290,18 @@ describe('captions and labels', () => {
   it('resultDateLine reads « aujourd\'hui · 12:42 · en 10 » on the day of the match', () => {
     const played = new Date(2025, 9, 10, 12, 42)
     const now = new Date(2025, 9, 10, 18, 0)
-    expect(resultDateLine(played.toISOString(), 10, now)).toBe("aujourd'hui · 12:42 · en 10")
-    expect(resultDateLine(played.toISOString(), 5, new Date(2025, 9, 11, 9, 0))).toBe('hier · 12:42 · en 5')
+    expect(resultDateLine(played.toISOString(), 10, now, true)).toBe("aujourd'hui · 12:42 · en 10")
+    expect(resultDateLine(played.toISOString(), 5, new Date(2025, 9, 11, 9, 0), true)).toBe('hier · 12:42 · en 5')
+  })
+
+  it('resultDateLine leaves the time of day out when asked', () => {
+    const played = new Date(2025, 9, 10, 12, 42)
+    expect(resultDateLine(played.toISOString(), 10, new Date(2025, 9, 10, 18, 0), false)).toBe("aujourd'hui · en 10")
   })
 
   it('resultDateLine falls back to the long date after two days', () => {
     const played = new Date(2025, 9, 8, 9, 5)
-    const line = resultDateLine(played.toISOString(), 10, new Date(2025, 9, 11, 9, 0))
+    const line = resultDateLine(played.toISOString(), 10, new Date(2025, 9, 11, 9, 0), true)
     expect(line).toBe('mercredi 8 octobre · 09:05 · en 10')
   })
 })

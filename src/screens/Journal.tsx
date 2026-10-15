@@ -8,6 +8,7 @@ import { SegmentedControl } from '../components/SegmentedControl'
 import { NotifTabs } from './NotifTabs'
 import type { RemoteApi } from '../remote/api'
 import { hrefOf } from '../router'
+import { useShowsTimes } from '../profile/useShowsTimes'
 import { useAppState } from '../store'
 import { toastTextFor } from '../store/remote-sync'
 import type { MatchEvent, MatchId, Player, PlayerId } from '../types'
@@ -48,6 +49,14 @@ function RowDetails({ row }: { row: JournalRow }) {
   )
 }
 
+function RowTime({ row }: { row: JournalRow }) {
+  return (
+    <time className="hr-time" dateTime={row.at}>
+      {row.time}
+    </time>
+  )
+}
+
 function JournalLine({ row }: { row: JournalRow }) {
   const href = row.linkable ? hrefOf({ name: 'match-detail', id: row.matchId }) : undefined
   return (
@@ -55,11 +64,7 @@ function JournalLine({ row }: { row: JournalRow }) {
       className="row--journal"
       href={href}
       chevron={row.linkable}
-      leading={
-        <time className="hr-time" dateTime={row.at}>
-          {row.time}
-        </time>
-      }
+      leading={row.time === '' ? undefined : <RowTime row={row} />}
       title={row.title}
       subtitle={<RowDetails row={row} />}
     />
@@ -75,10 +80,11 @@ type ListProps = { events: MatchEvent[]; players: Player[]; matchIds: MatchId[];
 function JournalList({ events, players, matchIds, emptyText }: ListProps) {
   // Captured once per visit: render stays pure, the day headers are fresh each time the screen opens.
   const [now] = useState(() => new Date())
+  const withTime = useShowsTimes()
   const days = useMemo(() => {
     const byId = new Map<PlayerId, Player>(players.map((player) => [player.id, player]))
-    return journalDays(events, byId, new Set(matchIds), now)
-  }, [events, players, matchIds, now])
+    return journalDays(events, byId, new Set(matchIds), now, withTime)
+  }, [events, players, matchIds, now, withTime])
   if (days.length === 0) return <Message text={emptyText} />
   return (
     <>

@@ -367,6 +367,8 @@ describe('settingsFooter', () => {
     const text = settingsFooter({ players: arr(12), matches: arr(148) })
     expect(text).toBe(`BabyFlair · version du ${buildLabel()} · 12 joueurs · 148 matchs · données sur cet appareil uniquement`)
     expect(buildLabel('2026-10-12T09:52:00Z')).toMatch(/oct./)
+    expect(buildLabel('2026-10-12T09:52:00Z')).not.toMatch(/:/)
+    expect(buildLabel('2026-10-12T09:52:00Z', true)).toMatch(/\d{2}:52/)
     expect(buildLabel('')).toBe('1.0.0')
   })
 

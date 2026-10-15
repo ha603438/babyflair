@@ -4,6 +4,6 @@ export { loadStore, normaliseSettings, normaliseStore, saveStore, STORAGE_KEY } 
 export type { DraftAction } from './draft'
 export { canBeComeback, draftReducer, initialDraft, isDraftComplete, NO_ACTIVE_SLOT, visibleSlots } from './draft'
 export type { AppState, NavPayload, ToastInput, ToastState } from './provider'
-export { AppStateProvider, useAppState } from './provider'
+export { AppStateProvider, useAppState, useOptionalAppState } from './provider'
 export type { SyncState } from './use-remote-sync'
 export { isGateNeeded, PROBE_ERRORS, probeOffice } from './remote-sync'
