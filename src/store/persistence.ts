@@ -1,3 +1,4 @@
+import { parseCallResponse } from '../calls/calls'
 import { isComebackScore } from '../stats'
 import type { Call, CallPlayer, Match, Player, Settings, Store } from '../types'
 import { backfillSeq, DEFAULT_SETTINGS, initialStore, nextSeqOf } from './reducer'
@@ -73,7 +74,8 @@ function normaliseCallPlayer(value: unknown): CallPlayer | null {
   if (!isRecord(value)) return null
   if (typeof value.callId !== 'string' || typeof value.playerId !== 'string') return null
   const joinedAt = typeof value.joinedAt === 'string' ? value.joinedAt : EPOCH
-  return { callId: value.callId, playerId: value.playerId, joinedAt }
+  // Absent in data written before the answers existed: those rows were all « Chauuud 🔥 ».
+  return { callId: value.callId, playerId: value.playerId, joinedAt, response: parseCallResponse(value.response) }
 }
 
 function arrayOf(value: unknown): unknown[] {

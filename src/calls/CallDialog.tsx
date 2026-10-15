@@ -1,33 +1,66 @@
 import { useId } from 'react'
 import { Button } from '../components/Button'
 import { useDialog } from '../components/useDialog'
-import type { PlayerId } from '../types'
-import { CALL_COPY, canFormTeams, rosterLine } from './calls'
-import type { Roster } from './calls'
+import type { Player, PlayerId } from '../types'
+import { CALL_COPY, canFormTeams, hotListCaption, nameFor, rosterLine } from './calls'
+import type { CallResponses, Roster } from './calls'
 
 export type CallDialogProps = {
   open: boolean
   /** Null once the call is closed or expired: the dialog then reads « Appel terminé ». */
   roster: Roster | null
+  /** « Chauds » / « Pas chauds » / « Pas encore répondu » (calls.ts callResponses); unused once the call is over. */
+  responses: CallResponses
   /** This phone's player profile; undefined for a visitor, who sees the roster but cannot answer. */
   viewerId: PlayerId | undefined
   busy: boolean
-  /** Joins with this phone's profile. */
+  /** « Chauuud 🔥 »: answers 'in' with this phone's profile. */
   onJoin: () => void
+  /** « Non je fais semblant de bosser »: answers 'out' with this phone's profile, then closes. */
+  onDecline: () => void
   onFormTeams: () => void
+  /** Closes without answering (backdrop, « Pas cette fois », a visitor's « Non je fais semblant de bosser »). */
   onDismiss: () => void
   /** Visitor: back to « Qui es-tu ? » to be able to answer. */
   onChooseProfile: () => void
 }
 
-function ParticipantList({ roster }: { roster: Roster }) {
-  if (roster.participants.length === 0) return null
+type Tone = 'in' | 'out' | 'pending'
+
+type NameListProps = { caption: string; players: Player[]; viewerId: PlayerId | undefined; tone: Tone }
+
+/** A small uppercase caption and the names as pills, wrapped: the dialog stays short on a phone. */
+function NameList({ caption, players, viewerId, tone }: NameListProps) {
   return (
-    <ul className="call-dialog__list">
-      {roster.participants.map((player) => (
-        <li key={player.id}>{player.name}</li>
-      ))}
-    </ul>
+    <div className="call-dialog__group">
+      <p className="call-dialog__group-caption">{caption}</p>
+      {players.length > 0 && (
+        <ul className={`call-dialog__names call-dialog__names--${tone}`}>
+          {players.map((player) => (
+            <li key={player.id} className="call-dialog__name">
+              {nameFor(player, viewerId)}
+            </li>
+          ))}
+        </ul>
+      )}
+    </div>
+  )
+}
+
+type ResponseListsProps = { responses: CallResponses; inCount: number; viewerId: PlayerId | undefined }
+
+/** « Chauds · x/4 » always; « Pas chauds » and « Pas encore répondu » only when someone is in them. */
+function ResponseLists({ responses, inCount, viewerId }: ResponseListsProps) {
+  return (
+    <div className="call-dialog__lists">
+      <NameList caption={hotListCaption(inCount)} players={responses.in} viewerId={viewerId} tone="in" />
+      {responses.out.length > 0 && (
+        <NameList caption={CALL_COPY.notHotList} players={responses.out} viewerId={viewerId} tone="out" />
+      )}
+      {responses.pending.length > 0 && (
+        <NameList caption={CALL_COPY.pendingList} players={responses.pending} viewerId={viewerId} tone="pending" />
+      )}
+    </div>
   )
 }
 
@@ -72,46 +105,55 @@ function VisitorActions({ onDismiss, onChooseProfile }: Pick<BodyProps, 'onDismi
   )
 }
 
-type AnswerProps = Pick<BodyProps, 'roster' | 'busy' | 'onJoin' | 'onDismiss'> & { viewerId: PlayerId }
+/** Why « Chauuud 🔥 » is disabled: already in, or the 4 places are taken. Null while it can be tapped. */
+function joinBlockedCaption(inCall: boolean, full: boolean): string | null {
+  if (inCall) return CALL_COPY.alreadyIn
+  if (full) return CALL_COPY.full
+  return null
+}
 
-/** « Chauuud 🔥 » joins with this phone's profile; « Non je fais semblant de bosser » only closes the dialog. */
-function AnswerActions({ roster, viewerId, busy, onJoin, onDismiss }: AnswerProps) {
+type AnswerProps = Pick<BodyProps, 'roster' | 'busy' | 'onJoin' | 'onDecline'> & { viewerId: PlayerId }
+
+/** « Chauuud 🔥 » answers 'in' while there is room; « Non je fais semblant de bosser » answers 'out', always. */
+function AnswerActions({ roster, viewerId, busy, onJoin, onDecline }: AnswerProps) {
   const inCall = roster.participantIds.includes(viewerId)
+  const blocked = joinBlockedCaption(inCall, canFormTeams(roster.participantIds.length))
   return (
     <>
       <div className="dialog-actions dialog-actions-single">
-        <Button variant="primary" size="md" disabled={busy || inCall} onClick={onJoin}>
+        <Button variant="primary" size="md" disabled={busy || blocked !== null} onClick={onJoin}>
           {CALL_COPY.join}
         </Button>
-        <Button variant="secondary" size="md" onClick={onDismiss}>
+        <Button variant="secondary" size="md" onClick={onDecline}>
           {CALL_COPY.decline}
         </Button>
       </div>
-      {inCall && <p className="call-dialog__caption">{CALL_COPY.alreadyIn}</p>}
+      {blocked !== null && <p className="call-dialog__caption">{blocked}</p>}
     </>
   )
 }
 
+/** « Former les équipes » is for the 4 players in the call; anyone else answers (or picks a profile first). */
 function Actions(props: BodyProps) {
-  if (canFormTeams(props.roster.participantIds.length)) return <FullActions {...props} />
-  if (props.viewerId === undefined) return <VisitorActions {...props} />
-  return <AnswerActions {...props} viewerId={props.viewerId} />
+  const { roster, viewerId } = props
+  if (viewerId === undefined) return <VisitorActions {...props} />
+  const inCall = roster.participantIds.includes(viewerId)
+  if (inCall && canFormTeams(roster.participantIds.length)) return <FullActions {...props} />
+  return <AnswerActions {...props} viewerId={viewerId} />
 }
 
 function OpenBody(props: BodyProps) {
-  const { roster } = props
+  const { roster, responses, viewerId } = props
   return (
     <>
-      <div className="dialog-text">
-        <p>{rosterLine(roster.organizer?.name, roster.participantIds.length)}</p>
-        <ParticipantList roster={roster} />
-      </div>
+      <p className="dialog-text">{rosterLine(roster.organizer?.name, roster.participantIds.length)}</p>
+      <ResponseLists responses={responses} inCount={roster.participantIds.length} viewerId={viewerId} />
       <Actions {...props} />
     </>
   )
 }
 
-/** « Chaud pour prendre une branlée ? »: organizer, roster x/4, answer as this phone's profile, then form teams. */
+/** « Chaud pour prendre une branlée ? »: organizer, who is in / out / yet to answer, the answer, then form teams. */
 export function CallDialog(props: CallDialogProps) {
   const { open, roster, onDismiss } = props
   const { ref, onClose, onClick } = useDialog(open, onDismiss)

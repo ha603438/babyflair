@@ -1,4 +1,4 @@
-// React side of the appels: the organizer flow (insert, then the notification), joining, and « Former les équipes ».
+// React side of the appels: the organizer flow (insert, then the notification), answering, and « Former les équipes ».
 // Decisions are in calls.ts / teams.ts; the server calls go through sync.api so they can be sequenced and awaited.
 // The organizer and the participant are always this phone's profile (« Qui es-tu ? »); a visitor has none.
 import { useCallback, useMemo, useState } from 'react'
@@ -8,8 +8,8 @@ import { replay } from '../rating'
 import { navigate } from '../router'
 import { useAppState } from '../store'
 import { toastTextFor } from '../store/remote-sync'
-import type { Call } from '../types'
-import { CALL_CAPACITY, CALL_COPY, newCall, newCallPlayer, notifyToast, participantIdsOf } from './calls'
+import type { Call, CallResponse } from '../types'
+import { CALL_CAPACITY, CALL_COPY, canRespond, newCall, newCallPlayer, notifyToast, participantIdsOf } from './calls'
 import { currentSubscription } from './push'
 import { balanceTeams } from './teams'
 
@@ -17,7 +17,11 @@ export type CallsApi = {
   busy: boolean
   /** Creates the call and notifies the office; resolves to the call id, or null (no profile, server refusal). */
   propose: () => Promise<string | null>
-  join: (callId: string) => void
+  /**
+   * Records this phone's answer (« Chauuud 🔥 » = 'in', « Non je fais semblant de bosser » = 'out'), replacing the
+   * previous one. Ignored when nothing changes, and for an 'in' once the call is full.
+   */
+  respond: (callId: string, response: CallResponse) => void
   /** Balanced Blancs / Noirs from the first 4 participants, draft prefilled, call closed, → #/match. */
   formTeams: (call: Call) => void
 }
@@ -67,12 +71,13 @@ export function useCalls(): CallsApi {
     [api, dispatch, playerId, refresh, showToast],
   )
 
-  const join = useCallback(
-    (callId: string) => {
+  const respond = useCallback(
+    (callId: string, response: CallResponse) => {
       if (playerId === undefined) return
-      dispatch({ type: 'joinCall', callPlayer: newCallPlayer(callId, playerId, new Date()) })
+      if (!canRespond(callId, store.callPlayers, playerId, response)) return
+      dispatch({ type: 'respondCall', callPlayer: newCallPlayer(callId, playerId, new Date(), response) })
     },
-    [dispatch, playerId],
+    [dispatch, playerId, store.callPlayers],
   )
 
   const formTeams = useCallback(
@@ -89,5 +94,5 @@ export function useCalls(): CallsApi {
     [dispatch, draftDispatch, store.callPlayers, store.matches, store.players, store.settings.lastTarget],
   )
 
-  return useMemo(() => ({ busy, propose, join, formTeams }), [busy, propose, join, formTeams])
+  return useMemo(() => ({ busy, propose, respond, formTeams }), [busy, propose, respond, formTeams])
 }

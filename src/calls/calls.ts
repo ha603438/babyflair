@@ -1,6 +1,6 @@
 // Appels à jouer (« Proposer un baby »): pure decisions over the store's calls / callPlayers. No React, no network,
 // so everything here runs in vitest's node environment.
-import type { Call, CallPlayer, Player, PlayerId } from '../types'
+import type { Call, CallPlayer, CallResponse, Player, PlayerId, PlayerStatus } from '../types'
 
 export const CALL_CAPACITY = 4
 /** Recruiting window: without 4 players after 5 minutes, the call is over (stored as expires_at). */
@@ -21,9 +21,19 @@ export const CALL_COPY = {
   formTeams: 'Former les équipes',
   over: 'Appel terminé',
   created: 'Appel créé',
+  hotList: 'Chauds',
+  notHotList: 'Pas chauds',
+  pendingList: 'Pas encore répondu',
+  full: 'Complet',
+  you: '(toi)',
 } as const
 
 export type Roster = { call: Call; organizer: Player | undefined; participants: Player[]; participantIds: PlayerId[] }
+
+/** The three lists of the call dialog. */
+export type CallResponses = { in: Player[]; out: Player[]; pending: Player[] }
+
+export const NO_RESPONSES: CallResponses = { in: [], out: [], pending: [] }
 
 function parseTime(iso: string): number {
   const time = Date.parse(iso)
@@ -40,8 +50,25 @@ export function newCall(id: string, createdBy: PlayerId, now: Date): Call {
   }
 }
 
-export function newCallPlayer(callId: string, playerId: PlayerId, now: Date): CallPlayer {
-  return { callId, playerId, joinedAt: now.toISOString() }
+export function newCallPlayer(
+  callId: string,
+  playerId: PlayerId,
+  now: Date,
+  response: CallResponse = 'in',
+): CallPlayer {
+  return { callId, playerId, joinedAt: now.toISOString(), response }
+}
+
+/** Stored / server values: anything but 'out' (a row written before the answers existed included) means 'in'. */
+export function parseCallResponse(value: unknown): CallResponse {
+  if (value === 'out') return 'out'
+  return 'in'
+}
+
+function answersOf(callId: string, callPlayers: CallPlayer[]): CallPlayer[] {
+  return callPlayers
+    .filter((cp) => cp.callId === callId)
+    .sort((a, b) => parseTime(a.joinedAt) - parseTime(b.joinedAt))
 }
 
 /**
@@ -55,20 +82,45 @@ export function isCallOpen(call: Call, now: Date, callPlayers: CallPlayer[] = []
   return parseTime(call.createdAt) + CALL_FULL_MS > now.getTime()
 }
 
+/** The players who answered « Chauuud 🔥 », in answer order: only they take one of the 4 places. */
 export function participantIdsOf(callId: string, callPlayers: CallPlayer[]): PlayerId[] {
-  return callPlayers
-    .filter((cp) => cp.callId === callId)
-    .sort((a, b) => parseTime(a.joinedAt) - parseTime(b.joinedAt))
+  return answersOf(callId, callPlayers)
+    .filter((cp) => cp.response === 'in')
     .map((cp) => cp.playerId)
 }
 
+/** This player's current answer to the call, undefined before any. */
+export function responseOf(
+  callId: string,
+  callPlayers: CallPlayer[],
+  playerId: PlayerId | undefined,
+): CallResponse | undefined {
+  if (playerId === undefined) return undefined
+  return callPlayers.find((cp) => cp.callId === callId && cp.playerId === playerId)?.response
+}
+
 export function isInCall(callId: string, callPlayers: CallPlayer[], viewerId: PlayerId | undefined): boolean {
-  if (viewerId === undefined) return false
-  return callPlayers.some((cp) => cp.callId === callId && cp.playerId === viewerId)
+  return responseOf(callId, callPlayers, viewerId) === 'in'
 }
 
 export function isCallFull(callId: string, callPlayers: CallPlayer[]): boolean {
   return participantIdsOf(callId, callPlayers).length >= CALL_CAPACITY
+}
+
+/**
+ * Whether this answer is worth recording: not the player's current one already, and « Chauuud 🔥 » only while there
+ * is a place left. Declining is always possible (it frees a place).
+ */
+export function canRespond(
+  callId: string,
+  callPlayers: CallPlayer[],
+  playerId: PlayerId,
+  response: CallResponse,
+): boolean {
+  const current = responseOf(callId, callPlayers, playerId)
+  if (current === response) return false
+  if (response === 'out') return true
+  return !isCallFull(callId, callPlayers)
 }
 
 /**
@@ -94,14 +146,63 @@ export function anyOpenCall(calls: Call[], now: Date, callPlayers: CallPlayer[] 
   return open[0] ?? null
 }
 
+function playersOf(ids: PlayerId[], players: Map<PlayerId, Player>): Player[] {
+  const known: Player[] = []
+  for (const id of ids) {
+    const player = players.get(id)
+    if (player !== undefined) known.push(player)
+  }
+  return known
+}
+
 export function rosterOf(call: Call, callPlayers: CallPlayer[], players: Map<PlayerId, Player>): Roster {
   const participantIds = participantIdsOf(call.id, callPlayers)
-  const participants: Player[] = []
-  for (const id of participantIds) {
-    const player = players.get(id)
-    if (player !== undefined) participants.push(player)
-  }
+  const participants = playersOf(participantIds, players)
   return { call, organizer: players.get(call.createdBy), participants, participantIds }
+}
+
+function organizerFirst(ids: PlayerId[], organizerId: PlayerId): PlayerId[] {
+  if (!ids.includes(organizerId)) return ids
+  return [organizerId, ...ids.filter((id) => id !== organizerId)]
+}
+
+/** Who should still answer: not answered yet, not a guest, not inactive in the ranking. */
+function isPending(player: Player, answered: Set<PlayerId>, status: PlayerStatus | undefined): boolean {
+  if (answered.has(player.id) || player.isGuest) return false
+  return status !== 'inactive'
+}
+
+/**
+ * The call dialog's lists: « Chauds » (organizer first, then by answer time), « Pas chauds » (by answer time) and
+ * « Pas encore répondu » (the office's players without an answer, guests and inactive players left out, A→Z).
+ * `byPlayer` is the replay's (useReplay().result.byPlayer), for the inactive status; deleted players are skipped.
+ */
+export function callResponses(
+  call: Call,
+  callPlayers: CallPlayer[],
+  players: Player[],
+  byPlayer: ReadonlyMap<PlayerId, { status: PlayerStatus }>,
+): CallResponses {
+  const answers = answersOf(call.id, callPlayers)
+  const byId = new Map<PlayerId, Player>(players.map((player) => [player.id, player]))
+  const inIds = answers.filter((cp) => cp.response === 'in').map((cp) => cp.playerId)
+  const outIds = answers.filter((cp) => cp.response === 'out').map((cp) => cp.playerId)
+  const answered = new Set(answers.map((cp) => cp.playerId))
+  const pending = players
+    .filter((player) => isPending(player, answered, byPlayer.get(player.id)?.status))
+    .sort((a, b) => a.name.localeCompare(b.name, 'fr'))
+  return { in: playersOf(organizerFirst(inIds, call.createdBy), byId), out: playersOf(outIds, byId), pending }
+}
+
+/** « Chauds · 2/4 ». */
+export function hotListCaption(count: number): string {
+  return `${CALL_COPY.hotList} · ${Math.min(count, CALL_CAPACITY)}/${CALL_CAPACITY}`
+}
+
+/** « Bob (toi) » for this phone's profile. */
+export function nameFor(player: Player, viewerId: PlayerId | undefined): string {
+  if (player.id !== viewerId) return player.name
+  return `${player.name} ${CALL_COPY.you}`
 }
 
 /** « Alice propose un baby · 2/4 présents ». */

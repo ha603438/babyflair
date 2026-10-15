@@ -42,6 +42,7 @@ function recordingApi(overrides: Partial<RemoteApi> = {}): { api: RemoteApi; cal
     fetchCalls: record('fetchCalls'),
     insertCall: record('insertCall'),
     insertCallPlayer: record('insertCallPlayer'),
+    upsertCallPlayer: record('upsertCallPlayer'),
     closeCall: record('closeCall'),
     upsertPushSubscription: record('upsertPushSubscription'),
     deletePushSubscription: record('deletePushSubscription'),
@@ -106,7 +107,7 @@ describe('remoteCallFor', () => {
   it('settings, clearAll, replaceData and addCall stay local', () => {
     const { api, calls } = recordingApi()
     const call = { id: 'c1', createdAt: 'p', expiresAt: 'p', createdBy: 'p1' }
-    const organizer = { callId: 'c1', playerId: 'p1', joinedAt: 'p' }
+    const organizer = { callId: 'c1', playerId: 'p1', joinedAt: 'p', response: 'in' as const }
     expect(remoteCallFor({ type: 'setSetting', patch: { lastTarget: 5 } }, api)).toBeNull()
     expect(remoteCallFor({ type: 'clearAll' }, api)).toBeNull()
     expect(remoteCallFor({ type: 'replaceData', players: [], matches: [] }, api)).toBeNull()
@@ -114,12 +115,18 @@ describe('remoteCallFor', () => {
     expect(calls).toEqual([])
   })
 
-  it('joinCall and closeCall hit the calls endpoints', async () => {
+  it('respondCall upserts the answer (in or out) and closeCall hits the calls endpoint', async () => {
     const { api, calls } = recordingApi()
-    const callPlayer = { callId: 'c1', playerId: 'p2', joinedAt: 'p' }
-    await remoteCallFor({ type: 'joinCall', callPlayer }, api)
+    const callPlayer = { callId: 'c1', playerId: 'p2', joinedAt: 'p', response: 'in' as const }
+    const declined = { ...callPlayer, joinedAt: 'r', response: 'out' as const }
+    await remoteCallFor({ type: 'respondCall', callPlayer }, api)
+    await remoteCallFor({ type: 'respondCall', callPlayer: declined }, api)
     await remoteCallFor({ type: 'closeCall', id: 'c1', closedAt: 'q' }, api)
-    expect(calls).toEqual([`insertCallPlayer(${JSON.stringify(callPlayer)})`, 'closeCall("c1","q")'])
+    expect(calls).toEqual([
+      `upsertCallPlayer(${JSON.stringify(callPlayer)})`,
+      `upsertCallPlayer(${JSON.stringify(declined)})`,
+      'closeCall("c1","q")',
+    ])
   })
 })
 

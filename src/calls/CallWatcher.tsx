@@ -1,16 +1,18 @@
-import { useEffect, useMemo, useState } from 'react'
+import { useEffect, useState } from 'react'
 import { profileId } from '../profile/profile'
 import { useChooseProfile, useProfile, useWriteGuard } from '../profile/useWriteGuard'
+import { useReplay } from '../rating/useReplay'
 import { navigate } from '../router'
 import type { Route } from '../router'
 import { useAppState } from '../store'
-import type { Player, PlayerId } from '../types'
+import type { PlayerId } from '../types'
 import { CallDialog } from './CallDialog'
-import { rosterOf } from './calls'
+import { callResponses, NO_RESPONSES, rosterOf } from './calls'
 import { seenCalls } from './seen'
 import { clearRequestedCall, requestCall, useRequestedCall } from './signal'
 import { useCalls } from './useCalls'
 import { callToShow } from './watch'
+import type { WatchOutput } from './watch'
 
 // Expiry is noticed within a minute even without a sync (local mode, offline).
 const NOW_REFRESH_MS = 60_000
@@ -29,19 +31,68 @@ function forcedIdOf(route: Route, requested: { callId: string } | null): string 
   return requested?.callId
 }
 
+const ANSWER_LABEL = "répondre à l'appel"
+
+type ShownCallProps = { shown: NonNullable<WatchOutput>; viewerId: PlayerId | undefined; onDismiss: () => void }
+
+/**
+ * The dialog of the call on screen, with its lists rebuilt from the store on every sync (20 s poll, own writes). The
+ * replay (for the inactive players left out of « Pas encore répondu ») only runs while a call is shown.
+ */
+function ShownCall({ shown, viewerId, onDismiss }: ShownCallProps) {
+  const { store } = useAppState()
+  const calls = useCalls()
+  const guard = useWriteGuard()
+  const chooseProfile = useChooseProfile()
+  const { result, players } = useReplay()
+  const { id, call } = shown
+  const { callPlayers } = store
+  const roster = call === null ? null : rosterOf(call, callPlayers, players)
+  const responses = call === null ? NO_RESPONSES : callResponses(call, callPlayers, store.players, result.byPlayer)
+
+  function formTeams(): void {
+    if (call === null) return
+    onDismiss()
+    calls.formTeams(call)
+  }
+
+  // A visitor never gets here (its « Non » only dismisses): the answer is recorded, then the dialog closes as before.
+  function decline(): void {
+    guard(ANSWER_LABEL, () => calls.respond(id, 'out'))
+    onDismiss()
+  }
+
+  // The call is asked for again so it reopens once the profile is chosen (it was already marked as seen).
+  function answerWithProfile(): void {
+    requestCall(id)
+    chooseProfile()
+  }
+
+  return (
+    <CallDialog
+      open
+      roster={roster}
+      responses={responses}
+      viewerId={viewerId}
+      busy={calls.busy}
+      onJoin={() => guard(ANSWER_LABEL, () => calls.respond(id, 'in'))}
+      onDecline={decline}
+      onFormTeams={() => guard('former les équipes', formTeams)}
+      onDismiss={onDismiss}
+      onChooseProfile={answerWithProfile}
+    />
+  )
+}
+
 /**
  * Mounted once in the shell: opens « Chaud pour prendre une branlée ? » for the office's open call (once per call
  * per phone), for `#/appel/:id` (notification click) and for « Proposer un baby » while a call is already open.
  */
 export function CallWatcher({ route }: { route: Route }) {
   const { store, sync } = useAppState()
-  const calls = useCalls()
   const requested = useRequestedCall()
   const now = useNow()
-  const guard = useWriteGuard()
-  const chooseProfile = useChooseProfile()
   const viewerId = profileId(useProfile())
-  const playersById = useMemo(() => new Map<PlayerId, Player>(store.players.map((p) => [p.id, p])), [store.players])
   const awaitingFirstSync = sync.mode === 'shared' && sync.lastSyncAt === undefined
   // The call on screen stays there until dismissed: being marked as seen only stops it from opening again later
   // (without this, the next render — a poll, the clock — closed the dialog right after it opened).
@@ -72,32 +123,5 @@ export function CallWatcher({ route }: { route: Route }) {
   }
 
   if (shown === null) return null
-  const { id, call } = shown
-  const roster = call === null ? null : rosterOf(call, store.callPlayers, playersById)
-
-  function formTeams(): void {
-    if (call === null) return
-    dismiss()
-    calls.formTeams(call)
-  }
-
-  // The call is asked for again so it reopens once the profile is chosen (it was already marked as seen).
-  function answerWithProfile(): void {
-    requestCall(id)
-    chooseProfile()
-  }
-
-  return (
-    <CallDialog
-      key={id}
-      open
-      roster={roster}
-      viewerId={viewerId}
-      busy={calls.busy}
-      onJoin={() => guard("répondre à l'appel", () => calls.join(id))}
-      onFormTeams={() => guard('former les équipes', formTeams)}
-      onDismiss={dismiss}
-      onChooseProfile={answerWithProfile}
-    />
-  )
+  return <ShownCall key={shown.id} shown={shown} viewerId={viewerId} onDismiss={dismiss} />
 }

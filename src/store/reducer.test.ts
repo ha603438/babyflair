@@ -1,5 +1,5 @@
 import { describe, expect, it } from 'vitest'
-import type { Match, Player, Store } from '../types'
+import type { CallPlayer, Match, Player, Store } from '../types'
 import { backfillSeq, initialStore, nextSeqOf, playerHasMatches, reducer } from './reducer'
 
 function player(id: string, name = id, isGuest = false): Player {
@@ -296,7 +296,7 @@ describe('importAll with an office code', () => {
 
 describe('appels à jouer', () => {
   const call = { id: 'c1', createdAt: 'a', expiresAt: 'b', createdBy: 'alice' }
-  const organizer = { callId: 'c1', playerId: 'alice', joinedAt: 'a' }
+  const organizer: CallPlayer = { callId: 'c1', playerId: 'alice', joinedAt: 'a', response: 'in' }
 
   it('addCall appends the call and its organizer once', () => {
     const state = reducer(seeded(), { type: 'addCall', call, organizer })
@@ -305,12 +305,24 @@ describe('appels à jouer', () => {
     expect(reducer(state, { type: 'addCall', call, organizer })).toBe(state)
   })
 
-  it('joinCall adds a participant once', () => {
+  it('respondCall adds an answer, then replaces it when the player changes their mind', () => {
     const state = reducer(seeded(), { type: 'addCall', call, organizer })
-    const bob = { callId: 'c1', playerId: 'bob', joinedAt: 'c' }
-    const joined = reducer(state, { type: 'joinCall', callPlayer: bob })
+    const bob: CallPlayer = { callId: 'c1', playerId: 'bob', joinedAt: 'c', response: 'in' }
+    const joined = reducer(state, { type: 'respondCall', callPlayer: bob })
     expect(joined.callPlayers).toEqual([organizer, bob])
-    expect(reducer(joined, { type: 'joinCall', callPlayer: { ...bob, joinedAt: 'd' } })).toBe(joined)
+    const declined = reducer(joined, { type: 'respondCall', callPlayer: { ...bob, joinedAt: 'd', response: 'out' } })
+    expect(declined.callPlayers).toEqual([organizer, { ...bob, joinedAt: 'd', response: 'out' }])
+    const back = reducer(declined, { type: 'respondCall', callPlayer: { ...bob, joinedAt: 'e' } })
+    expect(back.callPlayers).toEqual([organizer, { ...bob, joinedAt: 'e' }])
+  })
+
+  it('respondCall keeps the answers of other calls and other players apart', () => {
+    let state = reducer(seeded(), { type: 'addCall', call, organizer })
+    state = reducer(state, { type: 'addCall', call: { ...call, id: 'c2' }, organizer: { ...organizer, callId: 'c2' } })
+    const declined = reducer(state, { type: 'respondCall', callPlayer: { ...organizer, joinedAt: 'z', response: 'out' } })
+    expect(declined.callPlayers).toEqual([{ ...organizer, joinedAt: 'z', response: 'out' }, { ...organizer, callId: 'c2' }])
+    const chloe: CallPlayer = { callId: 'c2', playerId: 'chloe', joinedAt: 'y', response: 'out' }
+    expect(reducer(declined, { type: 'respondCall', callPlayer: chloe }).callPlayers).toHaveLength(3)
   })
 
   it('closeCall stamps closedAt once and leaves other calls alone', () => {

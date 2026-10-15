@@ -16,7 +16,8 @@ export type Action =
   | { type: 'setSetting'; patch: Partial<Settings> }
   /** Appels à jouer: optimistic local versions of the server writes (src/calls/). */
   | { type: 'addCall'; call: Call; organizer: CallPlayer }
-  | { type: 'joinCall'; callPlayer: CallPlayer }
+  /** « Chauuud 🔥 » / « Non je fais semblant de bosser »: replaces this player's answer to the call, or adds it. */
+  | { type: 'respondCall'; callPlayer: CallPlayer }
   | { type: 'closeCall'; id: string; closedAt: string }
 
 export const DEFAULT_SETTINGS: Settings = { lastFormat: '2v2', lastTarget: 5 }
@@ -159,10 +160,19 @@ function addCall(state: Store, call: Call, organizer: CallPlayer): Store {
   return { ...state, calls: [...state.calls, call], callPlayers: [...state.callPlayers, organizer] }
 }
 
-function joinCall(state: Store, callPlayer: CallPlayer): Store {
-  const already = state.callPlayers.some((cp) => cp.callId === callPlayer.callId && cp.playerId === callPlayer.playerId)
-  if (already) return state
-  return { ...state, callPlayers: [...state.callPlayers, callPlayer] }
+function sameAnswerer(a: CallPlayer, b: CallPlayer): boolean {
+  return a.callId === b.callId && a.playerId === b.playerId
+}
+
+function respondCall(state: Store, callPlayer: CallPlayer): Store {
+  if (!state.callPlayers.some((cp) => sameAnswerer(cp, callPlayer))) {
+    return { ...state, callPlayers: [...state.callPlayers, callPlayer] }
+  }
+  const callPlayers = state.callPlayers.map((cp) => {
+    if (!sameAnswerer(cp, callPlayer)) return cp
+    return callPlayer
+  })
+  return { ...state, callPlayers }
 }
 
 function closeCall(state: Store, id: string, closedAt: string): Store {
@@ -201,8 +211,8 @@ export function reducer(state: Store, action: Action): Store {
       return { ...state, settings: { ...state.settings, ...action.patch } }
     case 'addCall':
       return addCall(state, action.call, action.organizer)
-    case 'joinCall':
-      return joinCall(state, action.callPlayer)
+    case 'respondCall':
+      return respondCall(state, action.callPlayer)
     case 'closeCall':
       return closeCall(state, action.id, action.closedAt)
   }

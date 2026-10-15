@@ -1,6 +1,7 @@
 // PostgREST client for the shared mode, over plain fetch (no supabase-js). Everything is injected (fetch, config,
 // office code, profile) so the client is unit-testable in node with a fake fetch. Rows are snake_case on the server and
 // mapped to the app types here; dates are normalised back to the `...Z` ISO form the app writes everywhere.
+import { parseCallResponse } from '../calls/calls'
 import type { Call, CallPlayer, Match, MatchEvent, MatchEventAction, MatchSnapshot, Player, Target } from '../types'
 import type { RemoteConfig } from './config'
 
@@ -35,7 +36,10 @@ export type RemoteApi = {
   /** Open calls only (not closed, not expired), each with its call_players. */
   fetchCalls(now?: Date): Promise<CallsData>
   insertCall(call: Call): Promise<void>
+  /** The organizer's own row, at the call's creation. */
   insertCallPlayer(callPlayer: CallPlayer): Promise<void>
+  /** An answer (« Chauuud 🔥 » / « Non je fais semblant de bosser »): inserted, or replacing the previous one. */
+  upsertCallPlayer(callPlayer: CallPlayer): Promise<void>
   closeCall(id: string, closedAt: string): Promise<void>
   upsertPushSubscription(subscription: PushSubscriptionInput): Promise<void>
   deletePushSubscription(endpoint: string): Promise<void>
@@ -95,7 +99,8 @@ export type MatchEventRow = {
   after: unknown
 }
 
-export type CallPlayerRow = { call_id: string; player_id: string; joined_at: string }
+/** `response`: 'in' | 'out' (docs/supabase/call-responses.sql, default 'in'); absent before that migration. */
+export type CallPlayerRow = { call_id: string; player_id: string; joined_at: string; response?: string }
 
 export type CallRow = {
   id: string
@@ -236,11 +241,21 @@ export function callToRow(call: Call): CallRow {
 }
 
 export function callPlayerFromRow(row: CallPlayerRow): CallPlayer {
-  return { callId: row.call_id, playerId: row.player_id, joinedAt: toIso(row.joined_at) }
+  return {
+    callId: row.call_id,
+    playerId: row.player_id,
+    joinedAt: toIso(row.joined_at),
+    response: parseCallResponse(row.response),
+  }
 }
 
 export function callPlayerToRow(callPlayer: CallPlayer): CallPlayerRow {
-  return { call_id: callPlayer.callId, player_id: callPlayer.playerId, joined_at: callPlayer.joinedAt }
+  return {
+    call_id: callPlayer.callId,
+    player_id: callPlayer.playerId,
+    joined_at: callPlayer.joinedAt,
+    response: callPlayer.response,
+  }
 }
 
 /** Flattens the embedded call_players of each call row into the two app arrays. */
@@ -376,6 +391,12 @@ export function createApi(deps: ApiDeps): RemoteApi {
     await sendWrite(deps, 'POST', 'call_players', callPlayerToRow(callPlayer))
   }
 
+  // Upsert on the primary key (call_id, player_id): a change of mind replaces the answer and its time. No row comes
+  // back (`return=minimal`); a refused office code fails the insert / update itself (RLS with check).
+  async function upsertCallPlayer(callPlayer: CallPlayer): Promise<void> {
+    await send(deps, 'POST', 'call_players', callPlayerToRow(callPlayer), 'resolution=merge-duplicates,return=minimal')
+  }
+
   async function closeCall(id: string, closedAt: string): Promise<void> {
     await sendWrite(deps, 'PATCH', `calls?id=eq.${id}`, { closed_at: closedAt })
   }
@@ -474,6 +495,7 @@ export function createApi(deps: ApiDeps): RemoteApi {
     fetchCalls,
     insertCall,
     insertCallPlayer,
+    upsertCallPlayer,
     closeCall,
     upsertPushSubscription,
     deletePushSubscription,

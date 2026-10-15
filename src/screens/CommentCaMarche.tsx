@@ -102,8 +102,9 @@ const SECTIONS: Section[] = [
       'Depuis le classement, « Proposer un baby » envoie, au nom de ton profil, une notification à tous les ' +
       'téléphones qui ont activé les notifications dans Réglages. Chacun répond « Chauuud 🔥 » ou « Non je fais ' +
       'semblant de bosser » ; dès que 4 joueurs sont là, « Former les équipes » compose les équipes les plus ' +
-      'équilibrées selon le classement, tire les postes et les couleurs au sort, et ouvre le match. Sans 4 joueurs ' +
-      'au bout de 5 minutes, l’appel est annulé.',
+      'équilibrées selon le classement, tire les postes et les couleurs au sort, et ouvre le match. L’appel liste ' +
+      'les « Chauds », les « Pas chauds » et ceux qui n’ont pas encore répondu, et chacun peut changer d’avis tant ' +
+      'qu’il reste ouvert. Sans 4 joueurs au bout de 5 minutes, l’appel est annulé.',
   },
   {
     title: 'Tes données',

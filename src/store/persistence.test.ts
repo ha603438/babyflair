@@ -183,11 +183,20 @@ describe('appels à jouer', () => {
     const data = {
       ...base,
       calls: [{ id: 'c1', createdAt: 'a', expiresAt: 'b', createdBy: 'p1', closedAt: 'z' }, { id: 'no-expiry' }, 'junk'],
-      callPlayers: [{ callId: 'c1', playerId: 'p1', joinedAt: 'j' }, { callId: 'c1' }],
+      callPlayers: [
+        { callId: 'c1', playerId: 'p1', joinedAt: 'j' },
+        { callId: 'c1', playerId: 'p2', joinedAt: 'k', response: 'out' },
+        { callId: 'c1', playerId: 'p3', joinedAt: 'l', response: 'bogus' },
+        { callId: 'c1' },
+      ],
     }
     expect(normaliseStore(data)).toMatchObject({
       calls: [{ id: 'c1', createdAt: 'a', expiresAt: 'b', createdBy: 'p1', closedAt: 'z' }],
-      callPlayers: [{ callId: 'c1', playerId: 'p1', joinedAt: 'j' }],
+      callPlayers: [
+        { callId: 'c1', playerId: 'p1', joinedAt: 'j', response: 'in' },
+        { callId: 'c1', playerId: 'p2', joinedAt: 'k', response: 'out' },
+        { callId: 'c1', playerId: 'p3', joinedAt: 'l', response: 'in' },
+      ],
     })
   })
 

@@ -3,6 +3,8 @@ import type { Match, Player } from '../types'
 import type { FetchLike, MatchRow, PlayerRow } from './api'
 import {
   callFromRow,
+  callPlayerFromRow,
+  callPlayerToRow,
   callsFromRows,
   callToRow,
   createApi,
@@ -226,7 +228,11 @@ describe('createApi', () => {
       expires_at: '2025-10-06T12:45:00+00:00',
       created_by: 'p1',
       closed_at: null,
-      call_players: [{ call_id: 'c1', player_id: 'p1', joined_at: '2025-10-06T12:00:00+00:00' }],
+      call_players: [
+        { call_id: 'c1', player_id: 'p1', joined_at: '2025-10-06T12:00:00+00:00', response: 'in' },
+        { call_id: 'c1', player_id: 'p2', joined_at: '2025-10-06T12:01:00+00:00', response: 'out' },
+        { call_id: 'c1', player_id: 'p3', joined_at: '2025-10-06T12:02:00+00:00' },
+      ],
     }
     const { fetch, calls } = fakeFetch((call) => {
       if (call.url.includes('/calls')) return { status: 200, body: [row] }
@@ -235,7 +241,11 @@ describe('createApi', () => {
     const api = createApi({ fetch, config, officeCode: 'secret' })
     const expected = {
       calls: [{ id: 'c1', createdAt: '2025-10-06T12:00:00.000Z', expiresAt: '2025-10-06T12:45:00.000Z', createdBy: 'p1' }],
-      callPlayers: [{ callId: 'c1', playerId: 'p1', joinedAt: '2025-10-06T12:00:00.000Z' }],
+      callPlayers: [
+        { callId: 'c1', playerId: 'p1', joinedAt: '2025-10-06T12:00:00.000Z', response: 'in' },
+        { callId: 'c1', playerId: 'p2', joinedAt: '2025-10-06T12:01:00.000Z', response: 'out' },
+        { callId: 'c1', playerId: 'p3', joinedAt: '2025-10-06T12:02:00.000Z', response: 'in' },
+      ],
     }
     expect(await api.fetchCalls(new Date('2025-10-06T12:10:00.000Z'))).toEqual(expected)
     expect(calls[0].url).toContain('created_at=gt.2025-10-06T11%3A25%3A00.000Z')
@@ -247,15 +257,42 @@ describe('createApi', () => {
     const api = createApi({ fetch, config, officeCode: 'secret' })
     const call = { id: 'c1', createdAt: 'a', expiresAt: 'b', createdBy: 'p1', closedAt: 'z' }
     await api.insertCall(call)
-    await api.insertCallPlayer({ callId: 'c1', playerId: 'p2', joinedAt: 'j' })
+    await api.insertCallPlayer({ callId: 'c1', playerId: 'p2', joinedAt: 'j', response: 'in' })
     await api.closeCall('c1', 'z')
     expect(calls.map((c) => [c.method, c.url.replace(config.url, ''), c.body])).toEqual([
       ['POST', '/rest/v1/calls', { id: 'c1', created_at: 'a', expires_at: 'b', created_by: 'p1', closed_at: 'z' }],
-      ['POST', '/rest/v1/call_players', { call_id: 'c1', player_id: 'p2', joined_at: 'j' }],
+      ['POST', '/rest/v1/call_players', { call_id: 'c1', player_id: 'p2', joined_at: 'j', response: 'in' }],
       ['PATCH', '/rest/v1/calls?id=eq.c1', { closed_at: 'z' }],
     ])
     expect(callFromRow(callToRow(call))).toEqual(call)
     expect(callsFromRows([{ ...callToRow(call), call_players: undefined }]).callPlayers).toEqual([])
+  })
+
+  it('upsertCallPlayer merges on the primary key, sends the response and asks for no row back', async () => {
+    const { fetch, calls } = fakeFetch(() => ({ status: 201 }))
+    const api = createApi({ fetch, config, officeCode: 'secret', playerId: 'p2' })
+    await api.upsertCallPlayer({ callId: 'c1', playerId: 'p2', joinedAt: 'j', response: 'out' })
+    expect(calls).toHaveLength(1)
+    expect(calls[0].method).toBe('POST')
+    expect(calls[0].url).toBe('https://x.supabase.co/rest/v1/call_players')
+    expect(calls[0].headers.Prefer).toBe('resolution=merge-duplicates,return=minimal')
+    expect(calls[0].headers['x-office-code']).toBe('secret')
+    expect(calls[0].body).toEqual({ call_id: 'c1', player_id: 'p2', joined_at: 'j', response: 'out' })
+  })
+
+  it('upsertCallPlayer surfaces a refused office code', async () => {
+    const { fetch } = fakeFetch(() => ({ status: 401, body: { message: 'row-level security' } }))
+    const api = createApi({ fetch, config, officeCode: 'wrong' })
+    const answer = { callId: 'c1', playerId: 'p2', joinedAt: 'j', response: 'in' as const }
+    await expect(api.upsertCallPlayer(answer)).rejects.toMatchObject({ kind: 'unauthorized' })
+  })
+
+  it('maps the call_players response both ways, a missing one reading as in', () => {
+    const row = { call_id: 'c1', player_id: 'p1', joined_at: '2025-10-06T12:00:00+00:00' }
+    expect(callPlayerFromRow(row).response).toBe('in')
+    expect(callPlayerFromRow({ ...row, response: 'out' }).response).toBe('out')
+    const answer = { callId: 'c1', playerId: 'p1', joinedAt: 'j', response: 'out' as const }
+    expect(callPlayerToRow(answer)).toEqual({ call_id: 'c1', player_id: 'p1', joined_at: 'j', response: 'out' })
   })
 
   it('push subscriptions go through the register_push / unregister_push functions', async () => {

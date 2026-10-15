@@ -48,8 +48,8 @@ export function remoteCallFor(action: Action, api: RemoteApi): Promise<unknown> 
       return api.restoreMatch(action.match)
     case 'importAll':
       return api.replaceAll(action.players, backfillSeq(action.matches))
-    case 'joinCall':
-      return api.insertCallPlayer(action.callPlayer)
+    case 'respondCall':
+      return api.upsertCallPlayer(action.callPlayer)
     case 'closeCall':
       return api.closeCall(action.id, action.closedAt)
     // addCall: the organizer flow (inserts, then the notification) is sequenced by src/calls/useCalls.ts itself.

@@ -532,17 +532,55 @@
   padding-top: var(--s2);
 }
 
-.call-dialog__list {
-  margin: var(--s2) 0 0;
-  padding-left: var(--s4);
-  color: var(--text);
+/* « Chauds · 2/4 », « Pas chauds », « Pas encore répondu »: a small caption, then the names as wrapped pills. */
+.call-dialog__lists {
+  display: grid;
+  gap: var(--s3);
+  margin-top: var(--s3);
 }
 
-.call-dialog__list li + li {
-  margin-top: var(--s1);
+.call-dialog__group-caption {
+  font-size: var(--fs-micro);
+  font-weight: 600;
+  line-height: 1.4;
+  text-transform: uppercase;
+  letter-spacing: .04em;
+  color: var(--text-3);
 }
 
-/* « Déjà inscrit » under a disabled « Chauuud 🔥 ». */
+.call-dialog__names {
+  display: flex;
+  flex-wrap: wrap;
+  gap: var(--s1);
+  margin: var(--s1) 0 0;
+  padding: 0;
+  list-style: none;
+}
+
+.call-dialog__name {
+  padding: 2px var(--s2);
+  border: 1px solid var(--border);
+  border-radius: var(--r-pill);
+  font-size: var(--fs-caption);
+  font-weight: 500;
+  line-height: 1.4;
+  color: var(--text-2);
+  white-space: nowrap;
+}
+
+.call-dialog__names--in .call-dialog__name {
+  border-color: var(--accent-soft);
+  background: var(--accent-soft);
+  color: var(--accent-strong);
+  font-weight: 600;
+}
+
+.call-dialog__names--pending .call-dialog__name {
+  border-style: dashed;
+  color: var(--text-3);
+}
+
+/* « Déjà inscrit » or « Complet » under a disabled « Chauuud 🔥 ». */
 .call-dialog__caption {
   margin-top: var(--s2);
   font-size: var(--fs-caption);

@@ -6,6 +6,15 @@ export type ChangelogEntry = { id: string; date: string; title: string; items: s
 
 export const CHANGELOG: ChangelogEntry[] = [
   {
+    id: '2026-10-15-1',
+    date: '2026-10-15',
+    title: 'Qui est chaud ?',
+    items: [
+      'L’appel montre qui est chaud, qui ne l’est pas et qui n’a pas encore répondu.',
+      'Tu peux changer d’avis tant que l’appel est ouvert : « Proposer un baby » le rouvre.',
+    ],
+  },
+  {
     id: '2026-10-13-4',
     date: '2026-10-13',
     title: 'Bonus fanny et comeback',

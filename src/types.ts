@@ -62,7 +62,11 @@ export type Call = {
   closedAt?: string
 }
 
-export type CallPlayer = { callId: string; playerId: PlayerId; joinedAt: string }
+/** « Chauuud 🔥 » = 'in' (takes one of the 4 places), « Non je fais semblant de bosser » = 'out'. */
+export type CallResponse = 'in' | 'out'
+
+/** One answer to a call. `joinedAt` is the time of the latest answer (a change of mind replaces the row). */
+export type CallPlayer = { callId: string; playerId: PlayerId; joinedAt: string; response: CallResponse }
 
 // Journal des modifications (mode partagé): match_events rows, written by a server trigger only.
 
