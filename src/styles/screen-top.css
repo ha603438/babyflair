@@ -1,7 +1,7 @@
 /*
- * screen-top.css — Top stats (#/top): record cards under the section headers, each with its rule and a mini podium
- * (1st emphasised, 2nd and 3rd on small lines). Medal circles and pills come from lists.css, cards from base.css;
- * colours are tokens only, so light and dark both work.
+ * screen-top.css — Hall of Flair (#/top): record cards under the section headers, each with its rule and a mini podium
+ * (first entry slightly emphasised, the others, ex æquo included, on small lines). Medal circles and pills come from
+ * lists.css, cards from base.css; colours are tokens only, so light and dark both work.
  */
 
 .top-stats__intro {
@@ -78,7 +78,14 @@
   justify-self: center;
 }
 
-/* 2nd and 3rd: smaller medals, centred in the same column as the 1st one. */
+/* First entry: a touch under the 28 px list medal, in step with its 18 px name. */
+.podium-item--first .badge--medal {
+  width: 26px;
+  height: 26px;
+  font-size: 14px;
+}
+
+/* The other entries: smaller medals, centred in the same column as the first one. */
 .podium-item:not(.podium-item--first) .badge--medal {
   width: 22px;
   height: 22px;
@@ -111,13 +118,24 @@
   line-height: 1.3;
 }
 
+/* First entry: 18 px name over a 16 px value, a subtle step above the 15 px lines below. */
 .podium-entry--first .podium-name {
-  font-size: 20px;
+  font-size: 18px;
   font-weight: 700;
-  line-height: 1.25;
+  line-height: 1.3;
 }
 
-/* Two opponents: each name is a link to the player's page. */
+/* Two opponents (players or duos): each name is a link to its page; long duo names wrap instead of being cut. */
+.podium-name--links {
+  white-space: normal;
+  overflow-wrap: anywhere;
+}
+
+/* A rivalry wraps at its « – », never inside one name (« Arnault & Julien Fritz » stays on one line). */
+.podium-name--links a {
+  white-space: nowrap;
+}
+
 .podium-name a {
   padding-block: 6px;
   color: var(--accent);
@@ -146,7 +164,7 @@
 }
 
 .podium-entry--first .podium-value {
-  font-size: var(--fs-h2);
+  font-size: var(--fs-body);
   font-weight: 700;
   color: var(--text);
 }
@@ -158,14 +176,6 @@
 }
 
 .podium-sep {
-  color: var(--text-3);
-}
-
-/* « + 2 autres ex æquo » */
-.podium-more {
-  padding: 2px 0 var(--s1);
-  font-size: var(--fs-micro);
-  line-height: 1.4;
   color: var(--text-3);
 }
 

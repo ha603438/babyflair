@@ -120,22 +120,56 @@ describe('podium', () => {
       [1, 'b'],
       [3, 'c'],
     ])
-    expect(result.tiedBeyond).toBe(0)
   })
 
-  it('counts the lines left out that tie with the 3rd place', () => {
+  it('shows every ex æquo of the 1st place, the next rank falling off the podium', () => {
+    const result = podium([line('d', 5), line('c', 9), line('a', 9), line('b', 9)], byValue)
+    expect(ranksOf(result, (l) => l.name)).toEqual([
+      [1, 'a'],
+      [1, 'b'],
+      [1, 'c'],
+    ])
+  })
+
+  it('shows every ex æquo of the 2nd place', () => {
     const result = podium([line('a', 9), line('b', 5), line('c', 5), line('d', 5), line('e', 5), line('f', 1)], byValue)
     expect(ranksOf(result, (l) => l.name)).toEqual([
       [1, 'a'],
       [2, 'b'],
       [2, 'c'],
+      [2, 'd'],
+      [2, 'e'],
     ])
-    expect(result.tiedBeyond).toBe(2)
+  })
+
+  it('shows every ex æquo of the 3rd place, nothing below it', () => {
+    const lines = [line('a', 9), line('b', 7), line('c', 5), line('d', 5), line('e', 5), line('f', 1)]
+    expect(ranksOf(podium(lines, byValue), (l) => l.name)).toEqual([
+      [1, 'a'],
+      [2, 'b'],
+      [3, 'c'],
+      [3, 'd'],
+      [3, 'e'],
+    ])
+  })
+
+  it('keeps a whole podium of ex æquo, however many', () => {
+    const names = ['a', 'b', 'c', 'd', 'e', 'f', 'g', 'h']
+    const all = podium(names.map((name) => line(name, 4)), byValue)
+    expect(all.places.map((place) => place.rank)).toEqual(names.map(() => 1))
+    const mixed = podium([line('a', 9), line('b', 9), line('c', 5), line('d', 5), line('e', 5), line('f', 1)], byValue)
+    expect(ranksOf(mixed, (l) => l.name)).toEqual([
+      [1, 'a'],
+      [1, 'b'],
+      [3, 'c'],
+      [3, 'd'],
+      [3, 'e'],
+    ])
   })
 
   it('handles short and empty lists', () => {
-    expect(podium([line('a', 1)], byValue)).toEqual({ places: [{ rank: 1, line: line('a', 1) }], tiedBeyond: 0 })
-    expect(podium([], byValue)).toEqual({ places: [], tiedBeyond: 0 })
+    expect(podium([line('a', 1)], byValue)).toEqual({ places: [{ rank: 1, line: line('a', 1) }] })
+    expect(podium([], byValue)).toEqual({ places: [] })
     expect(PODIUM_SIZE).toBe(3)
   })
 })
@@ -144,7 +178,7 @@ describe('topRecords on an empty history', () => {
   it('has no line in any record, with or without players', () => {
     for (const players of [PLAYERS, []]) {
       const records = recordsOf([], players)
-      for (const record of Object.values(records)) expect(record).toEqual({ places: [], tiedBeyond: 0 })
+      for (const record of Object.values(records)) expect(record).toEqual({ places: [] })
     }
   })
 })
@@ -173,7 +207,6 @@ describe('Postes (Meilleur avant / arrière)', () => {
       [2, ['bob', 3, 2]],
       [3, ['chloe', 2, 3]],
     ])
-    expect(records.avant.tiedBeyond).toBe(0)
     expect(ranksOf(records.arriere, (l) => [l.playerId, l.wins, l.losses])).toEqual([
       [1, ['dan', 6, 4]],
       [2, ['eve', 4, 6]],
@@ -357,7 +390,7 @@ describe('Fanny et comebacks', () => {
 })
 
 describe('Le plus assidu', () => {
-  it('counts every match played (1v1 and 2v2), ex æquo by name, with the tie beyond the podium', () => {
+  it('counts every match played (1v1 and 2v2), every ex æquo shown by name', () => {
     const matches = [
       game(['alice', 'bob'], ['chloe', 'dan']),
       game(['alice'], ['eve']),
@@ -368,8 +401,10 @@ describe('Le plus assidu', () => {
       [1, ['alice', 2]],
       [1, ['eve', 2]],
       [3, ['bob', 1]],
+      [3, ['chloe', 1]],
+      [3, ['dan', 1]],
+      [3, ['fred', 1]],
     ])
-    expect(records.played.tiedBeyond).toBe(3)
   })
 })
 
@@ -428,7 +463,6 @@ describe('Record de points', () => {
       [1, ['bob', 1050, 'm3', day(3)]],
       [3, ['eve', 1020, 'm5', day(5)]],
     ])
-    expect(records.peak.tiedBeyond).toBe(0)
   })
 })
 
@@ -488,9 +522,9 @@ describe('Plus gros gain en un match', () => {
       [1, ['alice', 'm3', 30.4]],
       [1, ['chloe', 'm2', 30.2]],
       [3, ['alice', 'm1', 12.4]],
+      // Alice's +12,3 rounds like her +12,4: ex æquo at the 3rd place; Bob's +11,4 (5th) is left out.
+      [3, ['alice', 'm5', 12.3]],
     ])
-    // Alice's +12,3 rounds like her +12,4: tied with the 3rd place, left out.
-    expect(records.gain.tiedBeyond).toBe(1)
     expect(records.gain.places[0].line.playedAt).toBe(day(3))
   })
 })
@@ -546,8 +580,8 @@ describe('Duo inséparable and Plus grosse rivalité', () => {
       [1, ['alice+bob', ['alice', 'bob'], 3, 2, 1]],
       [1, ['chloe+dan', ['chloe', 'dan'], 3, 1, 2]],
       [3, ['alice+chloe', ['alice', 'chloe'], 1, 1, 0]],
+      [3, ['bob+dan', ['bob', 'dan'], 1, 0, 1]],
     ])
-    expect(records.duo.tiedBeyond).toBe(1)
   })
 
   it('counts the matches as opponents (1v1 and 2v2), the one ahead in the head-to-head first', () => {
@@ -557,8 +591,8 @@ describe('Duo inséparable and Plus grosse rivalité', () => {
       // 2–2: alphabetical order.
       [1, [['bob', 'chloe'], 4, [2, 2]]],
       [3, [['alice', 'chloe'], 3, [2, 1]]],
+      [3, [['bob', 'dan'], 3, [2, 1]]],
     ])
-    expect(records.rivalry.tiedBeyond).toBe(1)
   })
 
   it('puts the leader of the head-to-head first even when the name comes later', () => {
@@ -570,5 +604,88 @@ describe('Duo inséparable and Plus grosse rivalité', () => {
     const records = recordsOf([game(['alice'], ['bob'])])
     expect(records.duo.places).toEqual([])
     expect(records.rivalry.places.map((place) => place.line.players)).toEqual([['alice', 'bob']])
+  })
+})
+
+describe('Plus grosse rivalité de duos', () => {
+  it('counts the 2v2 matches of each pair of duos, the duo ahead first, 1v1 ignored', () => {
+    const matches = [
+      game(['alice', 'bob'], ['chloe', 'dan']),
+      // Same duos, members in another order and sides swapped: still the same pair of duos.
+      game(['bob', 'alice'], ['dan', 'chloe'], { winnerSide: 'B' }),
+      game(['chloe', 'dan'], ['alice', 'bob']),
+      game(['alice', 'chloe'], ['bob', 'dan']),
+      ...times(4, () => game(['alice'], ['bob'])),
+    ]
+    expect(ranksOf(recordsOf(matches).duoRivalry, (l) => [l.duos, l.matches, l.wins])).toEqual([
+      [
+        1,
+        [
+          [
+            ['alice', 'bob'],
+            ['chloe', 'dan'],
+          ],
+          3,
+          [2, 1],
+        ],
+      ],
+      [
+        2,
+        [
+          [
+            ['alice', 'chloe'],
+            ['bob', 'dan'],
+          ],
+          1,
+          [1, 0],
+        ],
+      ],
+    ])
+  })
+
+  it('puts the duo ahead in the head-to-head first even when its name comes later; level → alphabetical', () => {
+    const ahead = [
+      game(['chloe', 'dan'], ['alice', 'bob']),
+      game(['chloe', 'dan'], ['alice', 'bob']),
+      game(['alice', 'bob'], ['chloe', 'dan']),
+    ]
+    expect(recordsOf(ahead).duoRivalry.places[0].line).toEqual({
+      duos: [
+        ['chloe', 'dan'],
+        ['alice', 'bob'],
+      ],
+      matches: 3,
+      wins: [2, 1],
+    })
+    // 1–1 between « Aaron & Eve » (id zed+eve, sorting after bob+dan) and « Bob & Dan »: alphabetical by duo name.
+    const aaron: Player = { id: 'zed', name: 'Aaron', isGuest: false, createdAt: '2026-09-01T10:00:00.000Z' }
+    const level = [game(['zed', 'eve'], ['dan', 'bob']), game(['dan', 'bob'], ['zed', 'eve'])]
+    expect(recordsOf(level, [...PLAYERS, aaron]).duoRivalry.places[0].line).toEqual({
+      duos: [
+        ['eve', 'zed'],
+        ['bob', 'dan'],
+      ],
+      matches: 2,
+      wins: [1, 1],
+    })
+  })
+
+  it('ranks ex æquo pairs of duos together, by the two duo names whichever duo leads', () => {
+    const matches = [
+      // « Dan & Eve » lead « Alice & Chloé » 2–0: the pair sorts as « Alice & Chloé – Dan & Eve ».
+      ...times(2, () => game(['dan', 'eve'], ['alice', 'chloe'])),
+      // « Bob & Fred » lead « Chloé & Eve » 2–0: the pair sorts as « Bob & Fred – Chloé & Eve », after the first one.
+      ...times(2, () => game(['bob', 'fred'], ['chloe', 'eve'])),
+      game(['alice', 'bob'], ['dan', 'fred']),
+    ]
+    expect(ranksOf(recordsOf(matches).duoRivalry, (l) => [l.duos[0], l.duos[1], l.matches])).toEqual([
+      [1, [['dan', 'eve'], ['alice', 'chloe'], 2]],
+      [1, [['bob', 'fred'], ['chloe', 'eve'], 2]],
+      [3, [['alice', 'bob'], ['dan', 'fred'], 1]],
+    ])
+  })
+
+  it('stays empty without a 2v2 match', () => {
+    expect(recordsOf([game(['alice'], ['bob']), game(['chloe'], ['dan'])]).duoRivalry.places).toEqual([])
   })
 })

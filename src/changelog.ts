@@ -6,11 +6,21 @@ export type ChangelogEntry = { id: string; date: string; title: string; items: s
 
 export const CHANGELOG: ChangelogEntry[] = [
   {
+    id: '2026-10-15-5',
+    date: '2026-10-15',
+    title: 'Hall of Flair',
+    items: [
+      '«\u202FTop stats\u202F» devient le «\u202FHall of Flair\u202F»\u202F: le Sniper, le Mur, le Chat noir, le Hold-up…',
+      'Tous les ex æquo d’un podium sont affichés, avec le même rang.',
+      'Nouveau record «\u202FLe Clasico\u202F»\u202F: les deux duos qui se sont le plus affrontés.',
+    ],
+  },
+  {
     id: '2026-10-15-4',
     date: '2026-10-15',
-    title: 'Top stats',
+    title: 'Hall of Flair',
     items: [
-      '«\u202F🏅 Top stats\u202F» sous le classement\u202F: les records de tous les temps, invités compris.',
+      '«\u202F🏅 Hall of Flair\u202F» sous le classement\u202F: les records de tous les temps, invités compris.',
       'Meilleurs avant et arrière, séries, fanny et comebacks, exploits, records de points, duos et rivalités.',
     ],
   },

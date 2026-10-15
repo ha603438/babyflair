@@ -89,7 +89,7 @@ const SECTIONS: Section[] = [
     text:
       'Sous le classement, « 📈 Courbes » trace les points de chacun, match après match. Touche les noms pour ' +
       'comparer jusqu’à 8 joueurs, et glisse le doigt sur le graphique pour lire chaque match. Juste à côté, ' +
-      '« 🏅 Top stats » rassemble les records de tous les temps.',
+      '« 🏅 Hall of Flair » rassemble les records de tous les temps.',
   },
   {
     title: 'Modifier ou supprimer un match',

@@ -24,7 +24,7 @@ const CASES: Array<[string, string]> = [
   ['#/comment-ca-marche', 'Comment ça marche'],
   ['#/journal', "Journal d&#x27;activité"],
   ['#/courbes', 'Évolution du classement'],
-  ['#/top', 'Top stats'],
+  ['#/top', 'Hall of Flair'],
 ]
 
 describe('App shell', () => {

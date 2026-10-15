@@ -9,9 +9,10 @@ import type { Player, PlayerId } from '../../types'
 import { topStatsSections } from './topStatsCards'
 import type { CardView, EntryView, SectionView } from './topStatsCards'
 
-// Top stats (`#/top`): all-time records, one card per record under five section headers. Each card states its rule
-// and shows a mini podium: the 1st emphasised (big name, value and detail), the 2nd and 3rd on small lines, ex æquo
-// sharing their medal; a muted line when nobody qualifies yet. Copy and links come from topStatsCards.ts.
+// Hall of Flair (`#/top`): all-time records, one card per record under five section headers. Each card states its rule
+// and shows a mini podium: the first entry emphasised (larger name, value and detail), the others on small lines;
+// every ex æquo of ranks 1 to 3 is listed, sharing its medal. A muted line when nobody qualifies yet. Copy and links
+// come from topStatsCards.ts.
 
 export type TopStatsViewProps = {
   /** src/records.ts topRecords(), memoised by the screen shell. */
@@ -32,13 +33,13 @@ function introText(matchCount: number): string {
 // Podium entries
 // ---------------------------------------------------------------------------
 
-/** Plain names inside a linked entry; otherwise (two opponents) each name is its own link. */
+/** Plain names inside a linked entry; otherwise (two opponents) each name is its own link, free to wrap. */
 function Names({ entry }: { entry: EntryView }) {
   if (entry.href !== null) {
     return <span className="podium-name">{entry.names.map((name) => name.label).join(entry.joiner)}</span>
   }
   return (
-    <span className="podium-name">
+    <span className="podium-name podium-name--links">
       {entry.names.map((name, index) => (
         <Fragment key={name.href}>
           {index > 0 && entry.joiner}
@@ -78,7 +79,7 @@ function FirstDetail({ detail }: { detail: string | null }) {
   )
 }
 
-/** 1st: big name, then « value · detail » and the « en cours » pill. */
+/** The first entry: larger name, then « value · detail » and the « en cours » pill. */
 function FirstEntry({ entry }: { entry: EntryView }) {
   return (
     <li className="podium-item podium-item--first">
@@ -107,7 +108,7 @@ function LineDetail({ entry }: { entry: EntryView }) {
   )
 }
 
-/** 2nd and 3rd: one small line, the detail under the name. */
+/** The other entries (ex æquo of the 1st included): one small line, the detail under the name. */
 function LineEntry({ entry }: { entry: EntryView }) {
   return (
     <li className="podium-item">
@@ -123,24 +124,16 @@ function LineEntry({ entry }: { entry: EntryView }) {
   )
 }
 
-function TiedBeyond({ count }: { count: number }) {
-  if (count === 0) return null
-  return <p className="podium-more">{`+ ${plural(count, 'autre')} ex æquo`}</p>
-}
-
 function Podium({ card }: { card: CardView }) {
   const [first, ...rest] = card.entries
   if (first === undefined) return <p className="record-empty">{card.empty}</p>
   return (
-    <>
-      <ol className="podium">
-        <FirstEntry entry={first} />
-        {rest.map((entry, index) => (
-          <LineEntry key={index} entry={entry} />
-        ))}
-      </ol>
-      <TiedBeyond count={card.tiedBeyond} />
-    </>
+    <ol className="podium">
+      <FirstEntry entry={first} />
+      {rest.map((entry, index) => (
+        <LineEntry key={index} entry={entry} />
+      ))}
+    </ol>
   )
 }
 

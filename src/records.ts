@@ -4,11 +4,13 @@ import { isComeback, isFanny, positionOf } from './stats'
 import type { Position } from './stats'
 import type { HistoryPoint, Match, MatchId, MatchResult, Player, PlayerId, ReplayResult, Team } from './types'
 
-// Top stats (`#/top`): all-time records over every match of the Mixte history, every player included (guests and
-// inactive ones too). Each record is a podium: the top 3 lines in competition ranking (ex æquo share their rank
-// number, the next rank skips: 1, 1, 3), plus how many more lines tie with the 3rd. Pure, no React: the page
-// memoises topRecords() on the store's players / matches and the Mixte replay result.
+// Hall of Flair (`#/top`): all-time records over every match of the Mixte history, every player included (guests and
+// inactive ones too). Each record is a podium in competition ranking (ex æquo share their rank number, the next rank
+// skips: 1, 1, 3): EVERY line ranked 3rd or better, so all the ex æquo of a podium rank are shown (1, 2, 2, 2…) and a
+// podium can hold more than 3 lines. Pure, no React: the page memoises topRecords() on the store's players / matches
+// and the Mixte replay result.
 
+/** The last rank on a podium: every line ranked PODIUM_SIZE or better is kept, ex æquo included. */
 export const PODIUM_SIZE = 3
 /** Matches at a position (2v2) before a player can be « Meilleur avant » / « Meilleur arrière ». */
 export const MIN_POSITION_MATCHES = 5
@@ -21,10 +23,8 @@ type Outcome = 'win' | 'loss'
 
 export type Placed<T> = { rank: number; line: T }
 export type Podium<T> = {
-  /** At most PODIUM_SIZE lines, best first. */
+  /** Every line ranked PODIUM_SIZE or better, best first: possibly more than PODIUM_SIZE lines with ex æquo. */
   places: Placed<T>[]
-  /** Lines left out of the podium that share the rank of its last line. */
-  tiedBeyond: number
 }
 
 export type PositionLine = { playerId: PlayerId; wins: number; losses: number }
@@ -49,6 +49,8 @@ export type GainLine = { matchId: MatchId; playerId: PlayerId; delta: number; pl
 export type DuoLine = { duoId: DuoId; members: DuoMembers; matches: number; wins: number; losses: number }
 /** Two opponents, the one with more wins against the other first (then by name); `wins` in the same order. */
 export type RivalryLine = { players: [PlayerId, PlayerId]; matches: number; wins: [number, number] }
+/** Two duos who faced each other in 2v2, the one with more wins against the other first (then by duo label). */
+export type DuoRivalryLine = { duos: [DuoMembers, DuoMembers]; matches: number; wins: [number, number] }
 
 export type TopRecords = {
   avant: Podium<PositionLine>
@@ -64,6 +66,7 @@ export type TopRecords = {
   played: Podium<CountLine>
   duo: Podium<DuoLine>
   rivalry: Podium<RivalryLine>
+  duoRivalry: Podium<DuoRivalryLine>
 }
 
 /** How a record sorts its lines (best first) and which neighbours are ex æquo. */
@@ -157,24 +160,22 @@ export function replayOrder(matches: Match[]): Match[] {
 // Podium
 // ---------------------------------------------------------------------------
 
-function rankAt<T>(sorted: T[], ranks: number[], index: number, tied: Ranking<T>['tied']): number {
-  if (index > 0 && tied(sorted[index - 1], sorted[index])) return ranks[index - 1]
+/** Competition rank of sorted[index], `places` holding the lines before it: an ex æquo takes its neighbour's rank. */
+function rankAt<T>(sorted: T[], places: Placed<T>[], index: number, tied: Ranking<T>['tied']): number {
+  if (index > 0 && tied(sorted[index - 1], sorted[index])) return places[index - 1].rank
   return index + 1
 }
 
-function tiedBeyond(ranks: number[]): number {
-  if (ranks.length <= PODIUM_SIZE) return 0
-  const last = ranks[PODIUM_SIZE - 1]
-  return ranks.slice(PODIUM_SIZE).filter((rank) => rank === last).length
-}
-
-/** Sorts the lines, ranks them (ex æquo share the rank of the first of them) and keeps the top PODIUM_SIZE. */
+/** Sorts the lines, ranks them (ex æquo share the rank of the first of them) and keeps every rank ≤ PODIUM_SIZE. */
 export function podium<T>(lines: T[], ranking: Ranking<T>): Podium<T> {
   const sorted = [...lines].sort(ranking.compare)
-  const ranks: number[] = []
-  for (const index of sorted.keys()) ranks.push(rankAt(sorted, ranks, index, ranking.tied))
-  const places = sorted.slice(0, PODIUM_SIZE).map((line, index) => ({ rank: ranks[index], line }))
-  return { places, tiedBeyond: tiedBeyond(ranks) }
+  const places: Placed<T>[] = []
+  for (const [index, line] of sorted.entries()) {
+    const rank = rankAt(sorted, places, index, ranking.tied)
+    if (rank > PODIUM_SIZE) break
+    places.push({ rank, line })
+  }
+  return { places }
 }
 
 // ---------------------------------------------------------------------------
@@ -414,8 +415,16 @@ function gainRanking(context: Context): Ranking<GainLine> {
 }
 
 // ---------------------------------------------------------------------------
-// Fidélité: the duo with the most 2v2 matches together, the two players who faced each other most often
+// Fidélité: the duo with the most 2v2 matches together, the two players and the two duos who faced each other most
 // ---------------------------------------------------------------------------
+
+/** Most matches first; same count → ex æquo, by `label` (the duo's or the pair's names). */
+function matchesRanking<T extends { matches: number }>(label: (line: T) => string): Ranking<T> {
+  return {
+    compare: (a, b) => b.matches - a.matches || compareNames(label(a), label(b)),
+    tied: (a, b) => a.matches === b.matches,
+  }
+}
 
 function duoLines(matches: Match[]): DuoLine[] {
   const byDuo = new Map<DuoId, DuoLine>()
@@ -434,54 +443,103 @@ function duoLines(matches: Match[]): DuoLine[] {
 
 /** Most matches together first; same count → ex æquo, by the duo's name (« A & B »). */
 function duoRanking(context: Context): Ranking<DuoLine> {
-  const label = (line: DuoLine): string => duoLabel(line.members, context.players)
-  return {
-    compare: (a, b) => b.matches - a.matches || compareNames(label(a), label(b)),
-    tied: (a, b) => a.matches === b.matches,
-  }
+  return matchesRanking((line) => duoLabel(line.members, context.players))
 }
 
-/** Head-to-head tally of two opponents; `wins` follows the order of `ids` (sorted). */
-type Faceoff = { ids: [PlayerId, PlayerId]; matches: number; wins: [number, number] }
+/** Head-to-head tally of two opponents (players or duos), sorted by key; `wins` follows the order of `sides`. */
+type Faceoff<S> = { sides: [S, S]; matches: number; wins: [number, number] }
+/** Tells the sides of a faceoff apart: a player's id, a duo's id. */
+type KeyOf<S> = (side: S) => string
 
-function faceoffs(matches: Match[]): Faceoff[] {
-  const byPair = new Map<string, Faceoff>()
+function sortedSides<S>(a: S, b: S, keyOf: KeyOf<S>): [S, S] {
+  if (keyOf(b) < keyOf(a)) return [b, a]
+  return [a, b]
+}
+
+function sideIndex<S>(faceoff: Faceoff<S>, side: S, keyOf: KeyOf<S>): number {
+  if (keyOf(faceoff.sides[0]) === keyOf(side)) return 0
+  return 1
+}
+
+/** Adds one match won by `winner` against `loser` to the tally of the pair, whichever side won. */
+function tally<S>(byPair: Map<string, Faceoff<S>>, winner: S, loser: S, keyOf: KeyOf<S>): void {
+  const sides = sortedSides(winner, loser, keyOf)
+  const pairKey = sides.map(keyOf).join(' ')
+  const faceoff = byPair.get(pairKey) ?? { sides, matches: 0, wins: [0, 0] }
+  faceoff.matches += 1
+  faceoff.wins[sideIndex(faceoff, winner, keyOf)] += 1
+  byPair.set(pairKey, faceoff)
+}
+
+const playerKey: KeyOf<PlayerId> = (id) => id
+const duoKey: KeyOf<DuoMembers> = (members) => duoId(members[0], members[1])
+
+/** Every pair of players who faced each other (1v1 and 2v2): each winner against each loser. */
+function playerFaceoffs(matches: Match[]): Faceoff<PlayerId>[] {
+  const byPair = new Map<string, Faceoff<PlayerId>>()
   for (const match of matches) {
     const [[winners], [losers]] = sidesOf(match)
     for (const winner of winners) {
-      for (const loser of losers) {
-        const ids = pairOf(winner, loser)
-        const key = ids.join('+')
-        const faceoff = byPair.get(key) ?? { ids, matches: 0, wins: [0, 0] }
-        faceoff.matches += 1
-        faceoff.wins[ids.indexOf(winner)] += 1
-        byPair.set(key, faceoff)
-      }
+      for (const loser of losers) tally(byPair, winner, loser, playerKey)
     }
   }
   return [...byPair.values()]
 }
 
-// The one with more wins against the other comes first; on a level head-to-head, alphabetical order.
-function leaderFirst(faceoff: Faceoff, context: Context): RivalryLine {
-  const [a, b] = faceoff.ids
+/** Every pair of duos who faced each other: 2v2 matches only (1v1 ignored). */
+function duoFaceoffs(matches: Match[]): Faceoff<DuoMembers>[] {
+  const byPair = new Map<string, Faceoff<DuoMembers>>()
+  for (const match of matches) {
+    const [[winners], [losers]] = sidesOf(match)
+    if (winners.length !== 2 || losers.length !== 2) continue
+    tally(byPair, pairOf(winners[0], winners[1]), pairOf(losers[0], losers[1]), duoKey)
+  }
+  return [...byPair.values()]
+}
+
+// The one with more wins against the other comes first; on a level head-to-head, alphabetical order of `label`.
+function leaderFirst<S>(faceoff: Faceoff<S>, label: (side: S) => string): Faceoff<S> {
+  const [a, b] = faceoff.sides
   const [winsA, winsB] = faceoff.wins
-  const swap = winsB > winsA || (winsB === winsA && byName(context, b, a) < 0)
-  if (swap) return { players: [b, a], matches: faceoff.matches, wins: [winsB, winsA] }
-  return { players: [a, b], matches: faceoff.matches, wins: [winsA, winsB] }
+  const swap = winsB > winsA || (winsB === winsA && compareNames(label(b), label(a)) < 0)
+  if (!swap) return faceoff
+  return { sides: [b, a], matches: faceoff.matches, wins: [winsB, winsA] }
 }
 
 function rivalryLines(matches: Match[], context: Context): RivalryLine[] {
-  return faceoffs(matches).map((faceoff) => leaderFirst(faceoff, context))
+  return playerFaceoffs(matches).map((faceoff) => {
+    const { sides, matches: count, wins } = leaderFirst(faceoff, (id) => nameOf(context, id))
+    return { players: sides, matches: count, wins }
+  })
 }
 
 /** Most matches against each other first; same count → ex æquo, by the pair's names. */
 function rivalryRanking(context: Context): Ranking<RivalryLine> {
-  const label = (line: RivalryLine): string => duoLabel(pairOf(...line.players), context.players)
-  return {
-    compare: (a, b) => b.matches - a.matches || compareNames(label(a), label(b)),
-    tied: (a, b) => a.matches === b.matches,
-  }
+  return matchesRanking((line) => duoLabel(pairOf(...line.players), context.players))
+}
+
+function duoLabelOf(context: Context, members: DuoMembers): string {
+  return duoLabel(members, context.players)
+}
+
+function duoRivalryLines(matches: Match[], context: Context): DuoRivalryLine[] {
+  return duoFaceoffs(matches).map((faceoff) => {
+    const { sides, matches: count, wins } = leaderFirst(faceoff, (members) => duoLabelOf(context, members))
+    return { duos: sides, matches: count, wins }
+  })
+}
+
+/** « A & B – C & D »: the two duo names in alphabetical order, whichever duo leads the head-to-head. */
+function duoPairLabel(context: Context, line: DuoRivalryLine): string {
+  return line.duos
+    .map((members) => duoLabelOf(context, members))
+    .sort(compareNames)
+    .join(' – ')
+}
+
+/** Most 2v2 matches duo against duo first; same count → ex æquo, by the pair's duo names. */
+function duoRivalryRanking(context: Context): Ranking<DuoRivalryLine> {
+  return matchesRanking((line) => duoPairLabel(context, line))
 }
 
 // ---------------------------------------------------------------------------
@@ -495,7 +553,7 @@ function contextOf(players: Player[], ordered: Match[]): Context {
   }
 }
 
-/** Every record of the Top stats page, over all `matches` (the Mixte history) and its replay `result`. */
+/** Every record of the Hall of Flair page, over all `matches` (the Mixte history) and its replay `result`. */
 export function topRecords(players: Player[], matches: Match[], result: ReplayResult): TopRecords {
   const ordered = replayOrder(matches)
   const context = contextOf(players, ordered)
@@ -515,5 +573,6 @@ export function topRecords(players: Player[], matches: Match[], result: ReplayRe
     played: podium(countLines(counts.played), countRanking(context)),
     duo: podium(duoLines(ordered), duoRanking(context)),
     rivalry: podium(rivalryLines(ordered, context), rivalryRanking(context)),
+    duoRivalry: podium(duoRivalryLines(ordered, context), duoRivalryRanking(context)),
   }
 }

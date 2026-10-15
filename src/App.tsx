@@ -171,7 +171,7 @@ function AppHeader({ route }: { route: Route }) {
     case 'courbes':
       return <Header title={COURBES_TITLE[tabOf(store.settings)]} back />
     case 'top':
-      return <Header title="Top stats" back />
+      return <Header title="Hall of Flair" back />
   }
 }
 

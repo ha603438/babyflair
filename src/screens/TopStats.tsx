@@ -6,7 +6,7 @@ import type { ReplayData } from './lists/context'
 import { TopStatsView } from './lists/TopStatsView'
 
 /**
- * Top stats (`#/top`, from Classement): hooks only; the body lives in lists/TopStatsView.tsx. The records are
+ * Hall of Flair (`#/top`, from Classement): hooks only; the body lives in lists/TopStatsView.tsx. The records are
  * recomputed only when the store's players or matches, or the Mixte replay result, change.
  */
 export function TopStats() {

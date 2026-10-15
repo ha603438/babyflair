@@ -1,9 +1,11 @@
-import { duoLabel } from '../../duo'
+import { duoId, duoLabel } from '../../duo'
+import type { DuoMembers } from '../../duo'
 import { fmtDayOn, fmtDaySpan, fmtDelta, fmtInt, fmtPercent, plural } from '../../format'
 import { EXPLOIT_MAX_CHANCE, MIN_POSITION_MATCHES, MIN_STREAK } from '../../records'
 import type {
   CountLine,
   DuoLine,
+  DuoRivalryLine,
   ExploitLine,
   GainLine,
   PeakLine,
@@ -17,7 +19,7 @@ import { hrefOf } from '../../router'
 import type { MatchId, Player, PlayerId } from '../../types'
 import { recordText } from './labels'
 
-// Top stats (`#/top`): the French copy of every record card and the display lines of its podium. Pure: the records
+// Hall of Flair (`#/top`): the French copy of every record card and the display lines of its podium. Pure: the records
 // come from src/records.ts, the page (TopStatsView) only lays these out. Days only, never a time of day.
 
 export type NameLink = { label: string; href: string }
@@ -45,9 +47,8 @@ export type CardView = {
   rule: string
   /** Muted line shown when nobody qualifies, with the minimum. */
   empty: string
+  /** Every entry ranked 3rd or better: all the ex æquo of a rank, sharing its number. */
   entries: EntryView[]
-  /** More ex æquo of the last entry, left out of the podium. */
-  tiedBeyond: number
 }
 
 export type SectionView = { title: string; cards: CardView[] }
@@ -62,23 +63,23 @@ const EXPLOIT_PERCENT = fmtPercent(EXPLOIT_MAX_CHANCE)
 
 export const TOP_STATS_COPY = {
   avant: {
-    title: 'Meilleur avant',
-    rule: `Taux de victoire à l’avant, ${MIN_POSITION_MATCHES} matchs minimum`,
+    title: 'Le Sniper',
+    rule: `Meilleur taux de victoire à l’avant, ${MIN_POSITION_MATCHES} matchs minimum`,
     empty: `Pas encore assez de matchs${NNBSP}: ${MIN_POSITION_MATCHES} minimum à ce poste`,
   },
   arriere: {
-    title: 'Meilleur arrière',
-    rule: `Taux de victoire à l’arrière, ${MIN_POSITION_MATCHES} matchs minimum`,
+    title: 'Le Mur',
+    rule: `Meilleur taux de victoire à l’arrière, ${MIN_POSITION_MATCHES} matchs minimum`,
     empty: `Pas encore assez de matchs${NNBSP}: ${MIN_POSITION_MATCHES} minimum à ce poste`,
   },
   winStreak: {
-    title: 'Plus longue série de victoires',
-    rule: 'Victoires d’affilée, tous matchs confondus',
+    title: 'Inarrêtable',
+    rule: 'La plus longue série de victoires, tous matchs confondus',
     empty: `Pas encore de série${NNBSP}: ${MIN_STREAK} victoires d’affilée minimum`,
   },
   lossStreak: {
-    title: 'Plus longue série de défaites',
-    rule: 'Défaites d’affilée, tous matchs confondus',
+    title: 'Le Chat noir',
+    rule: 'La plus longue série de défaites, tous matchs confondus',
     empty: `Pas encore de série${NNBSP}: ${MIN_STREAK} défaites d’affilée minimum`,
   },
   fannyGiven: {
@@ -92,39 +93,44 @@ export const TOP_STATS_COPY = {
     empty: `Pas encore de fanny${NNBSP}: 1 minimum`,
   },
   comebacks: {
-    title: 'Roi du comeback',
-    rule: 'Le plus de victoires 5-4 après avoir été mené 0-4',
+    title: 'Le Phénix',
+    rule: `Le plus de comebacks${NNBSP}: gagner 5-4 après avoir été mené 0-4`,
     empty: `Pas encore de comeback${NNBSP}: 1 minimum`,
   },
   peak: {
-    title: 'Record de points',
+    title: 'Altitude record',
     rule: 'Le plus haut total de points jamais atteint',
     empty: `Pas encore de match${NNBSP}: 1 minimum`,
   },
   exploit: {
-    title: 'Plus gros exploit',
+    title: 'Le Hold-up',
     rule: 'La victoire qui avait le moins de chances, d’après les points',
     empty: `Pas encore d’exploit${NNBSP}: il faut gagner avec moins de ${EXPLOIT_PERCENT} de chances`,
   },
   gain: {
-    title: 'Plus gros gain en un match',
+    title: 'Le Jackpot',
     rule: 'Le plus de points pris en un seul match',
     empty: `Pas encore de match${NNBSP}: 1 minimum`,
   },
   played: {
-    title: 'Le plus assidu',
+    title: 'Accro au baby',
     rule: 'Le plus de matchs joués',
     empty: `Pas encore de match${NNBSP}: 1 minimum`,
   },
   duo: {
-    title: 'Duo inséparable',
+    title: 'Les Inséparables',
     rule: 'Le plus de matchs ensemble en 2 contre 2',
     empty: `Pas encore de match en 2 contre 2${NNBSP}: 1 minimum`,
   },
   rivalry: {
-    title: 'Plus grosse rivalité',
+    title: 'Meilleurs ennemis',
     rule: 'Le plus de matchs l’un contre l’autre',
     empty: `Pas encore de match${NNBSP}: 1 minimum`,
+  },
+  duoRivalry: {
+    title: 'Le Clasico',
+    rule: 'Le plus de matchs duo contre duo',
+    empty: `Pas encore de match en 2 contre 2${NNBSP}: 1 minimum`,
   },
 } as const satisfies Record<keyof TopRecords, Copy>
 
@@ -134,6 +140,11 @@ export const TOP_STATS_COPY = {
 
 function playerLink(players: Players, id: PlayerId): NameLink {
   return { label: players.get(id)?.name ?? '?', href: hrefOf({ name: 'joueur', id }) }
+}
+
+/** « A & B », to the duo page. */
+function duoLink(players: Players, members: DuoMembers): NameLink {
+  return { label: duoLabel(members, players), href: hrefOf({ name: 'duo', id: duoId(members[0], members[1]) }) }
 }
 
 const BLANK: Pick<EntryParts, 'joiner' | 'detail' | 'ongoing'> = { joiner: '', detail: null, ongoing: false }
@@ -190,15 +201,22 @@ function gainEntry(players: Players, line: GainLine, now: Date): EntryParts {
 }
 
 function duoEntry(players: Players, line: DuoLine): EntryParts {
-  const href = hrefOf({ name: 'duo', id: line.duoId })
-  const names = [{ label: duoLabel(line.members, players), href }]
-  return { ...BLANK, names, href, value: plural(line.matches, 'match'), detail: recordText(line) }
+  const link = duoLink(players, line.members)
+  return { ...BLANK, names: [link], href: link.href, value: plural(line.matches, 'match'), detail: recordText(line) }
+}
+
+/** Two opponents (players or duos), each name its own link: « 6 matchs · 4–2 », the leader first. */
+function opponentsEntry(names: NameLink[], matches: number, wins: [number, number]): EntryParts {
+  const detail = `${fmtInt(wins[0])}–${fmtInt(wins[1])}`
+  return { ...BLANK, names, joiner: ' – ', href: null, value: plural(matches, 'match'), detail }
 }
 
 function rivalryEntry(players: Players, line: RivalryLine): EntryParts {
-  const names = line.players.map((id) => playerLink(players, id))
-  const detail = `${fmtInt(line.wins[0])}–${fmtInt(line.wins[1])}`
-  return { ...BLANK, names, joiner: ' – ', href: null, value: plural(line.matches, 'match'), detail }
+  return opponentsEntry(line.players.map((id) => playerLink(players, id)), line.matches, line.wins)
+}
+
+function duoRivalryEntry(players: Players, line: DuoRivalryLine): EntryParts {
+  return opponentsEntry(line.duos.map((members) => duoLink(players, members)), line.matches, line.wins)
 }
 
 // ---------------------------------------------------------------------------
@@ -207,7 +225,7 @@ function rivalryEntry(players: Players, line: RivalryLine): EntryParts {
 
 function cardOf<T>(key: keyof TopRecords, podium: Podium<T>, entryOf: (line: T) => EntryParts): CardView {
   const entries = podium.places.map(({ rank, line }) => ({ rank, ...entryOf(line) }))
-  return { key, ...TOP_STATS_COPY[key], entries, tiedBeyond: podium.tiedBeyond }
+  return { key, ...TOP_STATS_COPY[key], entries }
 }
 
 /** The cards of the page, grouped under their section headers. `now` only decides whether a date shows its year. */
@@ -216,7 +234,7 @@ export function topStatsSections(records: TopRecords, players: Players, now: Dat
     countEntry(players, line, singular, pluralForm)
   return [
     {
-      title: 'Postes',
+      title: 'Les spécialistes',
       cards: [
         cardOf('avant', records.avant, (line) => positionEntry(players, line)),
         cardOf('arriere', records.arriere, (line) => positionEntry(players, line)),
@@ -238,7 +256,7 @@ export function topStatsSections(records: TopRecords, players: Players, now: Dat
       ],
     },
     {
-      title: 'Points',
+      title: 'Coups d’éclat',
       cards: [
         cardOf('peak', records.peak, (line) => peakEntry(players, line, now)),
         cardOf('exploit', records.exploit, (line) => exploitEntry(players, line, now)),
@@ -246,11 +264,12 @@ export function topStatsSections(records: TopRecords, players: Players, now: Dat
       ],
     },
     {
-      title: 'Fidélité',
+      title: 'Fidélités et rivalités',
       cards: [
         cardOf('played', records.played, count('match')),
         cardOf('duo', records.duo, (line) => duoEntry(players, line)),
         cardOf('rivalry', records.rivalry, (line) => rivalryEntry(players, line)),
+        cardOf('duoRivalry', records.duoRivalry, (line) => duoRivalryEntry(players, line)),
       ],
     },
   ]

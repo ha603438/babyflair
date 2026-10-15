@@ -132,17 +132,17 @@ function CurvesLink({ matchCount }: { matchCount: number }) {
   )
 }
 
-/** « 🏅 Top stats » → `#/top`: all-time records over every match (Mixte), whatever the selected tab. */
+/** « 🏅 Hall of Flair » → `#/top`: all-time records over every match (Mixte), whatever the selected tab. */
 function TopStatsLink({ matchCount }: { matchCount: number }) {
   if (matchCount === 0) return null
   return (
     <a className="call-propose__link" href={hrefOf({ name: 'top' })}>
-      🏅 Top stats
+      🏅 Hall of Flair
     </a>
   )
 }
 
-/** `matchCount`: the selected tab's matches (« 📈 Courbes »); `allMatchCount`: every match (« 🏅 Top stats »). */
+/** `matchCount`: the selected tab's matches (« 📈 Courbes »); `allMatchCount`: every match (« 🏅 Hall of Flair »). */
 type LinksProps = {
   onPropose: (() => void) | undefined
   playerCount: number

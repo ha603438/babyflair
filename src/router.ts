@@ -16,7 +16,7 @@ export type Route =
   | { name: 'nouveautes' }
   /** Classement › « 📈 Courbes »: rating curves of every player. */
   | { name: 'courbes' }
-  /** Classement › « 🏅 Top stats »: all-time records (src/records.ts). */
+  /** Classement › « 🏅 Hall of Flair »: all-time records (src/records.ts). */
   | { name: 'top' }
   /** Réglages › Journal des modifications (mode partagé). */
   | { name: 'journal' }
