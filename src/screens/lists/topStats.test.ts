@@ -4,8 +4,10 @@ import { renderToStaticMarkup, renderToString } from 'react-dom/server'
 import App from '../../App'
 import { replay } from '../../rating'
 import { topRecords } from '../../records'
-import type { Match, Player, RankingTab, Store } from '../../types'
+import type { Match, Player, PlayerId, RankingTab, Store, Target } from '../../types'
 import { TopStatsView } from './TopStatsView'
+import { TOP_STATS_COPY, topStatsSections } from './topStatsCards'
+import type { CardView } from './topStatsCards'
 
 // Server-rendered checks of the Hall of Flair page (`#/top`, Stats tab) and of its route (vitest runs in node, no DOM).
 // The records themselves are unit-tested in src/records.test.ts.
@@ -49,6 +51,77 @@ function cardOf(html: string, title: string): string {
   const card = html.split('<section class="card record">').find((part) => part.includes(`>${title}</h3>`))
   if (card === undefined) throw new Error(`no card « ${title} »`)
   return card.slice(0, card.indexOf('</section>'))
+}
+
+function cardsOf(matches: Match[], players: Player[] = PLAYERS): CardView[] {
+  const records = topRecords(players, matches, replay(players, matches, { now: NOW }))
+  const byId = new Map(players.map((player) => [player.id, player]))
+  return topStatsSections(records, byId, NOW).flatMap((section) => section.cards)
+}
+
+/** [rank, number of entries] of each group of the card titled `title`. */
+function shapeOf(cards: CardView[], title: string): [number, number][] {
+  const card = cards.find((candidate) => candidate.title === title)
+  if (card === undefined) throw new Error(`no card « ${title} »`)
+  return card.groups.map((group) => [group.rank, group.entries.length])
+}
+
+/** The podium lines (one per rank) of a card's HTML. */
+function itemsOf(card: string): string[] {
+  return card.split('<li class="').slice(1)
+}
+
+function classesOf(html: string, base: string): string[] {
+  return [...html.matchAll(new RegExp(`class="(${base}(?: [^"]*)?)"`, 'g'))].map((m) => m[1])
+}
+
+/** Park–Miller (exact in doubles): a deterministic `next(n)` in [0, n). */
+function randomOf(seed: number): (n: number) => number {
+  let state = seed
+  return (n) => {
+    state = (state * 48271) % 2147483647
+    return Math.floor((state / 2147483647) * n)
+  }
+}
+
+function shuffled(ids: PlayerId[], next: (n: number) => number): PlayerId[] {
+  const out = [...ids]
+  for (let i = out.length - 1; i > 0; i--) {
+    const j = next(i + 1)
+    const kept = out[i]
+    out[i] = out[j]
+    out[j] = kept
+  }
+  return out
+}
+
+function targetOf(next: (n: number) => number): Target {
+  if (next(3) === 0) return 5
+  return 10
+}
+
+/** Team A wins on a coin toss; a 5-4 in 5 is a comeback one time in two. */
+function scoresOf(target: Target, next: (n: number) => number): Pick<Match, 'scoreA' | 'scoreB' | 'comeback'> {
+  const loser = next(target)
+  const comeback = target === 5 && loser === 4 && next(2) === 0
+  if (next(2) === 0) return { scoreA: target, scoreB: loser, comeback }
+  return { scoreA: loser, scoreB: target, comeback }
+}
+
+/** Deterministic random matches among `roster` (shuffled each time), a 2v2 when `next(4) < duoShare`. */
+function generated(count: number, seed: number, roster: PlayerId[], duoShare: number): Match[] {
+  const next = randomOf(seed)
+  const matches: Match[] = []
+  for (let seq = 1; seq <= count; seq++) {
+    const ids = shuffled(roster, next)
+    const size = 1 + Number(next(4) < duoShare)
+    const target = targetOf(next)
+    const at = new Date(2026, 8, 1 + Math.floor(seq / 3), 12, seq).toISOString()
+    const teams = { teamA: ids.slice(0, size), teamB: ids.slice(size, 2 * size) }
+    const base = { id: `g${seq}`, seq, playedAt: at, createdAt: at, updatedAt: at, target }
+    matches.push({ ...base, ...teams, ...scoresOf(target, next) })
+  }
+  return matches
 }
 
 function storeOf(matches: Match[], classementTab?: RankingTab): Store {
@@ -118,36 +191,122 @@ describe('Hall of Flair page', () => {
     )
   })
 
-  it('renders the podium: 1st emphasised, ex æquo sharing the medal, days only and « en cours »', () => {
-    const streaks = cardOf(renderPage(MATCHES), 'Inarrêtable')
-    expect(streaks).toContain(
-      '<a class="podium-entry podium-entry--first podium-entry--link" href="#/joueurs/alice">' +
-        '<span class="badge badge--medal badge--gold">1</span>',
+  it('renders a lone 1st emphasised and a lone 2nd on a small line, the value on its right', () => {
+    const fanny = cardOf(renderPage(MATCHES), 'Abonné au fanny')
+    // Chloé 2 fannys conceded, Dan 1: no ex æquo, the layout of before.
+    expect(fanny).toContain(
+      '<li class="podium-item podium-item--first"><a class="podium-entry podium-entry--first podium-entry--link" ' +
+        'href="#/joueurs/chloe"><span class="badge badge--medal badge--gold">1</span><span class="podium-body">' +
+        '<span class="podium-name">Chloé</span><span class="podium-meta"><span class="podium-value">2 fanny encaissés' +
+        '</span></span></span></a></li>',
     )
-    expect(streaks).toContain('<span class="podium-name">Alice</span>')
-    expect(streaks).toContain('<span class="podium-value">2 victoires</span>')
-    expect(streaks).toContain(`<span class="podium-detail">le 9${NBSP}oct.</span>`)
-    expect(streaks).toContain('<span class="pill pill--ongoing">en cours</span>')
-    // Bob, ex æquo on a small line: same medal, his run's days, not running any more.
-    expect(streaks.match(/badge--gold">1</g)).toHaveLength(2)
-    expect(streaks).toContain('<a class="podium-entry podium-entry--link" href="#/joueurs/bob">')
-    expect(streaks).toContain(`du 3 au 5${NBSP}oct.`)
+    expect(fanny).toContain(
+      '<li class="podium-item"><a class="podium-entry podium-entry--link" href="#/joueurs/dan">' +
+        '<span class="badge badge--medal badge--silver">2</span><span class="podium-body">' +
+        '<span class="podium-name">Dan</span></span><span class="podium-value">1 fanny encaissé</span></a></li>',
+    )
+    expect(fanny).not.toContain('podium-tie')
+    expect(fanny).not.toContain('ex æquo')
+  })
+
+  it('puts ex æquo 1sts side by side, all emphasised alike, the shared value once under them', () => {
+    const streaks = cardOf(renderPage(MATCHES), 'Inarrêtable')
+    // Alice and Bob, 2 wins in a row each: one gold medal (hidden from screen readers, read as « 1er ex æquo : »).
+    expect(streaks).toContain(
+      `<li class="podium-item podium-item--first podium-tie"><span class="sr-only">1er ex æquo${NNBSP}: </span>` +
+        '<span class="podium-medal" aria-hidden="true"><span class="badge badge--medal badge--gold">1</span></span>' +
+        '<div class="podium-tie-body"><div class="podium-cells">',
+    )
+    expect(streaks.match(/badge--medal/g)).toHaveLength(1)
+    // Each cell its own link to the profile, its own days, the « en cours » pill only on Alice's running series.
+    expect(streaks).toContain(
+      '<a class="podium-cell podium-entry--link" href="#/joueurs/alice"><span class="podium-name">Alice</span>' +
+        `<span class="podium-meta"><span class="podium-detail">le 9${NBSP}oct.</span>` +
+        '<span class="pill pill--ongoing">en cours</span></span></a>',
+    )
+    expect(streaks).toContain(
+      '<a class="podium-cell podium-entry--link" href="#/joueurs/bob"><span class="podium-name">Bob</span>' +
+        `<span class="podium-meta"><span class="podium-detail">du 3 au 5${NBSP}oct.</span></span></a>`,
+    )
     expect(streaks.match(/en cours/g)).toHaveLength(1)
+    // The value once, after the cells; nobody bigger than the other.
+    expect(streaks).toContain('</div><span class="podium-value">2 victoires</span></div></li>')
+    expect(streaks.match(/2 victoires/g)).toHaveLength(1)
+    expect(streaks).not.toContain('podium-entry--first')
+    expect(new Set(classesOf(streaks, 'podium-cell'))).toEqual(new Set(['podium-cell podium-entry--link']))
+  })
+
+  it('puts ex æquo 2nds and 3rds side by side with one medal, the shared value once', () => {
+    const html = renderPage(MATCHES)
+    const played = cardOf(html, 'Accro au baby')
+    // Alice and Chloé 5 matches (1st ex æquo), Bob and Dan 4 (3rd ex æquo).
+    const [first, third] = itemsOf(played)
+    expect(first).toContain(`<span class="sr-only">1er ex æquo${NNBSP}: </span>`)
+    expect(third).toMatch(/^podium-item podium-tie">/)
+    expect(third).toContain(`<span class="sr-only">3e ex æquo${NNBSP}: </span>`)
+    expect(third.match(/badge--medal/g)).toHaveLength(1)
+    expect(third).toContain('badge--bronze">3<')
+    for (const [id, name] of [
+      ['bob', 'Bob'],
+      ['dan', 'Dan'],
+    ]) {
+      const cell = `<a class="podium-cell podium-entry--link" href="#/joueurs/${id}">`
+      expect(third).toContain(`${cell}<span class="podium-name">${name}</span></a>`)
+    }
+    expect(third.match(/4 matchs/g)).toHaveLength(1)
+    const altitude = itemsOf(cardOf(html, 'Altitude record'))
+    expect(altitude.map((item) => item.match(/podium-cell"|podium-cell /g)?.length ?? 0)).toEqual([0, 0, 2])
+  })
+
+  it('wraps 3+ ex æquo onto more rows of the same grid, a rivalry keeping one link per opponent', () => {
+    const rivalry = cardOf(renderPage(MATCHES), 'Meilleurs ennemis')
+    // Alice – Chloé 5 matches alone at the top, then three pairs at 4 matches, all 2nd.
+    const [first, second] = itemsOf(rivalry)
+    expect(first).not.toContain('podium-tie')
+    expect(second).toContain(`<span class="sr-only">2e ex æquo${NNBSP}: </span>`)
+    expect(second.match(/badge--medal/g)).toHaveLength(1)
+    expect(second).toContain('badge--silver">2<')
+    expect(classesOf(second, 'podium-cell')).toEqual(['podium-cell', 'podium-cell', 'podium-cell'])
+    expect(second).toContain(
+      '<div class="podium-cell"><span class="podium-name podium-name--links"><a href="#/joueurs/bob">Bob</a> – ' +
+        '<a href="#/joueurs/dan">Dan</a></span><span class="podium-meta podium-meta--line">' +
+        '<span class="podium-detail">3–1</span></span></div>',
+    )
+    expect(second.match(/4 matchs/g)).toHaveLength(1)
+  })
+
+  it('gives every line one medal and one value, and every ex æquo of a rank the same classes', () => {
+    const html = renderPage(MATCHES)
+    const items = itemsOf(html)
+    expect(items.length).toBeGreaterThan(10)
+    for (const item of items) {
+      expect(item.match(/badge--medal/g)).toHaveLength(1)
+      expect(item.match(/class="podium-value"/g)).toHaveLength(1)
+      if (!item.includes('podium-tie')) continue
+      expect(new Set(classesOf(item, 'podium-cell')).size).toBe(1)
+      expect(new Set(classesOf(item, 'podium-name')).size).toBe(1)
+      expect(new Set(classesOf(item, 'podium-meta')).size).toBeLessThanOrEqual(1)
+      expect(item).not.toContain('podium-entry--first')
+    }
   })
 
   it('links duo records to the duo page and match records to the match', () => {
     const html = renderPage(MATCHES)
     const duo = cardOf(html, 'Un flair de famille')
-    expect(duo).toContain('href="#/duo/alice+bob"')
+    // Both duos 4 matches together, ex æquo: each cell links to its duo page.
+    expect(duo).toContain('<a class="podium-cell podium-entry--link" href="#/duo/alice+bob">')
     expect(duo).toContain('<span class="podium-name">Alice &amp; Bob</span>')
-    expect(duo).toContain('href="#/duo/chloe+dan"')
+    expect(duo).toContain('<a class="podium-cell podium-entry--link" href="#/duo/chloe+dan">')
     expect(duo).toContain('<span class="podium-value">4 matchs</span>')
     expect(duo).toContain('3 V · 1 D')
     const exploit = cardOf(html, 'Le Hold-up')
     expect(exploit).toContain('href="#/historique/m3"')
     expect(exploit).toContain('<span class="podium-name">Chloé &amp; Dan</span>')
     expect(exploit).toMatch(new RegExp(`<span class="podium-value">\\d+${NNBSP}% de chances</span>`))
-    expect(cardOf(html, 'Le Jackpot')).toMatch(/href="#\/historique\/m\d"/)
+    // Alice and Bob took the same points in one match, ex æquo: each cell links to that match.
+    const jackpot = itemsOf(cardOf(html, 'Le Jackpot'))
+    expect(jackpot[0].match(/<a class="podium-cell podium-entry--link" href="#\/historique\/m\d">/g)).toHaveLength(2)
+    expect(jackpot[1]).toMatch(/<a class="podium-entry podium-entry--link" href="#\/historique\/m\d">/)
     expect(cardOf(html, 'Altitude record')).toMatch(/href="#\/joueurs\/alice"[^]*\d points</)
   })
 
@@ -179,15 +338,18 @@ describe('Hall of Flair page', () => {
     expect(rivalry.match(/class="podium-item/g)).toHaveLength(1)
   })
 
-  it('shows every ex æquo of a podium rank, with the same medal, and no « autre ex æquo » line', () => {
+  it('shows every ex æquo of a podium rank under one medal, and no « autre ex æquo » line', () => {
     const played = cardOf(renderPage(MATCHES), 'Accro au baby')
     // Alice and Chloé 5 matches, Bob and Dan 4: both 1st, then both 3rd.
-    expect(played.match(/badge--gold">1</g)).toHaveLength(2)
-    expect(played.match(/badge--bronze">3</g)).toHaveLength(2)
+    expect(played.match(/badge--gold">1</g)).toHaveLength(1)
+    expect(played.match(/badge--bronze">3</g)).toHaveLength(1)
+    expect(played).toContain('href="#/joueurs/alice"')
+    expect(played).toContain('href="#/joueurs/chloe"')
     expect(played).toContain('href="#/joueurs/bob"')
     expect(played).toContain('href="#/joueurs/dan"')
-    expect(played.match(/class="podium-item/g)).toHaveLength(4)
-    expect(renderPage(MATCHES)).not.toContain('ex æquo')
+    expect(played.match(/class="podium-item/g)).toHaveLength(2)
+    expect(played.match(/class="podium-cell[ "]/g)).toHaveLength(4)
+    expect(renderPage(MATCHES)).not.toContain('autre ex æquo')
   })
 
   it('never shows a time of day', () => {
@@ -200,6 +362,54 @@ describe('Hall of Flair page', () => {
     const html = renderPage([])
     expect(html).toContain('Pas encore de records')
     expect(html).not.toContain('class="card record"')
+  })
+})
+
+describe('Hall of Flair groups', () => {
+  it('groups the entries by rank: lone entries, ex æquo at ranks 1, 2 and 3, a 3-way tie', () => {
+    const cards = cardsOf(MATCHES)
+    expect(shapeOf(cards, 'Abonné au fanny')).toEqual([
+      [1, 1],
+      [2, 1],
+    ])
+    expect(shapeOf(cards, 'Inarrêtable')).toEqual([[1, 2]])
+    expect(shapeOf(cards, 'Meilleurs ennemis')).toEqual([
+      [1, 1],
+      [2, 3],
+    ])
+    expect(shapeOf(cards, 'Accro au baby')).toEqual([
+      [1, 2],
+      [3, 2],
+    ])
+    expect(shapeOf(cards, 'Altitude record')).toEqual([
+      [1, 1],
+      [2, 1],
+      [3, 2],
+    ])
+    expect(shapeOf(cards, 'Le Sniper')).toEqual([])
+  })
+
+  it('shares one value per group: every record ties on its displayed figure', () => {
+    // The page's matches, then 4 players always in 2v2 (positions, duo rivalries) and 6 players mixing 1v1 and 2v2:
+    // every record gets ex æquo somewhere, and each ex æquo must show exactly its group's value.
+    const roster4: PlayerId[] = ['alice', 'bob', 'chloe', 'dan']
+    const roster6 = [...roster4, 'eve', 'fred']
+    const players6 = [...PLAYERS, { id: 'fred', name: 'Fred', isGuest: false, createdAt: '2026-09-01T10:00:00.000Z' }]
+    const datasets: [Match[], Player[]][] = [[MATCHES, PLAYERS]]
+    for (const seed of [1, 2]) {
+      for (const count of [8, 10, 15, 20]) datasets.push([generated(count, seed, roster4, 4), PLAYERS])
+      datasets.push([generated(30, seed, roster6, 3), players6])
+    }
+    const tiedRecords = new Set<string>()
+    for (const [matches, players] of datasets) {
+      for (const card of cardsOf(matches, players)) {
+        for (const group of card.groups) {
+          expect(group.entries.map((entry) => entry.value)).toEqual(group.entries.map(() => group.value))
+          if (group.entries.length > 1) tiedRecords.add(card.key)
+        }
+      }
+    }
+    expect([...tiedRecords].sort()).toEqual(Object.keys(TOP_STATS_COPY).sort())
   })
 })
 

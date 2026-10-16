@@ -1,7 +1,8 @@
 /*
- * screen-top.css — Hall of Flair (#/top): record cards under the section headers, each with its rule and a mini podium
- * (first entry slightly emphasised, the others, ex æquo included, on small lines). Medal circles and pills come from
- * lists.css, cards from base.css; colours are tokens only, so light and dark both work.
+ * screen-top.css — Hall of Flair (#/top): record cards under the section headers, each with its rule and a mini podium,
+ * one medal per rank (a lone 1st slightly emphasised, a lone 2nd / 3rd on a small line, the ex æquo of a rank side by
+ * side in a 2-column grid, all the same size, their shared value once). Medal circles and pills come from lists.css,
+ * cards and .sr-only from base.css; colours are tokens only, so light and dark both work.
  */
 
 .top-stats__intro {
@@ -55,8 +56,8 @@
   margin-top: var(--s1);
 }
 
-/* Medal column, then name (+ detail), then the value. 44 px tap target; a pressed link bleeds 8 px into the card
-   padding so its background does not touch the text. */
+/* A lone entry: medal column, then name (+ detail), then the value. 44 px tap target; a pressed link bleeds 8 px into
+   the card padding so its background does not touch the text. */
 .podium-entry {
   display: grid;
   grid-template-columns: 28px minmax(0, 1fr) auto;
@@ -78,20 +79,21 @@
   justify-self: center;
 }
 
-/* First entry: a touch under the 28 px list medal, in step with its 18 px name. */
+/* 1st: a touch under the 28 px list medal, in step with its 18 px name. */
 .podium-item--first .badge--medal {
   width: 26px;
   height: 26px;
   font-size: 14px;
 }
 
-/* The other entries: smaller medals, centred in the same column as the first one. */
+/* 2nd and 3rd: smaller medals, centred in the same column as the 1st. */
 .podium-item:not(.podium-item--first) .badge--medal {
   width: 22px;
   height: 22px;
   font-size: var(--fs-micro);
 }
 
+/* Any pressable part of the podium: a whole line, or one ex æquo cell. */
 .podium-entry--link {
   user-select: none;
   -webkit-user-select: none;
@@ -109,6 +111,70 @@
   min-width: 0;
 }
 
+/* ---------- ex æquo ---------- */
+/* The same medal column and 8 px bleed as a lone entry; the cells and their shared value fill the rest. */
+.podium-tie {
+  display: grid;
+  grid-template-columns: 28px minmax(0, 1fr);
+  align-items: center;
+  column-gap: var(--s3);
+  margin-inline: calc(-1 * var(--s2));
+  padding-inline: var(--s2);
+}
+
+.podium-item--first.podium-tie {
+  padding-block: var(--s1) var(--s2);
+}
+
+.podium-medal {
+  display: flex;
+  justify-content: center;
+}
+
+/* 2nd / 3rd: the value on the right of the cells, centred like a lone line's; when the names at full length and the
+   value do not fit on one line (long names, « 3 fanny encaissés »), the value wraps under the cells, still on the
+   right, so the names are never cut for it. */
+.podium-tie-body {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  column-gap: var(--s3);
+  min-width: 0;
+}
+
+/* Two cells per row, 3+ ex æquo wrapping onto more rows. The grid bleeds 8 px on both sides: the names line up with a
+   lone entry's while a pressed cell keeps its padding around the text. */
+.podium-cells {
+  flex: 1 1 auto;
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  column-gap: var(--s2);
+  min-width: 0;
+  margin-inline: calc(-1 * var(--s2));
+}
+
+/* One ex æquo: its name (ellipsized, a rivalry wrapping at its « – ») over its detail; a 44 px link of its own. */
+.podium-cell {
+  display: flex;
+  flex-direction: column;
+  justify-content: center;
+  min-width: 0;
+  min-height: 44px;
+  padding: var(--s1) var(--s2);
+  border-radius: var(--r-sm);
+}
+
+.podium-tie .podium-value {
+  margin-left: auto;
+}
+
+/* 1st: the shared value always on its own line under the cells, emphasised like a lone 1st's. */
+.podium-item--first.podium-tie .podium-value {
+  flex-basis: 100%;
+  margin-left: 0;
+}
+
+/* ---------- names, values, details ---------- */
 .podium-name {
   overflow: hidden;
   text-overflow: ellipsis;
@@ -118,8 +184,9 @@
   line-height: 1.3;
 }
 
-/* First entry: 18 px name over a 16 px value, a subtle step above the 15 px lines below. */
-.podium-entry--first .podium-name {
+/* 1st (lone or ex æquo): 18 px names over a 16 px value, a subtle step above the 15 px lines below. */
+.podium-entry--first .podium-name,
+.podium-item--first .podium-cell .podium-name {
   font-size: 18px;
   font-weight: 700;
   line-height: 1.3;
@@ -149,7 +216,8 @@
   white-space: nowrap;
 }
 
-/* « 75 % · 6 V · 2 D » under the 1st name; the date span and « en cours » under the others. */
+/* « 75 % · 6 V · 2 D » under a lone 1st's name, the detail alone under an ex æquo 1st's; the date span and
+   « en cours » under the others. */
 .podium-meta {
   display: flex;
   flex-wrap: wrap;
@@ -163,7 +231,8 @@
   font-variant-numeric: tabular-nums;
 }
 
-.podium-entry--first .podium-value {
+.podium-entry--first .podium-value,
+.podium-item--first.podium-tie .podium-value {
   font-size: var(--fs-body);
   font-weight: 700;
   color: var(--text);

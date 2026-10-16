@@ -1,6 +1,6 @@
 import { duoId, duoLabel } from '../../duo'
 import type { DuoMembers } from '../../duo'
-import { fmtDayOn, fmtDaySpan, fmtDelta, fmtInt, fmtPercent, plural } from '../../format'
+import { fmtDayOn, fmtDaySpan, fmtDelta, fmtInt, fmtOrdinal, fmtPercent, plural } from '../../format'
 import { EXPLOIT_MAX_CHANCE, MIN_POSITION_MATCHES, MIN_STREAK } from '../../records'
 import type {
   CountLine,
@@ -25,7 +25,6 @@ import { recordText } from './labels'
 export type NameLink = { label: string; href: string }
 
 export type EntryView = {
-  rank: number
   /** The names shown, each with its own page (player, or duo for a duo record). */
   names: NameLink[]
   /** « & » between teammates, « – » between opponents. */
@@ -40,6 +39,14 @@ export type EntryView = {
   ongoing: boolean
 }
 
+/** One rank of a podium: its entry, or all its ex æquo (shown side by side, the same size). */
+export type GroupView = {
+  rank: number
+  /** The figure of the rank, shown once: every record ties on its displayed figure, so all its entries share it. */
+  value: string
+  entries: EntryView[]
+}
+
 export type CardView = {
   key: string
   title: string
@@ -47,14 +54,13 @@ export type CardView = {
   rule: string
   /** Muted line shown when nobody qualifies, with the minimum. */
   empty: string
-  /** Every entry ranked 3rd or better: all the ex æquo of a rank, sharing its number. */
-  entries: EntryView[]
+  /** Ranks 1 to 3 in order (competition ranking: 1, 1, 3), each with every ex æquo of that rank. */
+  groups: GroupView[]
 }
 
 export type SectionView = { title: string; cards: CardView[] }
 
 type Copy = Pick<CardView, 'title' | 'rule' | 'empty'>
-type EntryParts = Omit<EntryView, 'rank'>
 type Players = ReadonlyMap<PlayerId, Player>
 
 /** U+202F before « : », like the narrow no-break spaces of src/format.ts. */
@@ -152,21 +158,21 @@ function duoLink(players: Players, members: DuoMembers): NameLink {
   return { label: duoLabel(members, players), href: hrefOf({ name: 'duo', id: duoId(members[0], members[1]) }) }
 }
 
-const BLANK: Pick<EntryParts, 'joiner' | 'detail' | 'ongoing'> = { joiner: '', detail: null, ongoing: false }
+const BLANK: Pick<EntryView, 'joiner' | 'detail' | 'ongoing'> = { joiner: '', detail: null, ongoing: false }
 
 /** One player, the entry linking to the profile. */
-function playerEntry(players: Players, id: PlayerId, value: string, detail: string | null = null): EntryParts {
+function playerEntry(players: Players, id: PlayerId, value: string, detail: string | null = null): EntryView {
   const link = playerLink(players, id)
   return { ...BLANK, names: [link], href: link.href, value, detail }
 }
 
 /** The player(s) of one match (names in alphabetical order), the entry linking to the match. */
-function matchEntry(players: Players, matchId: MatchId, ids: PlayerId[], value: string, detail: string): EntryParts {
+function matchEntry(players: Players, matchId: MatchId, ids: PlayerId[], value: string, detail: string): EntryView {
   const names = ids.map((id) => playerLink(players, id)).sort((a, b) => a.label.localeCompare(b.label, 'fr'))
   return { ...BLANK, names, joiner: ' & ', href: hrefOf({ name: 'match-detail', id: matchId }), value, detail }
 }
 
-function positionEntry(players: Players, line: PositionLine): EntryParts {
+function positionEntry(players: Players, line: PositionLine): EntryView {
   return playerEntry(players, line.playerId, fmtPercent(line.wins / (line.wins + line.losses)), recordText(line))
 }
 
@@ -175,12 +181,12 @@ function streakNoun(line: StreakLine): string {
   return 'défaite'
 }
 
-function streakEntry(players: Players, line: StreakLine, now: Date): EntryParts {
+function streakEntry(players: Players, line: StreakLine, now: Date): EntryView {
   const entry = playerEntry(players, line.playerId, plural(line.length, streakNoun(line)))
   return { ...entry, detail: fmtDaySpan(line.from, line.to, now), ongoing: line.ongoing }
 }
 
-function countEntry(players: Players, line: CountLine, singular: string, pluralForm?: string): EntryParts {
+function countEntry(players: Players, line: CountLine, singular: string, pluralForm?: string): EntryView {
   return playerEntry(players, line.playerId, plural(line.count, singular, pluralForm))
 }
 
@@ -190,37 +196,37 @@ function pointsWord(n: number): string {
   return 'points'
 }
 
-function peakEntry(players: Players, line: PeakLine, now: Date): EntryParts {
+function peakEntry(players: Players, line: PeakLine, now: Date): EntryView {
   const value = `${fmtInt(line.rating)} ${pointsWord(line.rating)}`
   return playerEntry(players, line.playerId, value, fmtDayOn(line.playedAt, now))
 }
 
-function exploitEntry(players: Players, line: ExploitLine, now: Date): EntryParts {
+function exploitEntry(players: Players, line: ExploitLine, now: Date): EntryView {
   const value = `${fmtPercent(line.chance)} de chances`
   return matchEntry(players, line.matchId, line.winners, value, fmtDayOn(line.playedAt, now))
 }
 
-function gainEntry(players: Players, line: GainLine, now: Date): EntryParts {
+function gainEntry(players: Players, line: GainLine, now: Date): EntryView {
   const value = `${fmtDelta(line.delta)} ${pointsWord(line.delta)}`
   return matchEntry(players, line.matchId, [line.playerId], value, fmtDayOn(line.playedAt, now))
 }
 
-function duoEntry(players: Players, line: DuoLine): EntryParts {
+function duoEntry(players: Players, line: DuoLine): EntryView {
   const link = duoLink(players, line.members)
   return { ...BLANK, names: [link], href: link.href, value: plural(line.matches, 'match'), detail: recordText(line) }
 }
 
 /** Two opponents (players or duos), each name its own link: « 6 matchs · 4–2 », the leader first. */
-function opponentsEntry(names: NameLink[], matches: number, wins: [number, number]): EntryParts {
+function opponentsEntry(names: NameLink[], matches: number, wins: [number, number]): EntryView {
   const detail = `${fmtInt(wins[0])}–${fmtInt(wins[1])}`
   return { ...BLANK, names, joiner: ' – ', href: null, value: plural(matches, 'match'), detail }
 }
 
-function rivalryEntry(players: Players, line: RivalryLine): EntryParts {
+function rivalryEntry(players: Players, line: RivalryLine): EntryView {
   return opponentsEntry(line.players.map((id) => playerLink(players, id)), line.matches, line.wins)
 }
 
-function duoRivalryEntry(players: Players, line: DuoRivalryLine): EntryParts {
+function duoRivalryEntry(players: Players, line: DuoRivalryLine): EntryView {
   return opponentsEntry(line.duos.map((members) => duoLink(players, members)), line.matches, line.wins)
 }
 
@@ -228,9 +234,28 @@ function duoRivalryEntry(players: Players, line: DuoRivalryLine): EntryParts {
 // Cards and sections
 // ---------------------------------------------------------------------------
 
-function cardOf<T>(key: keyof TopRecords, podium: Podium<T>, entryOf: (line: T) => EntryParts): CardView {
-  const entries = podium.places.map(({ rank, line }) => ({ rank, ...entryOf(line) }))
-  return { key, ...TOP_STATS_COPY[key], entries }
+/** Consecutive places of the same rank form one group; its value is the first entry's (the same for all of them). */
+function groupsOf<T>(podium: Podium<T>, entryOf: (line: T) => EntryView): GroupView[] {
+  const groups: GroupView[] = []
+  for (const { rank, line } of podium.places) {
+    const entry = entryOf(line)
+    const last = groups.at(-1)
+    if (last?.rank === rank) {
+      last.entries.push(entry)
+      continue
+    }
+    groups.push({ rank, value: entry.value, entries: [entry] })
+  }
+  return groups
+}
+
+function cardOf<T>(key: keyof TopRecords, podium: Podium<T>, entryOf: (line: T) => EntryView): CardView {
+  return { key, ...TOP_STATS_COPY[key], groups: groupsOf(podium, entryOf) }
+}
+
+/** Read before a group of ex æquo (visually hidden): « 1er ex æquo : », « 2e ex æquo : »… */
+export function tiePrefix(rank: number): string {
+  return `${fmtOrdinal(rank)} ex æquo${NNBSP}: `
 }
 
 /** The cards of the page, grouped under their section headers. `now` only decides whether a date shows its year. */
