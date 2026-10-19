@@ -14,6 +14,8 @@ export const CHANGELOG: ChangelogEntry[] = [
       'Réussie, l’annonce rapporte d’autant plus qu’elle était osée\u202F; ratée, elle coûte des points. ' +
         'L’équipe d’en face n’est pas touchée, et le calcul est détaillé dans l’historique.',
       'La feuille de match tient bon\u202F: fermer l’app pendant la partie ne perd plus les équipes ni les annonces.',
+      'Stats des annonces\u202F: carte «\u202F🎯 Annonces\u202F» des fiches, «\u202FCouilles sur la table\u202F» au ' +
+        'Hall of Flair et «\u202FAnnonce du jour\u202F» dans le Récap.',
     ],
   },
   {

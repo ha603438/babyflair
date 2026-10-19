@@ -2,7 +2,7 @@ import { afterEach, describe, expect, it, vi } from 'vitest'
 import { createElement } from 'react'
 import { renderToStaticMarkup, renderToString } from 'react-dom/server'
 import App from '../../App'
-import { replay } from '../../rating'
+import { betChance, replay } from '../../rating'
 import { recap, RECAP_DAYS_STEP } from '../../recap'
 import type { Match, Player, Store, Target } from '../../types'
 import { matchText } from './recapLines'
@@ -118,6 +118,36 @@ describe('Récap view', () => {
     expect(hot).toMatch(/<span class="recap-line__detail">\d+ V · \d+ D<\/span>/)
     const cold = lineOf(today, 'Dans le dur')
     expect(cold).toMatch(/<span class="recap-line__value neg">−\d+<\/span>/)
+  })
+
+  it('shows the « Annonce du jour » (announcers, score, chance) linked to its match; the summary counts them', () => {
+    // Everybody even in m1: Alice & Bob's +3 makes it. Eve's +4 in m2 fails (10-8), and does not count.
+    const matches = [
+      { ...match(1, 15, { a: ['alice', 'bob'], b: ['chloe', 'dan'], score: [10, 5] }), betA: 3 },
+      { ...match(2, 15, { a: ['eve'], b: ['alice'], score: [10, 8] }), betA: 4 },
+    ]
+    const today = cardOf(renderRecap(matches), 'Aujourd&#x27;hui')
+    expect(today).toContain('<p class="recap-day__summary">2 matchs · 5 joueurs · 2 annonces</p>')
+    const bet = lineOf(today, 'Annonce du jour')
+    expect(bet).toContain('href="#/historique/m1"')
+    expect(bet).toContain('<span class="recap-line__emoji" aria-hidden="true">🎯</span>')
+    expect(bet).toContain('>Alice &amp; Bob · +3 annoncé, gagné 10–5</span>')
+    const chance = betChance(0.5, 10, 3)
+    expect(bet).toContain(`<span class="recap-line__value">${Math.round(chance * 100)}${NNBSP}%</span>`)
+    expect(bet).not.toContain('recap-line__detail')
+    // Right after the hold-up (Eve's upset of Alice).
+    expect(today).toContain('Hold-up du jour')
+    expect(today.indexOf('Annonce du jour')).toBeGreaterThan(today.indexOf('Hold-up du jour'))
+  })
+
+  it('has no « Annonce du jour » without a successful one, and no annonce part without an announcement', () => {
+    const html = renderRecap(MATCHES)
+    expect(html).not.toContain('Annonce du jour')
+    expect(html).not.toContain('annonce')
+    const failed = [{ ...match(1, 15, { a: ['alice'], b: ['bob'], score: [10, 8] }), betA: 3 }]
+    const card = cardOf(renderRecap(failed), 'Aujourd&#x27;hui')
+    expect(card).toContain('<p class="recap-day__summary">1 match · 2 joueurs · 1 annonce</p>')
+    expect(card).not.toContain('Annonce du jour')
   })
 
   it('names the addict of the day only from 3 matches: Alice played all 3 today', () => {

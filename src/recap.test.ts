@@ -1,7 +1,8 @@
 import { describe, expect, it } from 'vitest'
+import { betFields } from './bets'
 import { rank, replay } from './rating'
 import { groupByDay, localDayKey, recap, RECAP_DAYS_STEP, winnersFirst } from './recap'
-import type { Match, MatchId, MatchResult, Player, PlayerId, ReplayResult, Target } from './types'
+import type { BetOutcome, Match, MatchId, MatchResult, Player, PlayerId, ReplayResult, Target } from './types'
 
 // Récap (src/recap.ts): day grouping on the local calendar, the last days with matches, and each highlight's rule and
 // tie-breaks. Highlights other than « Nouveau n°1 » read only the per-match deltas and chances, so most cases use a
@@ -26,19 +27,22 @@ type MatchSpec = {
   score: [number, number]
   target?: Target
   comeback?: boolean
+  betA?: number
+  betB?: number
 }
 
 /** A match on October `day` 2026, local time (12:00 by default); ids follow the creation order. */
-function match({ day, hour = 12, minute = 0, a, b, score, target = 10, comeback }: MatchSpec): Match {
+function match({ day, hour = 12, minute = 0, a, b, score, target = 10, comeback, betA, betB }: MatchSpec): Match {
   seq += 1
   const at = new Date(2026, 9, day, hour, minute).toISOString()
   const base = { id: `m${seq}`, seq, playedAt: at, createdAt: at, updatedAt: at, target, teamA: a, teamB: b }
-  const played: Match = { ...base, scoreA: score[0], scoreB: score[1] }
+  const played: Match = { ...base, scoreA: score[0], scoreB: score[1], ...betFields(betA, betB) }
   if (comeback === undefined) return played
   return { ...played, comeback }
 }
 
-type Fake = { deltas?: Record<PlayerId, number>; expectedA?: number }
+/** `bets` the announcements as the replay would rate them (chosen freely here, the record only reads them). */
+type Fake = { deltas?: Record<PlayerId, number>; expectedA?: number; bets?: BetOutcome[] }
 
 /** A replay result with the given deltas (0 by default) and team A chances (50 % by default); nobody ever ranked. */
 function resultOf(matches: Match[], fakes: Record<MatchId, Fake> = {}): ReplayResult {
@@ -51,7 +55,7 @@ function resultOf(matches: Match[], fakes: Record<MatchId, Fake> = {}): ReplayRe
       return { playerId, team, before: 1000, after: 1000 + delta, delta, why: '' }
     }
     const perPlayer = [...m.teamA.map((id) => row(id, 'A')), ...m.teamB.map((id) => row(id, 'B'))]
-    byMatch.set(m.id, { matchId: m.id, expectedA, expectedB: 1 - expectedA, perPlayer, bets: [] })
+    byMatch.set(m.id, { matchId: m.id, expectedA, expectedB: 1 - expectedA, perPlayer, bets: fake.bets ?? [] })
   }
   return { byPlayer: new Map(), byMatch }
 }
@@ -223,6 +227,45 @@ describe('« Hold-up du jour »', () => {
     expect(dayOf([m1], { [m1.id]: { expectedA: 0.5 } }).holdUp).toBeNull()
     const tie = dayOf([m1, m2], { [m1.id]: { expectedA: 0.3 }, [m2.id]: { expectedA: 0.3 } })
     expect(tie.holdUp?.match.id).toBe(m2.id)
+  })
+})
+
+describe('« Annonce du jour »', () => {
+  type Side = 'A' | 'B'
+  const won = (team: Side, n: number, chance: number): BetOutcome => ({ team, n, chance, success: true, delta: 1 })
+  const lost = (team: Side, n: number, chance: number): BetOutcome => ({ team, n, chance, success: false, delta: -1 })
+
+  it('takes the successful announcement with the lowest chance, on either side; failed ones never count', () => {
+    const m1 = match({ day: 15, a: ['alice'], b: ['bob'], score: [10, 5], betA: 3 })
+    const m2 = match({ day: 15, minute: 1, a: ['chloe'], b: ['dan'], score: [4, 10], betA: 1, betB: 4 })
+    const m3 = match({ day: 15, minute: 2, a: ['alice'], b: ['eve'], score: [10, 9], betA: 5 })
+    const day = dayOf([m1, m2, m3], {
+      [m1.id]: { bets: [won('A', 3, 0.35)] },
+      [m2.id]: { bets: [lost('A', 1, 0.1), won('B', 4, 0.23)] },
+      [m3.id]: { bets: [lost('A', 5, 0.05)] },
+    })
+    expect(day.bet?.match.id).toBe(m2.id)
+    expect(day.bet?.bet).toMatchObject({ team: 'B', n: 4, chance: 0.23 })
+  })
+
+  it('takes the later match on a tie, and nothing on a day without a success', () => {
+    const m1 = match({ day: 15, a: ['alice'], b: ['bob'], score: [10, 5], betA: 3 })
+    const m2 = match({ day: 15, minute: 1, a: ['chloe'], b: ['dan'], score: [10, 5], betA: 3 })
+    const tied = dayOf([m1, m2], { [m1.id]: { bets: [won('A', 3, 0.3)] }, [m2.id]: { bets: [won('A', 3, 0.3)] } })
+    expect(tied.bet?.match.id).toBe(m2.id)
+    const m3 = match({ day: 16, a: ['alice'], b: ['bob'], score: [5, 10], betA: 2 })
+    expect(dayOf([m3], { [m3.id]: { bets: [lost('A', 2, 0.3)] } }).bet).toBeNull()
+    expect(dayOf([match({ day: 17, a: ['alice'], b: ['bob'], score: [10, 5] })]).bet).toBeNull()
+  })
+
+  it('counts the day’s announcements, one per announcing team', () => {
+    const matches = [
+      match({ day: 15, a: ['alice', 'bob'], b: ['chloe', 'dan'], score: [10, 5], betA: 3, betB: 2 }),
+      match({ day: 15, minute: 1, a: ['alice'], b: ['eve'], score: [10, 5] }),
+      match({ day: 15, minute: 2, a: ['alice'], b: ['eve'], score: [10, 5], betB: 1 }),
+    ]
+    expect(dayOf(matches).betCount).toBe(3)
+    expect(dayOf([match({ day: 16, a: ['alice'], b: ['eve'], score: [10, 5] })]).betCount).toBe(0)
   })
 })
 

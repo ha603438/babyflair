@@ -238,6 +238,28 @@
   line-height: 1.4;
 }
 
+/* « Plus belle annonce »: the tile is a link to the match, its value in the accent; a pressed tile bleeds 4 px. */
+.tile--link {
+  margin: calc(-1 * var(--s1));
+  padding: var(--s1);
+  border-radius: var(--r-sm);
+  user-select: none;
+  -webkit-user-select: none;
+  -webkit-touch-callout: none;
+  transition: background-color var(--t-fast);
+}
+
+.tile--link .tile-value { color: var(--accent); }
+.tile--link:active { background: var(--surface-2); }
+
+/* « A fait tomber 2 annonces adverses sur 3 », under the tiles of « 🎯 Annonces ». */
+.tiles-note {
+  margin-top: var(--s3);
+  font-size: var(--fs-caption);
+  line-height: 1.4;
+  color: var(--text-2);
+}
+
 /* Meilleur allié / Némésis: two rows in one card, each a link to the other player's page. */
 .rivalries { display: flex; flex-direction: column; gap: 12px; }
 .rivalry { display: block; color: inherit; text-decoration: none; }

@@ -7,6 +7,7 @@ import { InlinePlayerForm } from '../../components/InlinePlayerForm'
 import type { PlayerFormValue } from '../../components/InlinePlayerForm'
 import { Pencil } from '../../components/icons'
 import { SectionHeader } from '../../components/SectionHeader'
+import { playerBetRecord } from '../../betStats'
 import { HistoryRow } from '../../components/rows'
 import { duoId } from '../../duo'
 import type { Guard } from '../../profile/useWriteGuard'
@@ -28,11 +29,11 @@ import {
   streakText,
   winRateText,
 } from './labels'
-import { SparklineCard, Tile, Trend } from './profileParts'
+import { BetsCard, SparklineCard, Tile, Trend } from './profileParts'
 
 // Joueur screen body (spec §3.7): hero card (with the « Renommer » pencil and the inline rename form, and the 1V1
-// rating line when the player has 1v1 matches), sparkline, stat tiles, favourite partner (a link to the duo page),
-// last matches and the danger zone. Unknown id → redirect to the list.
+// rating line when the player has 1v1 matches), sparkline, stat tiles, « 🎯 Annonces » (once the player announced),
+// favourite partner (a link to the duo page), last matches and the danger zone. Unknown id → redirect to the list.
 
 /**
  * `guard`: renaming and deleting are writes, refused to a visitor (src/profile/useWriteGuard.ts). `oneVsOne`: the 1V1
@@ -264,6 +265,7 @@ function Details({ player, stats, replay, matches }: DetailsProps) {
       <StatsCard stats={stats} matches={replay.matches} />
       <PositionsCard playerId={player.id} matches={matches} />
       <FannyComebackCard playerId={player.id} matches={matches} />
+      <BetsCard record={playerBetRecord(player.id, replay.result, replay.matches)} subject="player" />
       <PartnerCard playerId={player.id} matches={matches} players={replay.players} />
       <RivalriesCard playerId={player.id} matches={matches} players={replay.players} />
     </>

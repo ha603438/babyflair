@@ -1,3 +1,5 @@
+import { betsOf, betTallies } from './betStats'
+import type { PlayerBetTally, RatedBet } from './betStats'
 import { duoId, duoLabel } from './duo'
 import type { DuoId, DuoMembers } from './duo'
 import { isComeback, isFanny, positionOf } from './stats'
@@ -18,6 +20,8 @@ export const MIN_POSITION_MATCHES = 5
 export const MIN_STREAK = 2
 /** An exploit is a win the winners were given less than an even chance of (their expected score before the match). */
 export const EXPLOIT_MAX_CHANCE = 0.5
+/** Announcements a player must have made before « Nostradamus » (best success rate). */
+export const MIN_BET_RATE = 3
 
 type Outcome = 'win' | 'loss'
 
@@ -51,6 +55,17 @@ export type DuoLine = { duoId: DuoId; members: DuoMembers; matches: number; wins
 export type RivalryLine = { players: [PlayerId, PlayerId]; matches: number; wins: [number, number] }
 /** Two duos who faced each other in 2v2, the one with more wins against the other first (then by duo label). */
 export type DuoRivalryLine = { duos: [DuoMembers, DuoMembers]; matches: number; wins: [number, number] }
+/** A player's announcements: `made` (as a member of the announcing team), `won` the successful ones. */
+export type BetRateLine = { playerId: PlayerId; made: number; won: number }
+/** A successful announcement: `players` the announcing team (recorded order), `chance` its pre-match chance (0..1). */
+export type LongshotLine = {
+  matchId: MatchId
+  team: Team
+  players: PlayerId[]
+  n: number
+  chance: number
+  playedAt: string
+}
 
 export type TopRecords = {
   avant: Podium<PositionLine>
@@ -68,6 +83,11 @@ export type TopRecords = {
   duo: Podium<DuoLine>
   rivalry: Podium<RivalryLine>
   duoRivalry: Podium<DuoRivalryLine>
+  betsMade: Podium<CountLine>
+  betRate: Podium<BetRateLine>
+  betsFailed: Podium<CountLine>
+  betLongshot: Podium<LongshotLine>
+  betsBroken: Podium<CountLine>
 }
 
 /** How a record sorts its lines (best first) and which neighbours are ex æquo. */
@@ -558,6 +578,70 @@ function duoRivalryRanking(context: Context): Ranking<DuoRivalryLine> {
 }
 
 // ---------------------------------------------------------------------------
+// Couilles sur la table: announcements made, success rate, failed ones, the longest shot, opponents' ones broken
+// ---------------------------------------------------------------------------
+
+/** Each player's `pick` of his tally, at least 1. */
+function tallyLines(tallies: PlayerBetTally[], pick: (tally: PlayerBetTally) => number): CountLine[] {
+  return countLines(new Map(tallies.map((tally) => [tally.playerId, pick(tally)])))
+}
+
+function betRateLines(tallies: PlayerBetTally[]): BetRateLine[] {
+  return tallies
+    .filter((tally) => tally.made >= MIN_BET_RATE && tally.won >= 1)
+    .map(({ playerId, made, won }) => ({ playerId, made, won }))
+}
+
+// Cross-multiplied success rates: exact integer comparison. Positive when `a` has the better rate.
+function compareBetRates(a: BetRateLine, b: BetRateLine): number {
+  return a.won * b.made - b.won * a.made
+}
+
+/** Success rate, then more successes, then name; ex æquo on the same rate with as many successes. */
+function betRateRanking(context: Context): Ranking<BetRateLine> {
+  return {
+    compare: (a, b) => compareBetRates(b, a) || b.won - a.won || byName(context, a.playerId, b.playerId),
+    tied: (a, b) => compareBetRates(a, b) === 0 && a.won === b.won,
+  }
+}
+
+function longshotLine(rated: RatedBet): LongshotLine {
+  const { match, bet } = rated
+  const players = sideOf(match, bet.team)
+  return { matchId: match.id, team: bet.team, players, n: bet.n, chance: bet.chance, playedAt: match.playedAt }
+}
+
+/** One line per successful announcement (per match and team). */
+function longshotLines(bets: RatedBet[]): LongshotLine[] {
+  return bets.filter((rated) => rated.bet.success).map(longshotLine)
+}
+
+/** Lowest chance first, the most recent match first on a tie; ex æquo on the same displayed percentage. */
+function longshotRanking(context: Context): Ranking<LongshotLine> {
+  return {
+    compare: (a, b) =>
+      a.chance - b.chance ||
+      orderOf(context, b.matchId) - orderOf(context, a.matchId) ||
+      compareIds(a.matchId, b.matchId) ||
+      compareIds(a.team, b.team),
+    tied: (a, b) => percentOf(a.chance) === percentOf(b.chance),
+  }
+}
+
+type BetRecords = Pick<TopRecords, 'betsMade' | 'betRate' | 'betsFailed' | 'betLongshot' | 'betsBroken'>
+
+function betRecords(bets: RatedBet[], context: Context): BetRecords {
+  const tallies = betTallies(bets)
+  return {
+    betsMade: podium(tallyLines(tallies, (tally) => tally.made), countRanking(context)),
+    betRate: podium(betRateLines(tallies), betRateRanking(context)),
+    betsFailed: podium(tallyLines(tallies, (tally) => tally.made - tally.won), countRanking(context)),
+    betLongshot: podium(longshotLines(bets), longshotRanking(context)),
+    betsBroken: podium(tallyLines(tallies, (tally) => tally.broken), countRanking(context)),
+  }
+}
+
+// ---------------------------------------------------------------------------
 // All the records
 // ---------------------------------------------------------------------------
 
@@ -590,5 +674,6 @@ export function topRecords(players: Player[], matches: Match[], result: ReplayRe
     duo: podium(duoLines(ordered), duoRanking(context)),
     rivalry: podium(rivalryLines(ordered, context), rivalryRanking(context)),
     duoRivalry: podium(duoRivalryLines(ordered, context), duoRivalryRanking(context)),
+    ...betRecords(betsOf(ordered, result), context),
   }
 }

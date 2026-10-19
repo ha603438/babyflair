@@ -1,3 +1,5 @@
+import { announcersOf } from '../../betStats'
+import type { RatedBet } from '../../betStats'
 import { duoId, duoLabel } from '../../duo'
 import { fmtDayHeader, fmtDelta, fmtInt, fmtPercent, plural } from '../../format'
 import { winnersFirst } from '../../recap'
@@ -38,6 +40,7 @@ export const RECAP_COPY = {
   cold: { emoji: '🧊', label: 'Dans le dur' },
   duo: { emoji: '🤝', label: 'Duo du jour' },
   holdUp: { emoji: '💰', label: 'Hold-up du jour' },
+  bet: { emoji: '🎯', label: 'Annonce du jour' },
   fanny: { emoji: '🍑', label: 'Fanny' },
   comeback: { emoji: '🔁', label: 'Comeback' },
   leader: { emoji: '👑', label: 'Nouveau n°1' },
@@ -63,11 +66,12 @@ export function matchText(match: Match, players: Players): string {
   return `${teamText(players, winners)} ${fmtInt(won)}${EN_DASH}${fmtInt(lost)} ${teamText(players, losers)}`
 }
 
-/** « 12 matchs · 9 joueurs · 2 fanny » (no fanny part on a day without one). */
+/** « 12 matchs · 9 joueurs · 2 fanny · 3 annonces » (no fanny or annonce part on a day without one). */
 export function summaryText(day: RecapDay): string {
   const parts = [plural(day.matches.length, 'match'), plural(day.playerCount, 'joueur')]
   const fannys = day.fannys.length
   if (fannys > 0) parts.push(plural(fannys, 'fanny', 'fanny'))
+  if (day.betCount > 0) parts.push(plural(day.betCount, 'annonce'))
   return parts.join(' · ')
 }
 
@@ -110,6 +114,16 @@ function holdUpLine(holdUp: HoldUp | null, players: Players): RecapLineView[] {
   return [line('hold-up', RECAP_COPY.holdUp, { ...parts, href: matchHref(holdUp.match) })]
 }
 
+/** « Edgar & Reda · +3 annoncé, gagné 10–5 », the chance on the right: a success is always the announcers' win. */
+function betLine(rated: RatedBet | null, players: Players): RecapLineView[] {
+  if (rated === null) return []
+  const { won, lost } = winnersFirst(rated.match)
+  const score = `${fmtInt(won)}${EN_DASH}${fmtInt(lost)}`
+  const subject = `${teamText(players, announcersOf(rated))} · +${fmtInt(rated.bet.n)} annoncé, gagné ${score}`
+  const parts = { subject, detail: null, value: fmtPercent(rated.bet.chance), tone: null }
+  return [line('bet', RECAP_COPY.bet, { ...parts, href: matchHref(rated.match) })]
+}
+
 function matchLines(kind: 'fanny' | 'comeback', matches: Match[], players: Players): RecapLineView[] {
   return matches.map((match) =>
     line(`${kind}-${match.id}`, RECAP_COPY[kind], {
@@ -142,6 +156,7 @@ export function recapLines(day: RecapDay, players: Players): RecapLineView[] {
     ...pointsLine('cold', RECAP_COPY.cold, day.cold, players),
     ...duoLine(day, players),
     ...holdUpLine(day.holdUp, players),
+    ...betLine(day.bet, players),
     ...matchLines('fanny', day.fannys, players),
     ...matchLines('comeback', day.comebacks, players),
     ...addictLine(day.addict, players),

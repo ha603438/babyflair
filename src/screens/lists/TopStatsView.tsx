@@ -9,7 +9,7 @@ import type { Player, PlayerId } from '../../types'
 import { tiePrefix, topStatsSections } from './topStatsCards'
 import type { CardView, EntryView, GroupView, SectionView } from './topStatsCards'
 
-// Hall of Flair (`#/top`): all-time records, one card per record under five section headers. Each card states its rule
+// Hall of Flair (`#/top`): all-time records, one card per record under six section headers. Each card states its rule
 // and shows a mini podium, one medal per rank: a lone 1st emphasised (larger name, value and detail), a lone 2nd or 3rd
 // on a small line; the ex æquo of a rank side by side, all the same size, their shared value shown once. A muted line
 // when nobody qualifies yet. Copy and links come from topStatsCards.ts.

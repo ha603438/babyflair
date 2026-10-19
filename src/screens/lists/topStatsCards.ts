@@ -1,13 +1,15 @@
 import { duoId, duoLabel } from '../../duo'
 import type { DuoMembers } from '../../duo'
 import { fmtDayOn, fmtDaySpan, fmtDelta, fmtInt, fmtOrdinal, fmtPercent, plural } from '../../format'
-import { EXPLOIT_MAX_CHANCE, MIN_POSITION_MATCHES, MIN_STREAK } from '../../records'
+import { EXPLOIT_MAX_CHANCE, MIN_BET_RATE, MIN_POSITION_MATCHES, MIN_STREAK } from '../../records'
 import type {
+  BetRateLine,
   CountLine,
   DuoLine,
   DuoRivalryLine,
   ExploitLine,
   GainLine,
+  LongshotLine,
   PeakLine,
   Podium,
   PositionLine,
@@ -143,6 +145,31 @@ export const TOP_STATS_COPY = {
     rule: 'Le plus de matchs duo contre duo',
     empty: `Pas encore de match en 2 contre 2${NNBSP}: 1 minimum`,
   },
+  betsMade: {
+    title: 'Le Flambeur',
+    rule: 'Le plus d’annonces, réussies ou ratées',
+    empty: `Pas encore d’annonce${NNBSP}: 1 minimum`,
+  },
+  betRate: {
+    title: 'Nostradamus',
+    rule: `Meilleur taux d’annonces réussies, ${MIN_BET_RATE} annonces et 1 réussite minimum`,
+    empty: `Pas encore de devin${NNBSP}: ${MIN_BET_RATE} annonces et 1 réussite minimum`,
+  },
+  betsFailed: {
+    title: 'Le Mytho',
+    rule: 'Le plus d’annonces ratées',
+    empty: `Pas encore d’annonce ratée${NNBSP}: 1 minimum`,
+  },
+  betLongshot: {
+    title: 'Coup de poker',
+    rule: 'L’annonce réussie qui avait le moins de chances',
+    empty: `Pas encore d’annonce réussie${NNBSP}: 1 minimum`,
+  },
+  betsBroken: {
+    title: 'Le Briseur de rêves',
+    rule: 'Le plus d’annonces adverses tombées à l’eau',
+    empty: `Pas encore d’annonce ratée${NNBSP}: 1 minimum`,
+  },
 } as const satisfies Record<keyof TopRecords, Copy>
 
 // ---------------------------------------------------------------------------
@@ -230,6 +257,19 @@ function duoRivalryEntry(players: Players, line: DuoRivalryLine): EntryView {
   return opponentsEntry(line.duos.map((members) => duoLink(players, members)), line.matches, line.wins)
 }
 
+/** « 67 % », « 2 réussies sur 3 ». */
+function betRateEntry(players: Players, line: BetRateLine): EntryView {
+  const detail = `${plural(line.won, 'réussie')} sur ${fmtInt(line.made)}`
+  return playerEntry(players, line.playerId, fmtPercent(line.won / line.made), detail)
+}
+
+/** The announcing team, to the match: « 18 % de chances », « +4 annoncé · le 3 oct. ». */
+function longshotEntry(players: Players, line: LongshotLine, now: Date): EntryView {
+  const value = `${fmtPercent(line.chance)} de chances`
+  const detail = `+${fmtInt(line.n)} annoncé · ${fmtDayOn(line.playedAt, now)}`
+  return matchEntry(players, line.matchId, line.players, value, detail)
+}
+
 // ---------------------------------------------------------------------------
 // Cards and sections
 // ---------------------------------------------------------------------------
@@ -292,6 +332,16 @@ export function topStatsSections(records: TopRecords, players: Players, now: Dat
         cardOf('peak', records.peak, (line) => peakEntry(players, line, now)),
         cardOf('exploit', records.exploit, (line) => exploitEntry(players, line, now)),
         cardOf('gain', records.gain, (line) => gainEntry(players, line, now)),
+      ],
+    },
+    {
+      title: 'Couilles sur la table',
+      cards: [
+        cardOf('betsMade', records.betsMade, count('annonce')),
+        cardOf('betRate', records.betRate, (line) => betRateEntry(players, line)),
+        cardOf('betsFailed', records.betsFailed, count('annonce ratée', 'annonces ratées')),
+        cardOf('betLongshot', records.betLongshot, (line) => longshotEntry(players, line, now)),
+        cardOf('betsBroken', records.betsBroken, count('rêve brisé', 'rêves brisés')),
       ],
     },
     {

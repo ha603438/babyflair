@@ -1,5 +1,6 @@
 import { useEffect } from 'react'
 import type { ReactNode } from 'react'
+import { duoBetRecord } from '../../betStats'
 import { HistoryRow } from '../../components/rows'
 import { SectionHeader } from '../../components/SectionHeader'
 import { canonicalDuoId, membersByName } from '../../duo'
@@ -21,12 +22,12 @@ import { hrefOf, navigate } from '../../router'
 import type { Match, MatchId, PlayerId, PlayerStats } from '../../types'
 import type { ReplayData } from './context'
 import { heroCaption, recentMatchIds, recordText, streakText, winRateText } from './labels'
-import { SparklineCard, Tile, Trend } from './profileParts'
+import { BetsCard, SparklineCard, Tile, Trend } from './profileParts'
 
 // Duo page (`#/duo/<idA>+<idB>`, 2V2 ranking): the player page for a pair of teammates. Hero (duo rating, rank or
 // progress, 7-day trend, each name linking to its player), sparkline, stat tiles, the two formations, fanny et
-// comebacks, the rival duos and the last matches together. No rename, no delete, no partner card. Unknown or
-// never-played duo → the same redirect as an unknown player.
+// comebacks, « 🎯 Annonces » (made together, in duo points), the rival duos and the last matches together. No rename,
+// no delete, no partner card. Unknown or never-played duo → the same redirect as an unknown player.
 
 export type DuoViewProps = {
   replay: ReplayData
@@ -239,6 +240,7 @@ function DuoPage(props: DuoProps) {
         <StatsCard duo={duo} replay={replay} />
         <PositionsCard duo={duo} replay={replay} />
         <FannyComebackCard duo={duo} />
+        <BetsCard record={duoBetRecord(duo.id, props.duos.result, replay.matches)} subject="duo" />
         <RivalriesCard duo={duo} duos={props.duos} />
       </div>
       <RecentMatches {...props} />

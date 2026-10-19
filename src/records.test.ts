@@ -695,3 +695,94 @@ describe('Plus grosse rivalité de duos', () => {
     expect(recordsOf([game(['alice'], ['bob']), game(['chloe'], ['dan'])]).duoRivalry.places).toEqual([])
   })
 })
+
+// ---------------------------------------------------------------------------
+// Couilles sur la table: announcements, rated by the real replay
+// ---------------------------------------------------------------------------
+
+/** `player` announces +1 against Fred and wins: a success. */
+function madeIt(player: PlayerId): Match {
+  return { ...game([player], ['fred']), betA: 1 }
+}
+
+/** `player` announces +6 against Fred and wins 10-5 only: a failure. */
+function missedIt(player: PlayerId): Match {
+  return { ...game([player], ['fred']), betA: 6 }
+}
+
+describe('Couilles sur la table', () => {
+  it('counts each member of an announcing team (Flambeur, Mytho) and each opponent of a failed one (Briseur)', () => {
+    const matches = [
+      { ...game(['alice', 'bob'], ['chloe', 'dan']), betA: 1 },
+      { ...game(['alice', 'bob'], ['chloe', 'dan']), betA: 6 },
+      // Alice on the Noirs this time: she loses, so her +2 fails, broken by Eve.
+      { ...game(['eve'], ['alice']), betB: 2 },
+    ]
+    const records = recordsOf(matches)
+    expect(ranksOf(records.betsMade, (l) => [l.playerId, l.count])).toEqual([
+      [1, ['alice', 3]],
+      [2, ['bob', 2]],
+    ])
+    expect(ranksOf(records.betsFailed, (l) => [l.playerId, l.count])).toEqual([
+      [1, ['alice', 2]],
+      [2, ['bob', 1]],
+    ])
+    expect(ranksOf(records.betsBroken, (l) => [l.playerId, l.count])).toEqual([
+      [1, ['chloe', 1]],
+      [1, ['dan', 1]],
+      [1, ['eve', 1]],
+    ])
+  })
+
+  it('« Nostradamus » needs 3 announcements and 1 success; ties → more successes, ex æquo on the same rate and successes', () => {
+    const matches = [
+      ...times(3, () => madeIt('dan')),
+      ...times(4, () => madeIt('bob')),
+      ...times(2, () => missedIt('bob')),
+      ...times(2, () => madeIt('chloe')),
+      missedIt('chloe'),
+      ...times(2, () => madeIt('alice')),
+      missedIt('alice'),
+      // 2 out of 2, but only 2 announcements.
+      ...times(2, () => madeIt('eve')),
+    ]
+    expect(ranksOf(recordsOf(matches).betRate, (l) => [l.playerId, l.won, l.made])).toEqual([
+      [1, ['dan', 3, 3]],
+      [2, ['bob', 4, 6]],
+      [3, ['alice', 2, 3]],
+      [3, ['chloe', 2, 3]],
+    ])
+  })
+
+  it('« Nostradamus » leaves out a player with no success', () => {
+    expect(recordsOf(times(3, () => missedIt('dan'))).betRate.places).toEqual([])
+  })
+
+  it('« Coup de poker »: the successful announcement with the lowest chance, the most recent first on a tie', () => {
+    const matches = [
+      // Everybody at 1000: +4 in 10 at even odds, twice (Eve as the Noirs), the same chance.
+      { ...game(['alice', 'bob'], ['chloe', 'dan'], { loserGoals: 2 }), betA: 4 },
+      { ...game(['eve'], ['fred'], { loserGoals: 2, winnerSide: 'B' }), betB: 4 },
+      // Favourites now, +1 only: a better chance.
+      { ...game(['alice', 'bob'], ['chloe', 'dan'], { loserGoals: 9 }), betA: 1 },
+      // Chloé & Dan announce +10 and lose: the lowest chance of all, but a failure.
+      { ...game(['alice', 'bob'], ['chloe', 'dan']), betB: 10 },
+    ]
+    const { places } = recordsOf(matches).betLongshot
+    expect(places.map((place) => [place.rank, place.line.matchId, place.line.team, place.line.players])).toEqual([
+      [1, 'm2', 'B', ['eve']],
+      [1, 'm1', 'A', ['alice', 'bob']],
+      [3, 'm3', 'A', ['alice', 'bob']],
+    ])
+    expect(places[0].line.chance).toBeCloseTo(places[1].line.chance, 12)
+    expect(places[0].line.chance).toBeLessThan(places[2].line.chance)
+    expect(places[0].line).toMatchObject({ n: 4, playedAt: matches[1].playedAt })
+  })
+
+  it('stays empty without an announcement', () => {
+    const records = recordsOf([game(['alice'], ['bob']), game(['alice', 'bob'], ['chloe', 'dan'])])
+    for (const key of ['betsMade', 'betRate', 'betsFailed', 'betLongshot', 'betsBroken'] as const) {
+      expect(records[key].places).toEqual([])
+    }
+  })
+})

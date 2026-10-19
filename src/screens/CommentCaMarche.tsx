@@ -88,7 +88,9 @@ const SECTIONS: Section[] = [
       `L’équipe d’en face n’est pas touchée, et l’annonce s’ajoute telle quelle (pas de partage entre coéquipiers, ` +
       `ni ×débutant, ni marge, ni bonus). Exemple${NNBSP}: deux équipes de même niveau en 10, les Blancs annoncent ` +
       `+4, soit 23${NNBSP}% de chances. Gagné 10-6 ou mieux${NNBSP}: +12,4 chacun en plus${NNBSP}; sinon${NNBSP}: ` +
-      `−3,6 chacun. Le détail du calcul est dans chaque match de l’historique.`,
+      `−3,6 chacun. Le détail du calcul est dans chaque match de l’historique. Les stats des annonces sont sur la ` +
+      `carte «${NNBSP}🎯 Annonces${NNBSP}» des fiches joueur et duo, dans la section «${NNBSP}Couilles sur la ` +
+      `table${NNBSP}» du Hall of Flair et dans l’«${NNBSP}Annonce du jour${NNBSP}» du Récap.`,
     box: BET_WHY_LINE,
   },
   {

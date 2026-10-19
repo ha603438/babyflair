@@ -1,3 +1,6 @@
+import { announcedBets } from './bets'
+import { betsOf, longestShot } from './betStats'
+import type { RatedBet } from './betStats'
 import { duoId, duoLabel } from './duo'
 import type { DuoMembers } from './duo'
 import { leaderBefore } from './rating'
@@ -6,9 +9,9 @@ import { isComeback, isFanny } from './stats'
 import type { Match, MatchResult, Player, PlayerId, ReplayResult, Team } from './types'
 
 // Récap (`#/stats`, default segment of the Stats tab): one entry per local calendar day with at least one match, most
-// recent first, with the day's highlights (Joueur du jour, Dans le dur, Duo du jour, Hold-up, fanny, comebacks,
-// Nouveau n°1, Accro du jour). Pure, no React and no copy: lists/recapLines.ts words it, lists/RecapView.tsx lays it
-// out. Points are the Mixte deltas of the replay `result`. Days only, never a time of day.
+// recent first, with the day's highlights (Joueur du jour, Dans le dur, Duo du jour, Hold-up, Annonce du jour, fanny,
+// comebacks, Nouveau n°1, Accro du jour). Pure, no React and no copy: lists/recapLines.ts words it,
+// lists/RecapView.tsx lays it out. Points and chances are the Mixte replay `result`'s. Days only, never a time of day.
 
 /** Days shown at first, and added by each « Jours précédents ». */
 export const RECAP_DAYS_STEP = 3
@@ -40,6 +43,10 @@ export type RecapDay = {
   duo: DuoDay | null
   /** « 💰 Hold-up du jour »: the win the winners had the lowest chance of (under 50 %). */
   holdUp: HoldUp | null
+  /** Announcements of the day, one per announcing team. */
+  betCount: number
+  /** « 🎯 Annonce du jour »: the successful announcement with the lowest chance (the later one on a tie). */
+  bet: RatedBet | null
   /** « 🍑 Fanny » and « 🔁 Comeback »: every one of the day, in replay order. */
   fannys: Match[]
   comebacks: Match[]
@@ -254,6 +261,14 @@ function holdUpOf(day: Match[], result: ReplayResult): HoldUp | null {
 }
 
 // ---------------------------------------------------------------------------
+// Annonces
+// ---------------------------------------------------------------------------
+
+function betCountOf(day: Match[]): number {
+  return day.reduce((count, match) => count + announcedBets(match).length, 0)
+}
+
+// ---------------------------------------------------------------------------
 // Nouveau n°1
 // ---------------------------------------------------------------------------
 
@@ -294,6 +309,8 @@ function recapDay(group: DayGroup, context: Context): RecapDay {
     cold: coldOf(players, context),
     duo: duoOf(matches, context),
     holdUp: holdUpOf(matches, context.result),
+    betCount: betCountOf(matches),
+    bet: longestShot(betsOf(matches, context.result)),
     fannys: matches.filter(isFanny),
     comebacks: matches.filter(isComeback),
     newLeader: newLeaderOf(matches, context),

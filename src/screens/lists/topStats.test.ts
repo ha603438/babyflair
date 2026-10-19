@@ -124,6 +124,17 @@ function generated(count: number, seed: number, roster: PlayerId[], duoShare: nu
   return matches
 }
 
+/** The same matches with random announcements: about one team in three announces 1 to 4 goals. */
+function withBets(matches: Match[], seed: number): Match[] {
+  const next = randomOf(seed)
+  return matches.map((played) => {
+    const bets: Pick<Match, 'betA' | 'betB'> = {}
+    if (next(3) === 0) bets.betA = 1 + next(4)
+    if (next(3) === 0) bets.betB = 1 + next(4)
+    return { ...played, ...bets }
+  })
+}
+
 function storeOf(matches: Match[], classementTab?: RankingTab): Store {
   return {
     version: 1,
@@ -147,12 +158,19 @@ afterEach(() => {
 })
 
 describe('Hall of Flair page', () => {
-  it('groups the 14 record cards under the five section headers, after a one-line intro', () => {
+  it('groups the 20 record cards under the six section headers, after a one-line intro', () => {
     const html = renderPage(MATCHES)
     expect(html).toContain('Tous les matchs depuis le début (5 matchs), invités compris.')
     const headers = [...html.matchAll(/<span class="section-header-title">([^<]*)<\/span>/g)].map((m) => m[1])
-    expect(headers).toEqual(['Les spécialistes', 'Séries', 'Fanny et comebacks', 'Coups d’éclat', 'Fidélités et rivalités'])
-    expect(html.match(/<section class="card record">/g)).toHaveLength(15)
+    expect(headers).toEqual([
+      'Les spécialistes',
+      'Séries',
+      'Fanny et comebacks',
+      'Coups d’éclat',
+      'Couilles sur la table',
+      'Fidélités et rivalités',
+    ])
+    expect(html.match(/<section class="card record">/g)).toHaveLength(20)
     const titles = [...html.matchAll(/<h3 class="record-title">([^<]*)<\/h3>/g)].map((m) => m[1])
     expect(titles).toEqual([
       'Le Sniper',
@@ -166,6 +184,11 @@ describe('Hall of Flair page', () => {
       'Altitude record',
       'Le Hold-up',
       'Le Jackpot',
+      'Le Flambeur',
+      'Nostradamus',
+      'Le Mytho',
+      'Coup de poker',
+      'Le Briseur de rêves',
       'Accro au baby',
       'Un flair de famille',
       'Meilleurs ennemis',
@@ -365,6 +388,105 @@ describe('Hall of Flair page', () => {
   })
 })
 
+// Announcements: Alice & Bob make their +4 (m1, everybody even: 23 %), both teams miss in m2, Alice makes her +3
+// against Eve's failed +2 (m3), Chloé & Dan make their +1 (m4), Bob misses his +2 against Eve (m5).
+const BETS: Match[] = [
+  { ...match(1, 3, ['alice', 'bob'], ['chloe', 'dan'], 10, 2), betA: 4 },
+  { ...match(2, 5, ['alice', 'bob'], ['chloe', 'dan'], 10, 7), betA: 5, betB: 3 },
+  { ...match(3, 7, ['alice'], ['eve'], 10, 4), betA: 3, betB: 2 },
+  { ...match(4, 9, ['chloe', 'dan'], ['alice', 'bob'], 10, 9), betA: 1 },
+  { ...match(5, 9, ['eve'], ['bob'], 10, 5), betB: 2 },
+]
+
+describe('Hall of Flair, « Couilles sur la table »', () => {
+  const titles = ['Le Flambeur', 'Nostradamus', 'Le Mytho', 'Coup de poker', 'Le Briseur de rêves']
+
+  it('has its own section of five cards, each with its rule', () => {
+    const html = renderPage(BETS)
+    const section = html.split('<span class="section-header-title">Couilles sur la table</span>')[1] ?? ''
+    const inSection = [...section.split('section-header-title')[0].matchAll(/<h3 class="record-title">([^<]*)</g)]
+    expect(inSection.map((m) => m[1])).toEqual(titles)
+    expect(cardOf(html, 'Le Flambeur')).toContain('<p class="record-rule">Le plus d’annonces, réussies ou ratées</p>')
+    expect(cardOf(html, 'Nostradamus')).toContain('Meilleur taux d’annonces réussies, 3 annonces et 1 réussite minimum')
+    expect(cardOf(html, 'Le Mytho')).toContain('<p class="record-rule">Le plus d’annonces ratées</p>')
+    expect(cardOf(html, 'Coup de poker')).toContain('L’annonce réussie qui avait le moins de chances')
+    expect(cardOf(html, 'Le Briseur de rêves')).toContain('Le plus d’annonces adverses tombées à l’eau')
+  })
+
+  it('shows the usual muted line with the minimum while nobody announced', () => {
+    const html = renderPage(MATCHES)
+    const empty = (title: string, text: string) =>
+      expect(cardOf(html, title)).toContain(`<p class="record-empty">${text}</p>`)
+    empty('Le Flambeur', `Pas encore d’annonce${NNBSP}: 1 minimum`)
+    empty('Nostradamus', `Pas encore de devin${NNBSP}: 3 annonces et 1 réussite minimum`)
+    empty('Le Mytho', `Pas encore d’annonce ratée${NNBSP}: 1 minimum`)
+    empty('Coup de poker', `Pas encore d’annonce réussie${NNBSP}: 1 minimum`)
+    empty('Le Briseur de rêves', `Pas encore d’annonce ratée${NNBSP}: 1 minimum`)
+    // Two announcements are not enough for Nostradamus, while the others already have a podium.
+    const two = renderPage(BETS.slice(0, 1).concat({ ...match(2, 5, ['alice'], ['eve'], 10, 4), betA: 9 }))
+    expect(cardOf(two, 'Nostradamus')).toContain(`Pas encore de devin${NNBSP}: 3 annonces et 1 réussite minimum`)
+    expect(cardOf(two, 'Le Flambeur')).toContain('class="podium"')
+  })
+
+  it('counts each member of an announcing team, ex æquo side by side', () => {
+    const cards = cardsOf(BETS)
+    // Alice and Bob 3 announcements, Chloé and Dan 2 (Eve's 1 is 5th).
+    expect(shapeOf(cards, 'Le Flambeur')).toEqual([
+      [1, 2],
+      [3, 2],
+    ])
+    // Alice 2 of 3, Bob 1 of 3; Chloé and Dan announced only twice.
+    expect(shapeOf(cards, 'Nostradamus')).toEqual([
+      [1, 1],
+      [2, 1],
+    ])
+    // Bob missed 2; Alice, Chloé, Dan and Eve 1 each.
+    expect(shapeOf(cards, 'Le Mytho')).toEqual([
+      [1, 1],
+      [2, 4],
+    ])
+    // Three successes: m1, m3, m4.
+    expect(shapeOf(cards, 'Coup de poker')).toEqual([
+      [1, 1],
+      [2, 1],
+      [3, 1],
+    ])
+    // Alice saw two announcements fail against her (m2, m3); Bob, Chloé, Dan and Eve one each.
+    expect(shapeOf(cards, 'Le Briseur de rêves')).toEqual([
+      [1, 1],
+      [2, 4],
+    ])
+  })
+
+  it('words each value and links players to their page, the longest shot to its match', () => {
+    const html = renderPage(BETS)
+    const flambeur = cardOf(html, 'Le Flambeur')
+    expect(flambeur).toContain('<a class="podium-cell podium-entry--link" href="#/joueurs/alice">')
+    expect(flambeur).toContain('<span class="podium-value">3 annonces</span>')
+    expect(flambeur).toContain('<span class="podium-value">2 annonces</span>')
+    const nostradamus = cardOf(html, 'Nostradamus')
+    expect(nostradamus).toContain('href="#/joueurs/alice"')
+    expect(nostradamus).toContain(
+      `<span class="podium-value">67${NNBSP}%</span><span class="podium-sep" aria-hidden="true">·</span>` +
+        '<span class="podium-detail">2 réussies sur 3</span>',
+    )
+    expect(nostradamus).toContain('1 réussie sur 3')
+    expect(cardOf(html, 'Le Mytho')).toContain('<span class="podium-value">2 annonces ratées</span>')
+    expect(cardOf(html, 'Le Mytho')).toContain('<span class="podium-value">1 annonce ratée</span>')
+    const poker = itemsOf(cardOf(html, 'Coup de poker'))
+    expect(poker[0]).toContain('<a class="podium-entry podium-entry--first podium-entry--link" href="#/historique/m1">')
+    expect(poker[0]).toContain('<span class="podium-name">Alice &amp; Bob</span>')
+    expect(poker[0]).toContain(`<span class="podium-value">23${NNBSP}% de chances</span>`)
+    expect(poker[0]).toContain(`<span class="podium-detail">+4 annoncé · le 3${NBSP}oct.</span>`)
+    expect(poker.join('')).toContain('href="#/historique/m3"')
+    expect(poker.join('')).toContain('href="#/historique/m4"')
+    const briseur = cardOf(html, 'Le Briseur de rêves')
+    expect(itemsOf(briseur)[0]).toContain('href="#/joueurs/alice"')
+    expect(briseur).toContain('<span class="podium-value">2 rêves brisés</span>')
+    expect(briseur).toContain('<span class="podium-value">1 rêve brisé</span>')
+  })
+})
+
 describe('Hall of Flair groups', () => {
   it('groups the entries by rank: lone entries, ex æquo at ranks 1, 2 and 3, a 3-way tie', () => {
     const cards = cardsOf(MATCHES)
@@ -399,6 +521,9 @@ describe('Hall of Flair groups', () => {
     for (const seed of [1, 2]) {
       for (const count of [8, 10, 15, 20]) datasets.push([generated(count, seed, roster4, 4), PLAYERS])
       datasets.push([generated(30, seed, roster6, 3), players6])
+      // Announcements (« Couilles sur la table »): the same kind of matches, about one team in three announcing.
+      datasets.push([withBets(generated(20, seed, roster4, 4), seed), PLAYERS])
+      datasets.push([withBets(generated(30, seed, roster6, 3), seed), players6])
     }
     const tiedRecords = new Set<string>()
     for (const [matches, players] of datasets) {
