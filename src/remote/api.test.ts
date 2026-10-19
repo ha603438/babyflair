@@ -14,6 +14,7 @@ import {
   playerFromRow,
   playerToRow,
   RemoteError,
+  snapshotFromJson,
 } from './api'
 import type { CallRow, MatchEventRow } from './api'
 import { remoteConfigFrom } from './config'
@@ -127,6 +128,28 @@ describe('row mapping', () => {
     expect(matchToRow({ ...match, scoreB: 4, comeback: true }).comeback).toBe(true)
     const { comeback: _field, ...unflagged } = match
     expect(matchToRow(unflagged).comeback).toBe(false)
+  })
+
+  it('reads bet_a / bet_b (absent when null or missing, clamped to the target) and always sends them', () => {
+    expect(matchFromRow({ ...matchRow, bet_a: 2, bet_b: null })).toEqual({ ...match, betA: 2 })
+    expect(matchFromRow({ ...matchRow, bet_a: null, bet_b: 5 })).toEqual({ ...match, betB: 5 })
+    expect(matchFromRow(matchRow)).toEqual(match)
+    expect(matchFromRow({ ...matchRow, bet_a: 9, bet_b: 0 })).toEqual({ ...match, betA: 5 })
+    expect(matchToRow({ ...match, betA: 3 })).toMatchObject({ bet_a: 3, bet_b: null })
+    expect(matchToRow(match)).toMatchObject({ bet_a: null, bet_b: null })
+    expect(matchToRow({ ...match, betA: null, betB: 1 })).toMatchObject({ bet_a: null, bet_b: 1 })
+  })
+
+  it('reads the announcements of match_events images', () => {
+    expect(snapshotFromJson({ ...matchRow, bet_a: 3, bet_b: null })).toEqual({
+      target: 5,
+      teamA: ['p1', 'p2'],
+      teamB: ['p3', 'p4'],
+      scoreA: 5,
+      scoreB: 3,
+      betA: 3,
+    })
+    expect(snapshotFromJson(matchRow)).not.toHaveProperty('betA')
   })
 
   it('maps match_events rows: action, actor, before / after images', () => {
@@ -369,8 +392,19 @@ describe('createApi', () => {
       score_a: 5,
       score_b: 3,
       comeback: false,
+      bet_a: null,
+      bet_b: null,
       updated_at: match.updatedAt,
     })
+  })
+
+  it('updateMatch sends the announcements, null once removed, so a bet edited alone reaches the server', async () => {
+    const { fetch, calls } = fakeFetch(() => ({ status: 200, body: [matchRow] }))
+    const api = createApi({ fetch, config, officeCode: 'secret' })
+    await api.updateMatch({ ...match, betA: 2, betB: 4 })
+    expect(calls[0].body).toMatchObject({ bet_a: 2, bet_b: 4 })
+    await api.updateMatch(match)
+    expect(calls[1].body).toMatchObject({ bet_a: null, bet_b: null })
   })
 
   it('updateMatch sends the comeback box, so an edit of the box alone reaches the server', async () => {

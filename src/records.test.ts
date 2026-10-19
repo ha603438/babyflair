@@ -429,7 +429,7 @@ function statsOf(playerId: PlayerId, history: HistoryPoint[]): PlayerStats {
 
 function resultOf(matchId: MatchId, expectedA: number, deltas: Array<[PlayerId, Team, number]> = []): MatchResult {
   const perPlayer = deltas.map(([playerId, team, delta]) => ({ playerId, team, before: 0, after: 0, delta, why: '' }))
-  return { matchId, expectedA, expectedB: 1 - expectedA, perPlayer }
+  return { matchId, expectedA, expectedB: 1 - expectedA, perPlayer, bets: [] }
 }
 
 function fabricated(byPlayer: PlayerStats[], byMatch: MatchResult[]): ReplayResult {

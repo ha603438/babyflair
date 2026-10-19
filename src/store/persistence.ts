@@ -1,3 +1,4 @@
+import { readBet } from '../bets'
 import { parseCallResponse } from '../calls/calls'
 import { isComebackScore } from '../stats'
 import type { Call, CallPlayer, Match, Player, RankingTab, Settings, Store } from '../types'
@@ -58,6 +59,11 @@ function normaliseMatch(value: unknown): Match | null {
   if (typeof value.updatedBy === 'string' && value.updatedBy.length > 0) match.updatedBy = value.updatedBy
   // Comeback box (absent in older data); a flag on any other score than 5-4 in 5 is dropped to false.
   if (typeof value.comeback === 'boolean') match.comeback = value.comeback && isComebackScore(match)
+  // Announcements (absent in older data): an integer ≥ 1 clamped to the target, anything else means none.
+  const betA = readBet(value.betA, match.target)
+  const betB = readBet(value.betB, match.target)
+  if (betA !== undefined) match.betA = betA
+  if (betB !== undefined) match.betB = betB
   return match
 }
 

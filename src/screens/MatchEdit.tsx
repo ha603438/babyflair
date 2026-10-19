@@ -1,6 +1,7 @@
 import { useEffect, useReducer } from 'react'
 import { SegmentedControl } from '../components/SegmentedControl'
 import { useWriteGuard } from '../profile/useWriteGuard'
+import { teamExpectation } from '../rating'
 import { useReplay } from '../rating/useReplay'
 import { back, navigate } from '../router'
 import { draftReducer, useAppState } from '../store'
@@ -29,7 +30,10 @@ function editReducer(state: EditState, action: DraftAction): EditState {
   return { draft, visitedPlayers: state.visitedPlayers || draft.step === 'players' }
 }
 
-/** « Modifier le match » (spec §3.5): a local draft seeded from the stored match; the shared draft is never touched. */
+/**
+ * « Modifier le match » (spec §3.5): a local draft seeded from the stored match; the shared draft is never touched.
+ * The announcements are edited with the same stepper, their chances taken right before this match in the replay.
+ */
 function MatchEditForm({ stored }: { stored: Match }) {
   const { dispatch, toast } = useAppState()
   const { result, players: playersById } = useReplay()
@@ -57,6 +61,7 @@ function MatchEditForm({ stored }: { stored: Match }) {
         teams={teams}
         dispatch={draftDispatch}
         playersById={playersById}
+        expectedA={teamExpectation(result, { ...teams, target: draft.target }, stored.id)}
         saveText="Enregistrer les modifications"
         canSave={canSave}
         onSave={() => guard('modifier ce match', save)}

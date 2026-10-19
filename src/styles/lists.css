@@ -628,3 +628,50 @@
 /* « Proposer un baby » as a discreet link under the context strip. */
 .call-propose { display: flex; justify-content: center; padding-top: 0; padding-bottom: var(--s2); }
 .call-propose__link { background: none; border: 0; color: var(--accent); font-size: 14px; font-weight: 600; padding: 6px 4px; cursor: pointer; }
+
+/* « 🎯 +4 ✓ » / « 🎯 +4 ✗ » announcement pills (HistoryRow, MatchSummary). */
+.pill--bet.is-won {
+  border-color: var(--pos);
+  color: var(--pos);
+}
+
+.pill--bet.is-lost {
+  color: var(--text-2);
+}
+
+/* MatchSummary: one block per announcing team, between the score hero and the player rows. */
+.ms-bets {
+  display: flex;
+  flex-direction: column;
+  gap: var(--s2);
+}
+
+.ms-bet {
+  padding: var(--s2) var(--s3);
+  border: 1px solid var(--border);
+  border-left-width: 3px;
+  border-radius: var(--r-sm);
+  background: var(--surface);
+}
+
+.ms-bet--won {
+  border-left-color: var(--pos);
+}
+
+.ms-bet--lost {
+  border-left-color: var(--neg);
+}
+
+.ms-bet__title {
+  font-size: var(--fs-label);
+  font-weight: 600;
+  line-height: 1.35;
+}
+
+.ms-bet__calc {
+  margin-top: 2px;
+  font-size: var(--fs-caption);
+  line-height: 1.4;
+  color: var(--text-2);
+  font-variant-numeric: tabular-nums;
+}

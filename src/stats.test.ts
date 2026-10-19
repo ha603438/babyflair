@@ -598,6 +598,26 @@ describe('validateImport', () => {
     expect(result.matches[0]).toEqual(sampleStore().matches[0])
   })
 
+  it('reads the announcements: absent or null = none, clamped to the target, round-tripped through an export', () => {
+    const result = validateImport(withMatch(withMatch(validFile(), 0, { betA: 3, betB: null }), 1, { betB: 9 }))
+    expectOk(result)
+    expect(result.matches[0]).toMatchObject({ betA: 3 })
+    expect('betB' in result.matches[0]).toBe(false)
+    expect(result.matches[1]).toMatchObject({ target: 5, betB: 5 })
+    expect('betA' in result.matches[1]).toBe(false)
+    const store = sampleStore()
+    store.matches[0] = { ...store.matches[0], betA: 2, betB: 4 }
+    const again = validateImport(JSON.parse(JSON.stringify(buildExport(store, NOW))))
+    expectOk(again)
+    expect(again.matches).toEqual(store.matches)
+  })
+
+  it('rejects an unreadable announcement', () => {
+    expectKo(validateImport(withMatch(validFile(), 0, { betA: 0 })), /Match n°1 : annonce des Blancs invalide \(0\)/)
+    expectKo(validateImport(withMatch(validFile(), 1, { betB: 'deux' })), /Match n°2 : annonce des Noirs invalide/)
+    expectKo(validateImport(withMatch(validFile(), 1, { betB: 1.5 })), /annonce des Noirs invalide/)
+  })
+
   it('keeps a comeback on a 5-4 in 5 and round-trips it through an export', () => {
     const result = validateImport(withMatch(validFile(), 1, { scoreA: 4, comeback: true }))
     expectOk(result)

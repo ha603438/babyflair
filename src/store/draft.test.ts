@@ -344,3 +344,75 @@ describe('comeback', () => {
     expect(draftReducer(done, keep).comeback).toBe(false)
   })
 })
+
+describe('announcements (« Annoncer un écart »)', () => {
+  const full = (): Draft => pickAll(initialDraft(SETTINGS), 'a', 'b', 'c', 'd') // 2v2 in 10, score step
+  const announced = (): Draft => run(full(), { type: 'setBet', team: 'A', n: 4 }, { type: 'setBet', team: 'B', n: 2 })
+
+  it('sets, clamps to 1..target and removes each team independently', () => {
+    const d = announced()
+    expect([d.betA, d.betB]).toEqual([4, 2])
+    expect(draftReducer(d, { type: 'setBet', team: 'A', n: 14 }).betA).toBe(10)
+    expect(draftReducer(d, { type: 'setBet', team: 'B', n: 0 }).betB).toBe(1)
+    const removed = draftReducer(d, { type: 'setBet', team: 'A', n: null })
+    expect('betA' in removed).toBe(false)
+    expect(removed.betB).toBe(2)
+    expect(draftReducer(d, { type: 'setBet', team: 'A', n: 4 })).toBe(d)
+  })
+
+  it('is refused on an incomplete roster and on the result view', () => {
+    const partial = pickAll(initialDraft(SETTINGS), 'a', 'b', 'c')
+    expect(draftReducer(partial, { type: 'setBet', team: 'A', n: 3 })).toBe(partial)
+    const done = draftReducer(full(), { type: 'saved', matchId: 'm1' })
+    expect(draftReducer(done, { type: 'setBet', team: 'A', n: 3 })).toBe(done)
+  })
+
+  it('a change of team drops both: a pick, an emptied slot, another format', () => {
+    const d = announced()
+    const changes: DraftAction[] = [
+      { type: 'clearSlot', index: 2 },
+      { type: 'setFormat', format: '1v1' },
+    ]
+    for (const action of changes) {
+      const next = draftReducer(d, action)
+      expect([next.betA, next.betB], action.type).toEqual([undefined, undefined])
+    }
+    const replaced = run(d, { type: 'setActiveSlot', index: 3 }, { type: 'pick', playerId: 'e' })
+    expect(replaced.slots).toEqual(['a', 'b', 'c', 'e'])
+    expect([replaced.betA, replaced.betB]).toEqual([undefined, undefined])
+  })
+
+  it('keeps them while the teams stay the same: swap, score, comeback, back and « Continuer »', () => {
+    const d = announced()
+    const kept = run(
+      d,
+      { type: 'swapTeam', team: 1 },
+      { type: 'setScore', score: { winner: 'A', loserGoals: 5 } },
+      { type: 'goToPlayers' },
+      { type: 'setActiveSlot', index: 0 },
+      { type: 'prefill', teamA: ['b', 'a'], teamB: ['c', 'd'], target: 10 },
+    )
+    expect([kept.betA, kept.betB]).toEqual([4, 2])
+    expect(kept.step).toBe('score')
+  })
+
+  it('a new target clamps them', () => {
+    const d = run(full(), { type: 'setBet', team: 'A', n: 8 }, { type: 'setBet', team: 'B', n: 3 })
+    const five = draftReducer(d, { type: 'setTarget', target: 5 })
+    expect([five.betA, five.betB]).toEqual([5, 3])
+  })
+
+  it('stay on the result view of the saved match, then reset with the next one', () => {
+    const done = draftReducer(announced(), { type: 'saved', matchId: 'm1' })
+    expect([done.betA, done.betB]).toEqual([4, 2])
+    const next: DraftAction[] = [
+      { type: 'reset' },
+      { type: 'prefill', teamA: ['a', 'b'], teamB: ['c', 'd'], target: 10 },
+      { type: 'keepWinners', winner: 'A', teamA: ['a', 'b'], teamB: ['c', 'd'], target: 10 },
+    ]
+    for (const action of next) {
+      const after = draftReducer(done, action)
+      expect([after.betA, after.betB], action.type).toEqual([undefined, undefined])
+    }
+  })
+})

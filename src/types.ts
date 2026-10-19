@@ -27,6 +27,12 @@ export type Match = {
   scoreB: number
   /** Winners trailing 0-4 who won 5-4 (box ticked at entry). Only ever true on a 5-4 in 5; absent means false. */
   comeback?: boolean
+  /**
+   * « Annonce d'écart » of the Blancs (team A) / Noirs (team B), set before playing: « on gagne d'au moins N buts ».
+   * An integer in 1..target; absent or null = no announcement. Rated by the engine (BetOutcome in MatchResult.bets).
+   */
+  betA?: number | null
+  betB?: number | null
   /** Mode partagé: who saved / last changed it, set by a server trigger from x-player-id. Never sent by the app. */
   createdBy?: PlayerId
   updatedBy?: PlayerId
@@ -84,6 +90,9 @@ export type MatchSnapshot = {
   scoreA: number
   scoreB: number
   comeback?: boolean
+  /** Announcements (bet_a / bet_b of the row), absent when none. */
+  betA?: number
+  betB?: number
 }
 
 export type MatchEvent = {
@@ -158,7 +167,30 @@ export type MatchPlayerResult = {
   why: string
 }
 
-export type MatchResult = { matchId: MatchId; expectedA: number; expectedB: number; perPlayer: MatchPlayerResult[] }
+/** A team's « annonce d'écart » as rated by the engine (src/rating/engine.ts, rateBet). */
+export type BetOutcome = {
+  team: Team
+  /** Announced minimum winning margin, 1..target. */
+  n: number
+  /** Pre-match chance of success (0..1) under the engine's independent-goals model, from the team's expectation. */
+  chance: number
+  /** The team won with target − loser goals ≥ n. */
+  success: boolean
+  /**
+   * Points added to EACH member of the team, on top of the normal delta (already included in MatchPlayerResult.delta):
+   * betStake × (1 − chance) on a success, −betStake × chance otherwise, rounded to 0.001.
+   */
+  delta: number
+}
+
+export type MatchResult = {
+  matchId: MatchId
+  expectedA: number
+  expectedB: number
+  perPlayer: MatchPlayerResult[]
+  /** The announcements of this match, team A first; empty when nobody announced. */
+  bets: BetOutcome[]
+}
 
 export type ReplayResult = { byPlayer: Map<PlayerId, PlayerStats>; byMatch: Map<MatchId, MatchResult> }
 
@@ -177,6 +209,9 @@ export type Draft = {
   lastSavedMatchId?: MatchId
   /** « Comeback » box under the score; only true while the score is a 5-4 in 5, cleared by any other change. */
   comeback?: boolean
+  /** « Annoncer un écart » of each team (1..target), on a complete roster only; absent = none; a team change resets. */
+  betA?: number | null
+  betB?: number | null
 }
 
 export type PreviewWhatIf = {

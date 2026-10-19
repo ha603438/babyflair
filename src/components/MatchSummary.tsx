@@ -1,4 +1,5 @@
-import type { Match, MatchPlayerResult, MatchResult, Player, PlayerId, PlayerStats } from '../types'
+import { betCalculation, betTitle } from '../bets'
+import type { BetOutcome, Match, MatchPlayerResult, MatchResult, Player, PlayerId, PlayerStats } from '../types'
 import { fmtInt, fmtOrdinal, fmtScore } from '../format'
 import { authorshipLine } from '../profile/journal'
 import { teamLabel } from '../stats'
@@ -117,7 +118,22 @@ function PlayerLine({ entry, player, rookie, why, movement, position }: PlayerLi
   )
 }
 
-/** Score hero, team names and per-player rows with the engine's why line (spec §3.4, §4 step C). */
+function betClass(bet: BetOutcome): string {
+  if (bet.success) return 'ms-bet ms-bet--won'
+  return 'ms-bet ms-bet--lost'
+}
+
+/** « 🎯 Annonce des Blancs : +4 · réussie (23 % de chances) » and, under it, how the points came out. */
+function BetBlock({ bet, match }: { bet: BetOutcome; match: Match }) {
+  return (
+    <div className={betClass(bet)}>
+      <p className="ms-bet__title">{betTitle(bet)}</p>
+      <p className="ms-bet__calc">{betCalculation(bet, match)}</p>
+    </div>
+  )
+}
+
+/** Score hero, team names, the announcements and per-player rows with the engine's why line (spec §3.4, §4 step C). */
 export function MatchSummary({ match, result, players, byPlayer, rankBefore, rankAfter, dateLine }: MatchSummaryProps) {
   const sides = sidesOf(match)
   const winnersLabel = teamLabel(sides.winners, players)
@@ -143,6 +159,13 @@ export function MatchSummary({ match, result, players, byPlayer, rankBefore, ran
           <div className="ms-team ms-team--loser">{losersLabel}</div>
         </div>
       </div>
+      {result.bets.length > 0 && (
+        <div className="ms-bets">
+          {result.bets.map((bet) => (
+            <BetBlock key={bet.team} bet={bet} match={match} />
+          ))}
+        </div>
+      )}
       <div className="ms-rows">
         {entries.map((entry) => {
           const stats = byPlayer?.get(entry.playerId)

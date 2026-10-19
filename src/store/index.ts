@@ -3,6 +3,7 @@ export { backfillSeq, DEFAULT_SETTINGS, initialStore, nextSeqOf, playerHasMatche
 export { loadStore, normaliseSettings, normaliseStore, saveStore, STORAGE_KEY } from './persistence'
 export type { DraftAction } from './draft'
 export { canBeComeback, draftReducer, initialDraft, isDraftComplete, NO_ACTIVE_SLOT, visibleSlots } from './draft'
+export { DRAFT_STORAGE_KEY, draftFromStored, draftToStored, loadDraft, saveDraft } from './draftStorage'
 export type { AppState, NavPayload, ToastInput, ToastState } from './provider'
 export { AppStateProvider, useAppState, useOptionalAppState } from './provider'
 export type { SyncState } from './use-remote-sync'

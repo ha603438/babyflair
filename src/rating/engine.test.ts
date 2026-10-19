@@ -4,6 +4,10 @@ import type { LeaderboardRow, Match, Player, PlayerDelta, RatingsState, ReplayRe
 import {
   matchBonus,
   applyMatch,
+  betChance,
+  betOutlook,
+  goalProbability,
+  rateBet,
   compareRows,
   DEFAULT_CONFIG,
   expectedScore,
@@ -90,8 +94,16 @@ function player(id: string, name: string): Player {
   return { id, name, isGuest: false, createdAt: T0 - 10 * DAY }
 }
 
+// The vectors predate the announcements (« annonces d'écart »): none of their matches carries one, so every delta must
+// come out with `bet: null`, a field the vectors simply do not have.
+function withoutBet(d: PlayerDelta): Omit<PlayerDelta, 'bet'> {
+  expect(d.bet).toBeNull()
+  const { bet: _bet, ...rest } = d
+  return rest
+}
+
 function explain(deltas: PlayerDelta[]): Explained[] {
-  return deltas.map((d) => ({ ...d, why: whyFr(d) }))
+  return deltas.map((d) => ({ ...withoutBet(d), why: whyFr(d) }) as Explained)
 }
 
 function summarise(result: ReplayResult): ReplaySummary {
@@ -123,7 +135,9 @@ const FOUR: Player[] = [player('a', 'Alice'), player('b', 'Bob'), player('c', 'C
 
 describe('test-vectors.json', () => {
   it('was generated with the default config and carries the 16 scenarios', () => {
-    expect(vectors.config).toEqual(DEFAULT_CONFIG)
+    // betStake came with the announcements, after the vectors: every other key is the generator's.
+    const { betStake: _stake, ...vectorConfig } = DEFAULT_CONFIG
+    expect(vectors.config).toEqual(vectorConfig)
     expect(vectors.scenarios).toHaveLength(16)
   })
 
@@ -206,7 +220,8 @@ describe('histories', () => {
     expect(board.rookies.map((r) => [r.player.id, r.rating, r.matches])).toEqual(expected.leaderboard.rookies)
     expect(board.inactive.map((r) => r.player.id)).toEqual(expected.leaderboard.inactive)
 
-    expect(result.matches[result.matches.length - 1]).toEqual(expected.lastMatch)
+    const last = result.matches[result.matches.length - 1]
+    expect({ ...last, deltas: last.deltas.map(withoutBet) }).toEqual(expected.lastMatch)
   })
 
   it('undo_seq_and_restore', () => {
@@ -300,5 +315,220 @@ describe('fanny and comeback bonus', () => {
     expect(plain.map((d) => d.delta)).toEqual([8.8, 8.8, -8.8, -8.8])
     expect(comeback.map((d) => d.delta)).toEqual([11, 11, -11, -11])
     expect(whyFr(comeback[0])).toContain('comeback ×1,25')
+  })
+})
+
+// ---------------------------------------------------------------------------
+// Announcements (« annonces d'écart »): BabyElo v2 + an Elo-style side bet per team
+// ---------------------------------------------------------------------------
+
+describe('betChance (independent-goals model)', () => {
+  // Σ_{k=0}^{maxLoser} C(target - 1 + k, k) q^target (1 - q)^k, written out independently of the engine.
+  function binomial(n: number, k: number): number {
+    let c = 1
+    for (let i = 1; i <= k; i++) c = (c * (n - k + i)) / i
+    return c
+  }
+  function reference(q: number, target: number, maxLoser: number): number {
+    let sum = 0
+    for (let k = 0; k <= maxLoser; k++) sum += binomial(target - 1 + k, k) * q ** target * (1 - q) ** k
+    return sum
+  }
+
+  it('equal teams in 10, announce +4: about 22,7 %', () => {
+    expect(goalProbability(0.5, 10)).toBeCloseTo(0.5, 12)
+    expect(betChance(0.5, 10, 4)).toBeCloseTo(reference(0.5, 10, 6), 12)
+    expect(betChance(0.5, 10, 4)).toBeCloseTo(0.2272, 4)
+  })
+
+  it('N = 1 gives the win expectation back, in 5 and in 10', () => {
+    for (const target of [5, 10] as const) {
+      for (const e of [0.05, 0.3, 0.5, 0.7, 0.93]) {
+        expect(betChance(e, target, 1), `${e} en ${target}`).toBeCloseTo(e, 10)
+      }
+    }
+  })
+
+  it('N = target is the chance of a fanny: q^target', () => {
+    expect(betChance(0.5, 5, 5)).toBeCloseTo(1 / 32, 12)
+    expect(betChance(0.5, 10, 10)).toBeCloseTo(1 / 1024, 12)
+    for (const e of [0.2, 0.7]) {
+      const q = goalProbability(e, 10)
+      expect(betChance(e, 10, 10)).toBeCloseTo(q ** 10, 12)
+      expect(betChance(e, 10, 10)).toBeCloseTo(reference(q, 10, 0), 12)
+    }
+  })
+
+  it('calibrates q on the race expectation and matches the closed form for any N', () => {
+    for (const target of [5, 10] as const) {
+      const q = goalProbability(0.62, target)
+      expect(reference(q, target, target - 1)).toBeCloseTo(0.62, 12)
+      for (let n = 1; n <= target; n++) {
+        expect(betChance(0.62, target, n)).toBeCloseTo(reference(q, target, target - n), 12)
+      }
+    }
+  })
+
+  it('falls as N grows, rises with the expectation, and stays in 0..1 at the extremes', () => {
+    for (let n = 1; n < 10; n++) expect(betChance(0.5, 10, n + 1)).toBeLessThan(betChance(0.5, 10, n))
+    expect(betChance(0.8, 5, 3)).toBeGreaterThan(betChance(0.4, 5, 3))
+    expect(betChance(0, 10, 3)).toBeCloseTo(0, 12)
+    expect(betChance(1, 10, 3)).toBeCloseTo(1, 9)
+  })
+
+  it('is deterministic', () => {
+    expect(betChance(0.613, 10, 3)).toBe(betChance(0.613, 10, 3))
+  })
+})
+
+describe('betOutlook / rateBet', () => {
+  it('equal teams in 10, +4: +12,4 if it works, -3,6 otherwise', () => {
+    const outlook = betOutlook(0.5, 10, 4)
+    expect(round3(outlook.success)).toBe(12.364)
+    expect(round3(outlook.failure)).toBe(-3.636)
+  })
+
+  it('a favourite (E = 0,7) announcing +1: p = 0,7, so +4,8 / -11,2', () => {
+    const outlook = betOutlook(0.7, 10, 1)
+    expect(outlook.chance).toBeCloseTo(0.7, 10)
+    expect(round3(outlook.success)).toBe(4.8)
+    expect(round3(outlook.failure)).toBe(-11.2)
+  })
+
+  it('has a zero expected value under the model, for any stake', () => {
+    for (const [e, target, n] of [[0.5, 10, 4], [0.3, 5, 2], [0.85, 10, 7]] as const) {
+      const { chance, success, failure } = betOutlook(e, target, n)
+      expect(chance * success + (1 - chance) * failure).toBeCloseTo(0, 12)
+    }
+    const doubled = betOutlook(0.5, 10, 4, { ...DEFAULT_CONFIG, betStake: 32 })
+    expect(doubled.success).toBeCloseTo(2 * betOutlook(0.5, 10, 4).success, 12)
+  })
+
+  it('succeeds only on a win by at least N, and is null without announcement', () => {
+    const side = { won: true, expected: 0.5 }
+    expect(rateBet(null, side, { target: 10, scoreA: 10, scoreB: 2 })).toBeNull()
+    expect(rateBet(undefined, side, { target: 10, scoreA: 10, scoreB: 2 })).toBeNull()
+    expect(rateBet(4, side, { target: 10, scoreA: 10, scoreB: 6 })?.success).toBe(true) // exactly 4
+    expect(rateBet(4, side, { target: 10, scoreA: 10, scoreB: 7 })?.success).toBe(false) // 3 only
+    expect(rateBet(4, { won: false, expected: 0.5 }, { target: 10, scoreA: 0, scoreB: 10 })?.success).toBe(false)
+    const fanny = rateBet(5, side, { target: 5, scoreA: 0, scoreB: 5 })
+    expect(fanny).toEqual({ n: 5, chance: 1 / 32, success: true, delta: 15.5 })
+  })
+})
+
+describe('applyMatch with announcements', () => {
+  const established = (ratings: Record<string, number>, matches = 20): RatingsState =>
+    Object.fromEntries(
+      Object.entries(ratings).map(([id, rating]) => [id, { rating, matches, wins: 10, losses: 10, lastPlayedAt: 0 }]),
+    )
+  const EQUAL = established({ a: 1000, b: 1000, c: 1000, d: 1000 })
+  const base = { id: 'm', seq: 1, playedAt: 1, createdAt: 1, teamA: ['a', 'b'], teamB: ['c', 'd'] }
+  const deltasOf = (state: RatingsState, match: Match): number[] => applyMatch(state, match).deltas.map((d) => d.delta)
+
+  it('success: equal teams in 10, the Blancs announce +4 and win 10-5 (+12 base, +12,364 announcement each)', () => {
+    const { deltas } = applyMatch(EQUAL, { ...base, target: 10, scoreA: 10, scoreB: 5, betA: 4 })
+    expect(deltas.map((d) => d.delta)).toEqual([24.364, 24.364, -12, -12])
+    expect(deltas[0].bet).toEqual({ n: 4, chance: betChance(0.5, 10, 4), success: true, delta: 12.364 })
+    expect(deltas[2].bet).toBeNull()
+    expect(whyFr(deltas[0])).toBe(
+      'Victoire 10-5 (en 10) · 50 % de chances · marge ×1,5 · part 50 % · ' +
+        'annonce +4 réussie (23 % de chances) +12,4 → +24,4',
+    )
+    expect(whyFr(deltas[2])).not.toContain('annonce')
+  })
+
+  it('failure by a smaller win: 10-7 for +4 costs 3,636 each on top of the win', () => {
+    const { deltas } = applyMatch(EQUAL, { ...base, target: 10, scoreA: 10, scoreB: 7, betA: 4 })
+    expect(deltas.map((d) => d.delta)).toEqual([6.764, 6.764, -10.4, -10.4])
+    expect(deltas[0].bet?.success).toBe(false)
+    expect(whyFr(deltas[0])).toContain(' · annonce +4 ratée (23 % de chances) −3,6 → +6,8')
+  })
+
+  it('failure by a loss: the announcement adds to the defeat', () => {
+    const { deltas } = applyMatch(EQUAL, { ...base, target: 10, scoreA: 7, scoreB: 10, betA: 4 })
+    expect(deltas.map((d) => d.delta)).toEqual([-14.036, -14.036, 10.4, 10.4])
+    expect(whyFr(deltas[1])).toContain('annonce +4 ratée (23 % de chances) −3,6 → −14,0')
+  })
+
+  it('leaves the other team untouched: the match is no longer zero-sum by exactly the announcement', () => {
+    const plain = deltasOf(EQUAL, { ...base, target: 10, scoreA: 10, scoreB: 5 })
+    const bet = applyMatch(EQUAL, { ...base, target: 10, scoreA: 10, scoreB: 5, betA: 4 }).deltas
+    expect(bet.slice(2).map((d) => d.delta)).toEqual(plain.slice(2))
+    const sum = bet.reduce((total, d) => total + d.delta, 0)
+    expect(sum).toBeCloseTo(2 * 12.364, 9)
+  })
+
+  it('both teams announce independently on the same match', () => {
+    const { deltas } = applyMatch(EQUAL, { ...base, target: 10, scoreA: 10, scoreB: 8, betA: 2, betB: 3 })
+    const plain = deltasOf(EQUAL, { ...base, target: 10, scoreA: 10, scoreB: 8 })
+    const success = round3(betOutlook(0.5, 10, 2).success)
+    const failure = round3(betOutlook(0.5, 10, 3).failure)
+    expect(deltas[0].bet).toMatchObject({ n: 2, success: true, delta: success })
+    expect(deltas[2].bet).toMatchObject({ n: 3, success: false, delta: failure })
+    expect(deltas.map((d) => d.delta)).toEqual([
+      round3(plain[0] + success),
+      round3(plain[1] + success),
+      round3(plain[2] + failure),
+      round3(plain[3] + failure),
+    ])
+  })
+
+  it('in 5: uses the to-5 expectation (format factor) for the chance', () => {
+    const state = established({ a: 1100, b: 1100, c: 1000, d: 1000 })
+    const { deltas } = applyMatch(state, { ...base, target: 5, scoreA: 5, scoreB: 3, betA: 2, betB: 1 })
+    const eA = expectedScore(100, 5)
+    expect(deltas[0].expected).toBe(eA)
+    const chanceA = betChance(eA, 5, 2)
+    const chanceB = betChance(1 - eA, 5, 1)
+    expect(deltas[0].bet).toEqual({ n: 2, chance: chanceA, success: true, delta: round3(16 * (1 - chanceA)) })
+    expect(deltas[3].bet).toEqual({ n: 1, chance: chanceB, success: false, delta: round3(-16 * chanceB) })
+    expect(deltas[3].bet?.chance).toBeCloseTo(1 - eA, 10)
+  })
+
+  it('is not touched by the teammate split, the rookie multiplier, the margin or the fanny bonus', () => {
+    const state = established({ a: 1300, b: 800, c: 1000, d: 1000 }, 0) // rookies ×3, unequal teammates
+    const match: Match = { ...base, target: 10, scoreA: 10, scoreB: 0, betA: 10 } // fanny ×1,2, margin ×2
+    const plain = applyMatch(state, { ...match, betA: null }).deltas
+    const bet = applyMatch(state, match).deltas
+    const extra = bet[0].bet?.delta ?? Number.NaN
+    expect(extra).toBe(round3(16 * (1 - betChance(bet[0].expected, 10, 10))))
+    expect(bet[0].delta - plain[0].delta).toBeCloseTo(extra, 2)
+    expect(bet[1].delta - plain[1].delta).toBeCloseTo(extra, 2)
+    expect(bet[0].bet).toEqual(bet[1].bet)
+    expect(bet.slice(2)).toEqual(plain.slice(2))
+  })
+
+  it('works in a 1v1, and a null announcement is no announcement', () => {
+    const state = established({ a: 1000, c: 1000 })
+    const one = { ...base, teamA: ['a'], teamB: ['c'], target: 10 as const }
+    const { deltas } = applyMatch(state, { ...one, scoreA: 10, scoreB: 4, betA: 6 })
+    expect(deltas[0].bet?.success).toBe(true)
+    expect(whyFr(deltas[0])).toContain('annonce +6 réussie')
+    const without = applyMatch(state, { ...one, scoreA: 10, scoreB: 4 })
+    expect(applyMatch(state, { ...one, scoreA: 10, scoreB: 4, betA: null, betB: null })).toEqual(without)
+  })
+
+  it('rejects an announcement outside 1..target', () => {
+    const valid: Match = { ...base, target: 5, scoreA: 5, scoreB: 3 }
+    const message = 'Invalid match m: an announced margin must be an integer in 1..target'
+    for (const bad of [0, 6, 2.5, -1, Number.NaN]) {
+      expect(thrownBy(() => validateMatch({ ...valid, betA: bad }))?.message, String(bad)).toBe(message)
+      expect(thrownBy(() => validateMatch({ ...valid, betB: bad }))?.message, String(bad)).toBe(message)
+    }
+    expect(() => validateMatch({ ...valid, betA: 5, betB: 1 })).not.toThrow()
+    expect(() => validateMatch({ ...valid, betA: null, betB: undefined })).not.toThrow()
+  })
+
+  it('replays deterministically and carries the announcement in the result', () => {
+    const roster = [player('a', 'Alice'), player('b', 'Bob'), player('c', 'Chloé'), player('d', 'David')]
+    const matches: Match[] = [
+      { ...base, id: 'm1', seq: 1, target: 10, scoreA: 10, scoreB: 5, betA: 4 },
+      { ...base, id: 'm2', seq: 2, playedAt: 2, createdAt: 2, target: 5, scoreA: 2, scoreB: 5, betB: 3 },
+    ]
+    const result = replay(roster, matches)
+    expect(replay(roster, matches)).toEqual(result)
+    expect(result.matches[0].deltas[0].bet?.success).toBe(true)
+    expect(result.matches[1].deltas[2].bet?.success).toBe(true)
+    expect(result.matches[1].deltas[0].bet).toBeNull()
   })
 })

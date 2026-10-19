@@ -269,6 +269,38 @@ describe('comeback', () => {
   })
 })
 
+describe('announcements', () => {
+  it('normaliseStore keeps integers ≥ 1 clamped to the target and drops anything else', () => {
+    const match = {
+      id: 'm1',
+      seq: 1,
+      playedAt: '2025-10-06T12:42:00.000Z',
+      target: 5,
+      teamA: ['a'],
+      teamB: ['b'],
+      scoreA: 5,
+      scoreB: 1,
+    }
+    const store = normaliseStore({
+      version: 1,
+      players: [],
+      matches: [
+        { ...match, betA: 3, betB: 1 },
+        { ...match, id: 'm2', seq: 2, betA: 9, betB: null },
+        { ...match, id: 'm3', seq: 3, betA: 0, betB: 'x' },
+        { ...match, id: 'm4', seq: 4 },
+      ],
+    })
+    expect(store?.matches.map((m) => [m.betA, m.betB])).toEqual([
+      [3, 1],
+      [5, undefined],
+      [undefined, undefined],
+      [undefined, undefined],
+    ])
+    expect(store !== null && 'betA' in store.matches[3]).toBe(false)
+  })
+})
+
 describe('normaliseSettings · classementTab', () => {
   it('keeps a known Classement tab and drops anything else', () => {
     expect(normaliseSettings({ classementTab: '2v2' }).classementTab).toBe('2v2')

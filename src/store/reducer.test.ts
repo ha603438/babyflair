@@ -344,6 +344,33 @@ describe('appels à jouer', () => {
   })
 })
 
+describe('announcements', () => {
+  it('addMatch, updateMatch and restoreMatch clamp them to the target; an edit can remove one', () => {
+    const state = seeded()
+    const input = matchInput('m4', ['alice'], ['dan'])
+    const fiveTwo = { ...input, target: 5 as const, scoreA: 5, scoreB: 2, betA: 7, betB: 2 }
+    const added = reducer(state, { type: 'addMatch', match: fiveTwo })
+    expect(added.matches.at(-1)).toMatchObject({ betA: 5, betB: 2 })
+    const edited = reducer(state, { type: 'updateMatch', match: { ...state.matches[0], betB: 3 } })
+    expect(edited.matches[0].betB).toBe(3)
+    const { betB: _removed, ...without } = edited.matches[0]
+    const cleared = reducer(edited, { type: 'updateMatch', match: without })
+    expect('betB' in cleared.matches[0]).toBe(false)
+    const removed = { ...state.matches[2], betA: 0 }
+    const gone = reducer(state, { type: 'deleteMatch', id: removed.id })
+    expect('betA' in reducer(gone, { type: 'restoreMatch', match: removed, index: 2 }).matches[2]).toBe(false)
+  })
+
+  it('importAll keeps the array when there is nothing to fix', () => {
+    const valid: Match = { ...matchInput('x1', ['p1'], ['p2']), seq: 1, betA: 3 }
+    const settings = { lastFormat: '1v1', lastTarget: 5 } as const
+    const matches = [valid]
+    const players = [player('p1'), player('p2')]
+    const imported = reducer(initialStore, { type: 'importAll', players, matches, settings })
+    expect(imported.matches).toBe(matches)
+  })
+})
+
 describe('comeback', () => {
   const fiveFour = { target: 5, scoreA: 5, scoreB: 4 } as const
 

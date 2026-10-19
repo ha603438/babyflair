@@ -1,3 +1,4 @@
+import { betFields, clampBet } from '../bets'
 import type { Draft, Format, PlayerId, Score, Settings, Target, Team } from '../types'
 
 export type DraftAction =
@@ -14,6 +15,7 @@ export type DraftAction =
   | { type: 'swapTeam'; team: 1 | 2 } /* 2v2: swaps arrière and avant of a team */
   | { type: 'keepWinners'; winner: Team; teamA: PlayerId[]; teamB: PlayerId[]; target: Target } /* winners stay on their side */
   | { type: 'setComeback'; value: boolean } /* « Comeback » box, only kept on a 5-4 in 5 */
+  | { type: 'setBet'; team: Team; n: number | null } /* « Annoncer un écart » (1..target), null = « Retirer » */
 
 /** `activeSlot` value meaning "no slot is active" (every required slot is filled). */
 export const NO_ACTIVE_SLOT = -1
@@ -142,10 +144,14 @@ function slotAt(ids: PlayerId[], index: number): PlayerId | null {
   return ids[index]
 }
 
+/** The announcements go along (« Continuer » after « Modifier »): keepBets drops them if the teams changed. */
 function prefill(draft: Draft, teamA: PlayerId[], teamB: PlayerId[], target: Target): Draft {
   const format: Format = teamA.length > 1 || teamB.length > 1 ? '2v2' : '1v1'
   const slots = [slotAt(teamA, 0), slotAt(teamA, 1), slotAt(teamB, 0), slotAt(teamB, 1)]
-  return settle({ format, target, slots, activeSlot: draft.activeSlot, score: null, step: 'players', comeback: false })
+  const { activeSlot } = draft
+  const next = settle({ format, target, slots, activeSlot, score: null, step: 'players', comeback: false })
+  if (draft.step === 'done') return next
+  return { ...next, ...betFields(draft.betA, draft.betB) }
 }
 
 function swapTeam(draft: Draft, team: 1 | 2): Draft {
@@ -167,7 +173,73 @@ function keepWinners(draft: Draft, winner: Team, teamA: PlayerId[], teamB: Playe
   return settle({ format, target, slots, activeSlot: draft.activeSlot, score: null, step: 'players', comeback: false })
 }
 
-export function draftReducer(draft: Draft, action: DraftAction): Draft {
+// ---------------------------------------------------------------------------
+// Announcements (« Annoncer un écart »): one per team, on a complete roster, before one match
+// ---------------------------------------------------------------------------
+
+type BetKey = 'betA' | 'betB'
+
+function betKeyOf(team: Team): BetKey {
+  if (team === 'A') return 'betA'
+  return 'betB'
+}
+
+function hasBets(draft: Draft): boolean {
+  return clampBet(draft.betA, draft.target) !== null || clampBet(draft.betB, draft.target) !== null
+}
+
+export function withoutBets(draft: Draft): Draft {
+  const { betA: _betA, betB: _betB, ...rest } = draft
+  return rest
+}
+
+function withBet(draft: Draft, key: BetKey, n: number | null): Draft {
+  if (n !== null) return { ...draft, [key]: n }
+  const { [key]: _removed, ...rest } = draft
+  return rest
+}
+
+function setBet(draft: Draft, team: Team, n: number | null): Draft {
+  if (draft.step === 'done' || !isDraftComplete(draft)) return draft
+  const key = betKeyOf(team)
+  const value = clampBet(n, draft.target)
+  if (value === (draft[key] ?? null)) return draft
+  return withBet(draft, key, value)
+}
+
+/** Each team's ids, sorted (an arrière / avant swap keeps the same team); null while a visible slot is empty. */
+function rosterKey(draft: Draft): string | null {
+  const visible = visibleSlots(draft.format)
+  if (visible.some((index) => draft.slots[index] === null)) return null
+  const team = (first: number): string =>
+    visible
+      .filter((index) => index >= first && index < first + 2)
+      .map((index) => draft.slots[index])
+      .sort()
+      .join('+')
+  return `${draft.format}|${team(0)}|${team(2)}`
+}
+
+function clampedBets(draft: Draft): Draft {
+  const betA = clampBet(draft.betA, draft.target)
+  const betB = clampBet(draft.betB, draft.target)
+  if (betA === (draft.betA ?? null) && betB === (draft.betB ?? null)) return draft
+  return withBet(withBet(draft, 'betA', betA), 'betB', betB)
+}
+
+/**
+ * Announcements belong to one roster before one match: a change of team (or of format), an emptied slot or the next
+ * match after a save drops them; a new target clamps them to 1..target.
+ */
+function keepBets(before: Draft, after: Draft): Draft {
+  if (after === before || !hasBets(after)) return after
+  if (before.step === 'done' && after.step !== 'done') return withoutBets(after)
+  const key = rosterKey(after)
+  if (key === null || key !== rosterKey(before)) return withoutBets(after)
+  return clampedBets(after)
+}
+
+function reduceDraft(draft: Draft, action: DraftAction): Draft {
   switch (action.type) {
     case 'setFormat':
       return setFormat(draft, action.format)
@@ -195,5 +267,24 @@ export function draftReducer(draft: Draft, action: DraftAction): Draft {
       return keepWinners(draft, action.winner, action.teamA, action.teamB, action.target)
     case 'setComeback':
       return setComeback(draft, action.value)
+    case 'setBet':
+      return setBet(draft, action.team, action.n)
   }
+}
+
+export function draftReducer(draft: Draft, action: DraftAction): Draft {
+  return keepBets(draft, reduceDraft(draft, action))
+}
+
+export type DraftParts = Pick<Draft, 'format' | 'target' | 'slots' | 'betA' | 'betB'>
+
+/**
+ * A draft rebuilt from its persisted parts (src/store/draftStorage.ts): no score yet, the active slot and the step
+ * recomputed from the slots, announcements kept only on a complete roster and clamped to the target.
+ */
+export function restoreDraft(parts: DraftParts): Draft {
+  const base: Draft = { ...initialDraft({ lastFormat: parts.format, lastTarget: parts.target }), slots: parts.slots }
+  const settled = settle(base)
+  if (!isDraftComplete(settled)) return settled
+  return clampedBets(withBet(withBet(settled, 'betA', parts.betA ?? null), 'betB', parts.betB ?? null))
 }

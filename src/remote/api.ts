@@ -1,6 +1,7 @@
 // PostgREST client for the shared mode, over plain fetch (no supabase-js). Everything is injected (fetch, config,
 // office code, profile) so the client is unit-testable in node with a fake fetch. Rows are snake_case on the server and
 // mapped to the app types here; dates are normalised back to the `...Z` ISO form the app writes everywhere.
+import { readBet } from '../bets'
 import { parseCallResponse } from '../calls/calls'
 import type { Call, CallPlayer, Match, MatchEvent, MatchEventAction, MatchSnapshot, Player, Target } from '../types'
 import type { RemoteConfig } from './config'
@@ -77,15 +78,20 @@ export type MatchRow = {
   score_b: number
   /** « Comeback » box (docs/supabase/comeback.sql, not null default false); absent before that migration. */
   comeback?: boolean
+  /** « Annonces d'écart » (docs/supabase/bets.sql, smallint null, 1..target); absent before that migration. */
+  bet_a?: number | null
+  bet_b?: number | null
   /** Filled by the server trigger (docs/supabase/profiles.sql); absent before that migration. */
   created_by?: string | null
   updated_by?: string | null
 }
 
-/** What the app writes: the authorship columns are the trigger's, never sent; `comeback` always is. */
-export type MatchWriteRow = Omit<MatchRow, 'seq' | 'comeback' | 'created_by' | 'updated_by'> & {
+/** What the app writes: the authorship columns are the trigger's, never sent; `comeback` and the bets always are. */
+export type MatchWriteRow = Omit<MatchRow, 'seq' | 'comeback' | 'bet_a' | 'bet_b' | 'created_by' | 'updated_by'> & {
   seq?: number
   comeback: boolean
+  bet_a: number | null
+  bet_b: number | null
 }
 
 export type MatchEventRow = {
@@ -151,6 +157,10 @@ export function matchFromRow(row: MatchRow): Match {
     scoreB: row.score_b,
     comeback: row.comeback === true,
   }
+  const betA = readBet(row.bet_a, match.target)
+  const betB = readBet(row.bet_b, match.target)
+  if (betA !== undefined) match.betA = betA
+  if (betB !== undefined) match.betB = betB
   const createdBy = nonEmptyString(row.created_by)
   const updatedBy = nonEmptyString(row.updated_by)
   if (createdBy !== undefined) match.createdBy = createdBy
@@ -174,6 +184,9 @@ export function matchToRow(match: Omit<Match, 'seq'> & { seq?: number }): MatchW
     score_a: match.scoreA,
     score_b: match.scoreB,
     comeback: match.comeback === true,
+    // null clears an announcement removed by an edit.
+    bet_a: match.betA ?? null,
+    bet_b: match.betB ?? null,
   }
   if (match.seq !== undefined) row.seq = match.seq
   return row
@@ -195,6 +208,10 @@ export function snapshotFromJson(value: unknown): MatchSnapshot | null {
   if (typeof scoreA !== 'number' || typeof scoreB !== 'number' || typeof target !== 'number') return null
   const snapshot: MatchSnapshot = { target: targetOf(target), teamA: [...teamA], teamB: [...teamB], scoreA, scoreB }
   if (value.comeback === true) snapshot.comeback = true
+  const betA = readBet(value.bet_a, snapshot.target)
+  const betB = readBet(value.bet_b, snapshot.target)
+  if (betA !== undefined) snapshot.betA = betA
+  if (betB !== undefined) snapshot.betB = betB
   return snapshot
 }
 
@@ -455,6 +472,8 @@ export function createApi(deps: ApiDeps): RemoteApi {
       score_a: row.score_a,
       score_b: row.score_b,
       comeback: row.comeback,
+      bet_a: row.bet_a,
+      bet_b: row.bet_b,
       updated_at: row.updated_at,
     }
     await sendWrite(deps, 'PATCH', `matches?id=eq.${match.id}`, patch)

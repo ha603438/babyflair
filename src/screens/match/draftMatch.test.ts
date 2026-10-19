@@ -321,3 +321,37 @@ describe('rankMapOf', () => {
     expect(rankMapOf(ranking, ['nobody']).size).toBe(0)
   })
 })
+
+describe('announcements through the draft', () => {
+  it('a new match carries the announced keys only', () => {
+    expect(newMatchFromDraft(draft({ betA: 4 }), 'id', NOW_ISO)).toMatchObject({ betA: 4 })
+    expect('betB' in newMatchFromDraft(draft({ betA: 4, betB: null }), 'id', NOW_ISO)).toBe(false)
+    expect(matchFieldsOf(draft({ betA: 2, betB: 3 }))).toMatchObject({ betA: 2, betB: 3 })
+  })
+
+  it('the edit draft opens with the stored announcements and round-trips them', () => {
+    const base = match({ comeback: false, betA: 3, betB: 1 })
+    expect(matchToDraft(base)).toMatchObject({ betA: 3, betB: 1 })
+    expect(draftToMatch(matchToDraft(base), base, NOW_ISO)).toEqual({ ...base, updatedAt: NOW_ISO })
+    expect('betA' in matchToDraft(match())).toBe(false)
+  })
+
+  it('changing, adding or removing an announcement is a change to save; removing it drops the key', () => {
+    const base = match({ betA: 3 })
+    const opened = matchToDraft(base)
+    expect(isDraftChanged(opened, base)).toBe(false)
+    expect(isDraftChanged(draftReducer(opened, { type: 'setBet', team: 'A', n: 4 }), base)).toBe(true)
+    expect(isDraftChanged(draftReducer(opened, { type: 'setBet', team: 'B', n: 2 }), base)).toBe(true)
+    const removed = draftReducer(opened, { type: 'setBet', team: 'A', n: null })
+    expect(isDraftChanged(removed, base)).toBe(true)
+    expect('betA' in draftToMatch(removed, base, NOW_ISO)).toBe(false)
+    expect(isDraftChanged(matchToDraft(match({ betA: null })), match())).toBe(false)
+  })
+
+  it('a change of target in the edit clamps the announcement', () => {
+    const base = match({ betA: 8 })
+    const five = draftReducer(matchToDraft(base), { type: 'setTarget', target: 5 })
+    const scored = draftReducer(five, { type: 'setScore', score: { winner: 'A', loserGoals: 2 } })
+    expect(draftToMatch(scored, base, NOW_ISO)).toMatchObject({ target: 5, betA: 5 })
+  })
+})

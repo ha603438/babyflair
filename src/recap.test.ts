@@ -51,7 +51,7 @@ function resultOf(matches: Match[], fakes: Record<MatchId, Fake> = {}): ReplayRe
       return { playerId, team, before: 1000, after: 1000 + delta, delta, why: '' }
     }
     const perPlayer = [...m.teamA.map((id) => row(id, 'A')), ...m.teamB.map((id) => row(id, 'B'))]
-    byMatch.set(m.id, { matchId: m.id, expectedA, expectedB: 1 - expectedA, perPlayer })
+    byMatch.set(m.id, { matchId: m.id, expectedA, expectedB: 1 - expectedA, perPlayer, bets: [] })
   }
   return { byPlayer: new Map(), byMatch }
 }

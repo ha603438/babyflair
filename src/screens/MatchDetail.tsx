@@ -23,7 +23,7 @@ function replaceWithHistorique(): void {
 // The replay is keyed on the same store as the match list, so a match without a result is a transient state at
 // worst; the hero and the buttons still render, only the per-player rows are missing.
 function emptyResult(matchId: MatchId): MatchResult {
-  return { matchId, expectedA: 0.5, expectedB: 0.5, perPlayer: [] }
+  return { matchId, expectedA: 0.5, expectedB: 0.5, perPlayer: [], bets: [] }
 }
 
 export function MatchDetail({ id }: { id: MatchId }) {

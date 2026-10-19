@@ -2,6 +2,7 @@
 // engine's (./engine.ts: ms timestamps, soft deletes, 0.001-rounded ratings). Screens import from here and never do
 // rating math themselves.
 import type {
+  BetOutcome,
   HistoryPoint,
   Match,
   MatchId,
@@ -27,15 +28,42 @@ import type {
   PlayerDelta,
   RatingsState,
 } from './engine'
-import { applyMatch, compareRows, DEFAULT_CONFIG, freshState, leaderboard, replay as engineReplay, whyFr } from './engine'
+import {
+  applyMatch,
+  compareRows,
+  DEFAULT_CONFIG,
+  expectedScore,
+  freshState,
+  leaderboard,
+  replay as engineReplay,
+  whyFr,
+} from './engine'
 
-export { DEFAULT_CONFIG, expectedScore, marginMultiplier, rookieMultiplier, whyFr as whyLine } from './engine'
+export {
+  betChance,
+  betOutlook,
+  DEFAULT_CONFIG,
+  expectedScore,
+  goalProbability,
+  marginMultiplier,
+  rookieMultiplier,
+  whyFr as whyLine,
+} from './engine'
 export type { Config, PlayerDelta } from './engine'
 // Both modules only reach each other's hoisted functions at call time, so this import cycle is harmless.
 export { useReplay } from './useReplay'
 export type { ReplayView } from './useReplay'
 
-export type PreviewDraft = { teamA: PlayerId[]; teamB: PlayerId[]; target: Target; score?: Score; comeback?: boolean }
+export type PreviewDraft = {
+  teamA: PlayerId[]
+  teamB: PlayerId[]
+  target: Target
+  score?: Score
+  comeback?: boolean
+  /** Announcements: only the exact preview (score chosen) applies them, the what-if columns stay base-only. */
+  betA?: number | null
+  betB?: number | null
+}
 
 const PREVIEW_ID = 'preview'
 // Above any stored seq, so a preview can never collide with a real row; the engine only requires a finite number.
@@ -70,6 +98,8 @@ function toEngineMatch(match: Match): EngineMatch {
     scoreA: match.scoreA,
     scoreB: match.scoreB,
     comeback: match.comeback === true,
+    betA: match.betA ?? null,
+    betB: match.betB ?? null,
   }
 }
 
@@ -109,6 +139,17 @@ function expectations(deltas: PlayerDelta[]): { expectedA: number; expectedB: nu
   return { expectedA, expectedB: 1 - expectedA }
 }
 
+// Every member of a team carries the same announcement: the first one of each team stands for it.
+function betsOf(deltas: PlayerDelta[]): BetOutcome[] {
+  const bets: BetOutcome[] = []
+  for (const team of ['A', 'B'] as const) {
+    const bet = deltas.find((d) => d.team === team)?.bet ?? null
+    if (bet === null) continue
+    bets.push({ team, n: bet.n, chance: bet.chance, success: bet.success, delta: bet.delta })
+  }
+  return bets
+}
+
 function toMatchResult(result: EngineMatchResult): MatchResult {
   return {
     matchId: result.matchId,
@@ -121,6 +162,7 @@ function toMatchResult(result: EngineMatchResult): MatchResult {
       delta: d.delta,
       why: whyFr(d),
     })),
+    bets: betsOf(result.deltas),
   }
 }
 
@@ -272,5 +314,48 @@ export function previewMatch(result: ReplayResult, players: Player[], draft: Pre
     teamB: draft.teamB,
   }
   if (draft.score === undefined) return whatIf(state, roster, base)
-  return exact(state, roster, { ...base, ...scoresOf(draft.target, draft.score), comeback: draft.comeback === true })
+  const scored = { ...base, ...scoresOf(draft.target, draft.score), comeback: draft.comeback === true }
+  return exact(state, roster, { ...scored, betA: draft.betA ?? null, betB: draft.betB ?? null })
+}
+
+// The replay position of every rated match (byMatch is built in replay order).
+function replayOrder(result: ReplayResult): Map<MatchId, number> {
+  return new Map([...result.byMatch.keys()].map((id, index): [MatchId, number] => [id, index]))
+}
+
+// The exact engine rating of a player after every match placed before `limit` in the replay order (the history is in
+// that order and carries the 0.001-rounded ratingAfter); startRating before any match.
+function ratingAt(stats: PlayerStats | undefined, order: Map<MatchId, number>, limit: number): number {
+  const history = stats?.history ?? []
+  if (limit === Number.POSITIVE_INFINITY) return history.at(-1)?.ratingAfter ?? DEFAULT_CONFIG.startRating
+  let rating = DEFAULT_CONFIG.startRating
+  for (const point of history) {
+    const index = order.get(point.matchId)
+    if (index === undefined || index >= limit) break
+    rating = point.ratingAfter
+  }
+  return rating
+}
+
+function limitOf(order: Map<MatchId, number>, beforeMatchId: MatchId | undefined): number {
+  if (beforeMatchId === undefined) return Number.POSITIVE_INFINITY
+  return order.get(beforeMatchId) ?? Number.POSITIVE_INFINITY
+}
+
+/**
+ * Team A's win expectation (the engine's E, format factor included) for a roster: after every match by default (the
+ * new-match sheet, same value as previewMatch), or right before `beforeMatchId` (the edit screen, where the match
+ * keeps its place in the replay). Feeds the announcement stepper (betOutlook). A player unknown to `result` counts
+ * at startRating.
+ */
+export function teamExpectation(
+  result: ReplayResult,
+  draft: Pick<PreviewDraft, 'teamA' | 'teamB' | 'target'>,
+  beforeMatchId?: MatchId,
+): number {
+  const order = replayOrder(result)
+  const limit = limitOf(order, beforeMatchId)
+  const teamRating = (ids: PlayerId[]): number =>
+    ids.reduce((sum, id) => sum + ratingAt(result.byPlayer.get(id), order, limit), 0) / ids.length
+  return expectedScore(teamRating(draft.teamA) - teamRating(draft.teamB), draft.target)
 }

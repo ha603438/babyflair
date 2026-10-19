@@ -11,6 +11,7 @@ import type {
   Store,
   Target,
 } from './types'
+import { readBet } from './bets'
 
 const DAY_MS = 24 * 60 * 60 * 1000
 const SEVEN_DAYS_MS = 7 * DAY_MS
@@ -332,6 +333,8 @@ function readMatch(raw: unknown, position: number, playerIds: Set<PlayerId>): { 
   if (scores === null) {
     return ko(`${label} : score incohérent (${String(raw.scoreA)} – ${String(raw.scoreB)} en ${raw.target}).`)
   }
+  const bets = readImportBets(raw, raw.target, label)
+  if (!bets.ok) return bets
   return {
     ok: true,
     match: {
@@ -346,8 +349,25 @@ function readMatch(raw: unknown, position: number, playerIds: Set<PlayerId>): { 
       scoreA: scores.scoreA,
       scoreB: scores.scoreB,
       ...readComeback(raw.comeback, { target: raw.target, ...scores }),
+      ...bets.fields,
     },
   }
+}
+
+type BetsRead = { ok: true; fields: Pick<Match, 'betA' | 'betB'> } | ImportKo
+
+// Optional (older exports have none); null means no announcement. An integer ≥ 1 is clamped to the target (the same
+// rule as a change of target), anything else rejects the file.
+function readImportBets(raw: Record<string, unknown>, target: Target, label: string): BetsRead {
+  const fields: Pick<Match, 'betA' | 'betB'> = {}
+  for (const [key, side] of [['betA', 'Blancs'], ['betB', 'Noirs']] as const) {
+    const value = raw[key]
+    if (value === undefined || value === null) continue
+    const n = readBet(value, target)
+    if (n === undefined) return ko(`${label} : annonce des ${side} invalide (${String(value)}).`)
+    fields[key] = n
+  }
+  return { ok: true, fields }
 }
 
 // Optional (older exports have none); a stray `true` on another score than 5-4 in 5 is dropped to false rather than

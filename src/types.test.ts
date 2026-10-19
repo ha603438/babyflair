@@ -55,6 +55,7 @@ const replay: ReplayResult = {
         perPlayer: [
           { playerId: 'p1', team: 'A', before: 1012, after: 1028, delta: 16, why: 'Attendu 28 % de victoire' },
         ],
+        bets: [],
       },
     ],
   ]),

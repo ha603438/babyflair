@@ -5,7 +5,8 @@ import type { Action } from './reducer'
 import { playerHasMatches, reducer } from './reducer'
 import { loadStore, saveStore } from './persistence'
 import type { DraftAction } from './draft'
-import { draftReducer, initialDraft } from './draft'
+import { draftReducer } from './draft'
+import { loadOrInitialDraft, saveDraft } from './draftStorage'
 import type { SyncState } from './use-remote-sync'
 import { useRemoteSync } from './use-remote-sync'
 
@@ -58,6 +59,17 @@ function useStoreWithPersistence(): { store: Store; dispatch: (a: Action) => voi
   }, [])
 
   return { store, dispatch, storageBlocked }
+}
+
+/** The match sheet, restored from and written back to localStorage so a game survives the app being closed. */
+type DraftState = { draft: Draft; draftDispatch: (a: DraftAction) => void }
+
+function useDraftWithPersistence(settings: Store['settings']): DraftState {
+  const [draft, draftDispatch] = useReducer(draftReducer, settings, loadOrInitialDraft)
+  useEffect(() => {
+    saveDraft(draft)
+  }, [draft])
+  return { draft, draftDispatch }
 }
 
 function useToast(): AppState['toast'] {
@@ -116,7 +128,7 @@ function useNavPayload(): AppState['nav'] {
 
 export function AppStateProvider(props: { children: ReactNode }): JSX.Element {
   const { store, dispatch: localDispatch, storageBlocked } = useStoreWithPersistence()
-  const [draft, draftDispatch] = useReducer(draftReducer, store.settings, initialDraft)
+  const { draft, draftDispatch } = useDraftWithPersistence(store.settings)
   const toast = useToast()
   const nav = useNavPayload()
   const showToast = toast.show

@@ -6,6 +6,17 @@ export type ChangelogEntry = { id: string; date: string; title: string; items: s
 
 export const CHANGELOG: ChangelogEntry[] = [
   {
+    id: '2026-10-19-1',
+    date: '2026-10-19',
+    title: 'Annonces d’écart',
+    items: [
+      'Avant de jouer, chaque équipe peut annoncer «\u202F🎯 on gagne d’au moins N buts\u202F» sur la feuille de match.',
+      'Réussie, l’annonce rapporte d’autant plus qu’elle était osée\u202F; ratée, elle coûte des points. ' +
+        'L’équipe d’en face n’est pas touchée, et le calcul est détaillé dans l’historique.',
+      'La feuille de match tient bon\u202F: fermer l’app pendant la partie ne perd plus les équipes ni les annonces.',
+    ],
+  },
+  {
     id: '2026-10-15-8',
     date: '2026-10-15',
     title: 'Du flair partout',

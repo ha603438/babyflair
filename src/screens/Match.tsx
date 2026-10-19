@@ -1,10 +1,12 @@
 import { useEffect, useState } from 'react'
+import { betFields } from '../bets'
 import { Button } from '../components/Button'
 import { EmptyState } from '../components/EmptyState'
 import { Check } from '../components/icons'
 import { MatchSummary } from '../components/MatchSummary'
 import { useShowsTimes } from '../profile/useShowsTimes'
 import { useWriteGuard } from '../profile/useWriteGuard'
+import { teamExpectation } from '../rating'
 import { useReplay } from '../rating/useReplay'
 import { navigate } from '../router'
 import { useAppState, visibleSlots } from '../store'
@@ -185,13 +187,16 @@ export function Match() {
   }
 
   if (draft.step === 'score' && teams !== null) {
-    const preview = computePreview(result, store.players, teams, draft.target, draft.score, draft.comeback === true)
+    const bets = betFields(draft.betA, draft.betB)
+    const comeback = draft.comeback === true
+    const preview = computePreview(result, store.players, teams, draft.target, draft.score, comeback, bets)
     return (
       <ScorePanel
         draft={draft}
         teams={teams}
         dispatch={draftDispatch}
         playersById={playersById}
+        expectedA={teamExpectation(result, { ...teams, target: draft.target })}
         preview={
           preview && <MatchPreview preview={preview} teams={teams} target={draft.target} playersById={playersById} />
         }

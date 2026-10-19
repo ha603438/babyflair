@@ -3,10 +3,13 @@ import { createElement } from 'react'
 import type { ReactElement } from 'react'
 import { renderToString } from 'react-dom/server'
 import { fmtPercent } from '../../format'
+import { applyMatch, whyFr } from '../../rating/engine'
 import { replay } from '../../rating'
-import { AppStateProvider } from '../../store'
+import { AppStateProvider, DRAFT_STORAGE_KEY, STORAGE_KEY } from '../../store'
 import type { Match, Player, Store } from '../../types'
+import { BET_WHY_LINE, CommentCaMarche } from '../CommentCaMarche'
 import { Match as MatchScreen } from '../Match'
+import { MatchDetail } from '../MatchDetail'
 import { Joueur } from '../Joueur'
 import { MatchEdit } from '../MatchEdit'
 import { MatchPreview } from './MatchPreview'
@@ -211,5 +214,94 @@ describe('MatchPreview', () => {
     expect(html).not.toContain('Si victoire')
     expect(html).toContain('preview__delta--pos')
     expect(html).toContain('preview__delta--neg')
+  })
+})
+
+describe('annonces d’écart', () => {
+  const NNBSP = '\u202F'
+
+  it('the edit sheet offers a discreet toggle under each team, above the score', () => {
+    const html = render(createElement(MatchEdit, { id: 'm1' }), storeOf(PLAYERS, [MATCH]))
+    const copy = plain(html)
+    expect(html).toContain('aria-label="Annoncer un écart pour les Blancs"')
+    expect(html).toContain('aria-label="Annoncer un écart pour les Noirs"')
+    expect(copy.split('🎯 Annoncer un écart')).toHaveLength(3)
+    expect(html.indexOf('class="bets"')).toBeLessThan(html.indexOf('class="match-panel__header"'))
+    expect(copy).not.toContain('Couilles sur la table')
+  })
+
+  it('the edit sheet shows the stored announcement in the stepper, with its live stake and status', () => {
+    // Everybody at 1000 before m1: 50 % each side, +4 in 10 → 23 %, +12 / −4; 10-8 is a win by 2 only.
+    const html = render(createElement(MatchEdit, { id: 'm1' }), storeOf(PLAYERS, [{ ...MATCH, betA: 4 }]))
+    const copy = plain(html)
+    expect(html).toContain('class="bet bet--A" role="group" aria-label="Annonce des Blancs"')
+    expect(copy).toContain('>🎯 Couilles sur la table<')
+    expect(copy).toContain('>Gagner d’au moins<')
+    expect(copy).toContain('>4 buts<')
+    expect(copy).toContain(`23${NNBSP}%`)
+    expect(copy).toContain('+12 si réussi')
+    expect(copy).toContain('−4 sinon')
+    expect(copy).toContain(`✗ Ratée${NNBSP}: −4`)
+    expect(copy).toContain('>Retirer<')
+    expect(html).toContain('aria-label="Annoncer un écart pour les Noirs"')
+  })
+
+  it('the new-match sheet comes back after the app was closed, announcements included', () => {
+    const store = storeOf(PLAYERS, [MATCH])
+    const draft = { version: 1, format: '2v2', target: 5, slots: ['alice', 'bob', 'chloe', 'eve'], betA: null, betB: 3 }
+    const data: Record<string, string> = {
+      [STORAGE_KEY]: JSON.stringify(store),
+      [DRAFT_STORAGE_KEY]: JSON.stringify(draft),
+    }
+    vi.stubGlobal('window', { location: { hash: '#/match' }, history: { back: vi.fn() } })
+    vi.stubGlobal('localStorage', { getItem: (key: string) => data[key] ?? null, setItem: () => undefined })
+    const html = renderToString(createElement(AppStateProvider, null, createElement(MatchScreen)))
+    const copy = plain(html)
+    expect(html).toContain('class="match-screen match-screen--score"')
+    expect(html).toContain('aria-label="Annoncer un écart pour les Blancs"')
+    expect(html).toContain('class="bet bet--B" role="group" aria-label="Annonce des Noirs"')
+    expect(copy).toContain('>3 buts<')
+    expect(html).toContain('class="preview preview--whatif"')
+  })
+
+  it('the exact preview includes the announcement once the score is chosen', () => {
+    const playersById = new Map(PLAYERS.map((player) => [player.id, player]))
+    const result = replay(PLAYERS, [], { now: new Date('2025-10-10T12:00:00.000Z') })
+    const teams = { teamA: ['alice', 'bob'], teamB: ['chloe', 'dan'] }
+    const score = { winner: 'A', loserGoals: 5 } as const
+    const plainPreview = computePreview(result, PLAYERS, teams, 10, score)
+    const withBet = computePreview(result, PLAYERS, teams, 10, score, false, { betA: 4 })
+    if (plainPreview?.mode !== 'exact' || withBet?.mode !== 'exact') throw new Error('exact preview expected')
+    const delta = (preview: typeof withBet, id: string) =>
+      preview.data.rows.find((row) => row.playerId === id)?.delta ?? 0
+    expect(delta(withBet, 'alice') - delta(plainPreview, 'alice')).toBeCloseTo(12.364, 2)
+    expect(delta(withBet, 'chloe')).toBe(delta(plainPreview, 'chloe'))
+    const html = renderToString(createElement(MatchPreview, { preview: withBet, teams, target: 10, playersById }))
+    // Fresh players, 10-5: 16 × 1,5 × 0,5 × débutant ×3 = 36 each, plus 12,364 for the Blancs' announcement.
+    expect(plain(html)).toContain('aria-label="plus 48.364 points"')
+    expect(plain(html)).toContain('>+48<')
+    expect(plain(html)).toContain('aria-label="moins 36 points">−36<')
+  })
+
+  it('the match detail explains the announcement and each why line carries it', () => {
+    const html = render(createElement(MatchDetail, { id: 'm1' }), storeOf(PLAYERS, [{ ...MATCH, betA: 4 }]))
+    const copy = plain(html)
+    expect(copy).toContain(`🎯 Annonce des Blancs${NNBSP}: +4 · ratée (23${NNBSP}% de chances)`)
+    expect(copy).toContain(`Gagné de 2 buts, +4 annoncé${NNBSP}: −16 × 22,7${NNBSP}% de chances = −3,6 chacun`)
+    expect(copy).toContain('annonce +4 ratée (23 % de chances) −3,6')
+    expect(copy).toContain('🎯 +4 ✗')
+  })
+
+  it('the rules page has the « Annonces » section, its box being the engine’s real why line', () => {
+    const copy = plain(renderToString(createElement(CommentCaMarche)))
+    expect(copy).toContain('>Annonces<')
+    expect(copy).toContain('Couilles sur la table'.toLowerCase())
+    const state = Object.fromEntries(
+      ['a', 'b', 'c', 'd'].map((id) => [id, { rating: 1000, matches: 20, wins: 10, losses: 10, lastPlayedAt: 0 }]),
+    )
+    const example = { id: 'x', seq: 1, playedAt: 1, createdAt: 1, target: 10 as const }
+    const teams = { teamA: ['a', 'b'], teamB: ['c', 'd'] }
+    const { deltas } = applyMatch(state, { ...example, ...teams, scoreA: 10, scoreB: 5, betA: 4 })
+    expect(BET_WHY_LINE.replaceAll(NNBSP, ' ')).toBe(whyFr(deltas[0]))
   })
 })

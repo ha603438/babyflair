@@ -251,3 +251,30 @@ describe('replayMode 1v1', () => {
     expect([...aged.ranking.inactive].sort()).toEqual(['a', 'b', 'c', 'e'])
   })
 })
+
+describe('announcements in the 2V2 and 1V1 rankings', () => {
+  const withBet = (bets: Pick<Match, 'betA' | 'betB'>): Match[] =>
+    HISTORY.map((m) => (m.id === 'm4' || m.id === 'm3' ? { ...m, ...bets } : m))
+
+  it('the duo entity gets the announcement, judged on the duo ratings', () => {
+    const plain = replayMode('2v2', PLAYERS, HISTORY, NOW)
+    const bet = replayMode('2v2', PLAYERS, withBet({ betA: 3 }), NOW) // m4: b+a beat d+c 10-6 (margin 4)
+    const before = plain.result.byMatch.get('m4')
+    const after = bet.result.byMatch.get('m4')
+    if (before === undefined || after === undefined) throw new Error('m4 missing')
+    expect(after.bets).toHaveLength(1)
+    expect(after.bets[0]).toMatchObject({ team: 'A', n: 3, success: true })
+    const duoAB = after.perPlayer.find((p) => p.team === 'A')
+    const plainAB = before.perPlayer.find((p) => p.team === 'A')
+    expect(duoAB?.playerId).toBe(duoId('a', 'b'))
+    expect((duoAB?.delta ?? 0) - (plainAB?.delta ?? 0)).toBeCloseTo(after.bets[0].delta, 2)
+    expect(after.perPlayer.find((p) => p.team === 'B')?.delta).toBe(before.perPlayer.find((p) => p.team === 'B')?.delta)
+    expect(expandDuoResult(after, HISTORY[3])?.bets).toEqual(after.bets)
+  })
+
+  it('the 1V1 ranking applies it too', () => {
+    const bet = replayMode('1v1', PLAYERS, withBet({ betA: 7 }), NOW) // m3: a beats b 10-4 (margin 6 < 7)
+    const result = bet.result.byMatch.get('m3')
+    expect(result?.bets).toEqual([expect.objectContaining({ team: 'A', n: 7, success: false })])
+  })
+})

@@ -1,5 +1,7 @@
 // Pure helpers of the match entry / edit flow (spec §3.5, §4, §9). No React, no engine: everything here is
 // derived from a Draft, a Match and the store's players, so it is unit-tested in vitest's node environment.
+import { betFields } from '../../bets'
+import type { Bets } from '../../bets'
 import type { ChipState } from '../../components/Chip'
 import { fmtDayHeader, fmtScore, fmtTime, plural } from '../../format'
 import { isComeback, rankIndexOf } from '../../stats'
@@ -12,8 +14,8 @@ export const TEAM_B_FIRST_SLOT = 2
 
 export type DraftTeams = { teamA: PlayerId[]; teamB: PlayerId[] }
 
-/** Fields of a Match that the draft decides; id, seq and the dates come from the caller. */
-export type MatchFields = Pick<Match, 'target' | 'teamA' | 'teamB' | 'scoreA' | 'scoreB'> & { comeback: boolean }
+/** Fields of a Match that the draft decides; id, seq and the dates come from the caller. Bets only when announced. */
+export type MatchFields = Pick<Match, 'target' | 'teamA' | 'teamB' | 'scoreA' | 'scoreB'> & { comeback: boolean } & Bets
 
 function formatOf(match: Pick<Match, 'teamA' | 'teamB'>): Format {
   if (match.teamA.length > 1 || match.teamB.length > 1) return '2v2'
@@ -79,7 +81,9 @@ export function matchFieldsOf(draft: Draft): MatchFields | null {
   const teams = draftTeams(draft)
   if (teams === null || draft.score === null) return null
   const scores = scoresOf(draft.score, draft.target)
-  return { target: draft.target, teamA: teams.teamA, teamB: teams.teamB, ...scores, comeback: draftComeback(draft) }
+  const { target } = draft
+  const bets = betFields(draft.betA, draft.betB)
+  return { target, teamA: teams.teamA, teamB: teams.teamB, ...scores, comeback: draftComeback(draft), ...bets }
 }
 
 /** Edit screen: a local draft opened directly on the score step, format derived from the team sizes. */
@@ -92,11 +96,13 @@ export function matchToDraft(match: Match): Draft {
     score: scoreOf(match),
     step: 'score',
     comeback: isComeback(match),
+    ...betFields(match.betA, match.betB),
   }
 }
 
 /**
- * Edit screen save: the stored match with the draft's teams, target, score and comeback. Keeps id, seq, createdAt and
+ * Edit screen save: the stored match with the draft's teams, target, score, comeback and announcements (a removed
+ * announcement is simply absent). Keeps id, seq, createdAt and
  * playedAt (the date is not editable in v1) and stamps updatedAt. Throws on an incomplete or unscored draft:
  * callers gate the save button with `isDraftChanged`.
  */
@@ -127,6 +133,7 @@ export function isDraftChanged(draft: Draft, base: Match): boolean {
   if (fields.target !== base.target) return true
   if (fields.scoreA !== base.scoreA || fields.scoreB !== base.scoreB) return true
   if (fields.comeback !== (base.comeback === true)) return true
+  if ((fields.betA ?? null) !== (base.betA ?? null) || (fields.betB ?? null) !== (base.betB ?? null)) return true
   return !sameIds(fields.teamA, base.teamA) || !sameIds(fields.teamB, base.teamB)
 }
 

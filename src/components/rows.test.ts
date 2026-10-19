@@ -69,6 +69,7 @@ const result: MatchResult = {
     { playerId: 'a', team: 'B', before: 1012, after: 1028, delta: 16, why: whyA },
     { playerId: 'b', team: 'B', before: 990, after: 1011, delta: 21, why: 'why b' },
   ],
+  bets: [],
 }
 
 function rankRow(props: Partial<Parameters<typeof RankRow>[0]> & { variant: 'ranked' | 'rookie' | 'inactive' }) {
@@ -332,5 +333,36 @@ describe('MatchSummary', () => {
   it('uses « 1er » for the first rank', () => {
     const html = summary({ rankBefore: new Map([['a', 1]]), rankAfter: new Map([['a', 1]]) })
     expect(html).toContain('1er → 1er')
+  })
+})
+
+describe('announcements (« annonces d’écart »)', () => {
+  const NNBSP = ' '
+  // Chloé & Dan (Blancs) announced +3 and lost 8-10; Alice & Bob (Noirs) announced +2 and won by 2.
+  const announced: Match = { ...match, betA: 3, betB: 2 }
+  const bets: MatchResult['bets'] = [
+    { team: 'A', n: 3, chance: 0.2, success: false, delta: -3.2 },
+    { team: 'B', n: 2, chance: 0.5, success: true, delta: 8 },
+  ]
+
+  it('HistoryRow shows one pill per announcement, Blancs first', () => {
+    const html = historyRow({ match: announced })
+    expect(html).toContain(`class="pill pill--bet is-lost" title="Annonce des Blancs${NNBSP}: +3, ratée">🎯 +3 ✗<`)
+    expect(html).toContain(`class="pill pill--bet is-won" title="Annonce des Noirs${NNBSP}: +2, réussie">🎯 +2 ✓<`)
+    expect(html.indexOf('🎯 +3')).toBeLessThan(html.indexOf('🎯 +2'))
+    expect(historyRow()).not.toContain('pill--bet')
+  })
+
+  it('MatchSummary explains each announcement between the hero and the player rows', () => {
+    const html = summary({ match: announced, result: { ...result, bets } })
+    expect(html).toContain(`>🎯 Annonce des Blancs${NNBSP}: +3 · ratée (20${NNBSP}% de chances)<`)
+    expect(html).toContain(`>Perdu, +3 annoncé${NNBSP}: −16 × 20,0${NNBSP}% de chances = −3,2 chacun<`)
+    expect(html).toContain(`>🎯 Annonce des Noirs${NNBSP}: +2 · réussie (50${NNBSP}% de chances)<`)
+    expect(html).toContain(`>Gagné de 2 buts, +2 annoncé${NNBSP}: 16 × 50,0${NNBSP}% de risque = +8,0 chacun<`)
+    expect(html).toContain('class="ms-bet ms-bet--lost"')
+    expect(html).toContain('class="ms-bet ms-bet--won"')
+    expect(html.indexOf('class="ms-bets"')).toBeGreaterThan(html.indexOf('class="ms-hero"'))
+    expect(html.indexOf('class="ms-bets"')).toBeLessThan(html.indexOf('class="ms-rows"'))
+    expect(summary()).not.toContain('ms-bet')
   })
 })

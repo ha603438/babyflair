@@ -1,3 +1,4 @@
+import { withValidBets } from '../bets'
 import { withValidComeback } from '../stats'
 import type { Call, CallPlayer, Match, MatchId, Player, PlayerId, Settings, Store } from '../types'
 
@@ -63,10 +64,15 @@ export function backfillSeq(matches: Match[]): Match[] {
   })
 }
 
-/** A comeback only stands on a 5-4 in 5: stray flags are dropped to false. The same array when nothing changes. */
-function withValidComebacks(matches: Match[]): Match[] {
-  if (matches.every((match) => withValidComeback(match) === match)) return matches
-  return matches.map(withValidComeback)
+/** A comeback flag only on a 5-4 in 5, announcements in 1..target: the match itself when nothing needs a fix. */
+function withValidFlags(match: Match): Match {
+  return withValidBets(withValidComeback(match))
+}
+
+/** Stray comeback flags dropped to false, announcements clamped to the target; the same array when nothing changes. */
+function withValidMatches(matches: Match[]): Match[] {
+  if (matches.every((match) => withValidFlags(match) === match)) return matches
+  return matches.map(withValidFlags)
 }
 
 function renamePlayer(state: Store, id: PlayerId, name: string, isGuest: boolean): Store {
@@ -85,7 +91,7 @@ function deletePlayer(state: Store, id: PlayerId): Store {
 }
 
 function addMatch(state: Store, match: Omit<Match, 'seq'>): Store {
-  const created: Match = withValidComeback({ ...match, seq: state.nextSeq })
+  const created: Match = withValidFlags({ ...match, seq: state.nextSeq })
   return { ...state, matches: [...state.matches, created], nextSeq: state.nextSeq + 1 }
 }
 
@@ -94,7 +100,7 @@ function updateMatch(state: Store, incoming: Match): Store {
   if (index === -1) return state
   const previous = state.matches[index]
   const updated: Match = {
-    ...withValidComeback(incoming),
+    ...withValidFlags(incoming),
     id: previous.id,
     seq: previous.seq,
     createdAt: previous.createdAt,
@@ -111,7 +117,7 @@ function restoreMatch(state: Store, match: Match, index: number): Store {
   if (state.matches.some((existing) => existing.id === match.id)) return state
   const position = Math.max(0, Math.min(index, state.matches.length))
   const matches = state.matches.slice()
-  matches.splice(position, 0, withValidComeback(match))
+  matches.splice(position, 0, withValidFlags(match))
   return { ...state, matches, nextSeq: Math.max(state.nextSeq, match.seq + 1) }
 }
 
@@ -139,7 +145,7 @@ function mergeImportedSettings(current: Settings, imported: Settings): Settings 
 }
 
 function importAll(state: Store, players: Player[], incoming: Match[], settings: Settings): Store {
-  const matches = withValidComebacks(backfillSeq(incoming))
+  const matches = withValidMatches(backfillSeq(incoming))
   return {
     ...state,
     version: 1,
@@ -151,7 +157,7 @@ function importAll(state: Store, players: Player[], incoming: Match[], settings:
 }
 
 function replaceData(state: Store, players: Player[], incoming: Match[], calls: Call[], callPlayers: CallPlayer[]): Store {
-  const matches = withValidComebacks(backfillSeq(incoming))
+  const matches = withValidMatches(backfillSeq(incoming))
   return { ...state, players: players.slice(), matches, nextSeq: nextSeqOf(matches), calls: calls.slice(), callPlayers: callPlayers.slice() }
 }
 

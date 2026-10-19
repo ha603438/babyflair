@@ -7,6 +7,7 @@ import { teamLabel } from '../../stats'
 import { canBeComeback } from '../../store'
 import type { DraftAction } from '../../store'
 import type { Draft, Player, PlayerId, Target } from '../../types'
+import { BetPicker } from './BetPicker'
 import { TEAM_A_FIRST_SLOT, TEAM_B_FIRST_SLOT } from './draftMatch'
 import type { DraftTeams } from './draftMatch'
 import { RosterSlots } from './RosterSlots'
@@ -59,6 +60,8 @@ export type ScorePanelProps = {
   teams: DraftTeams
   dispatch: (action: DraftAction) => void
   playersById: Map<PlayerId, Player>
+  /** Team A's win expectation for this roster, for the announcement stepper (rating/index.ts teamExpectation). */
+  expectedA: number
   /** New-match preview under the grid; omitted in edit mode (spec §3.5). */
   preview?: ReactNode
   saveText: string
@@ -70,8 +73,8 @@ export type ScorePanelProps = {
 
 /**
  * Step B (spec §4): roster bar (team names return to step A with that team's first slot active, « Modifier » with
- * nothing changed), « Score » header with [En 5 | En 10], the ScoreGrid, the « Comeback » box on a 5-4, the
- * optional preview and the sticky CTA.
+ * nothing changed), the « Annoncer un écart » columns, « Score » header with [En 5 | En 10], the ScoreGrid, the
+ * « Comeback » box on a 5-4, the optional preview and the sticky CTA.
  * On viewports ≥ 760 px tall the CSS swaps the bar for the slot block.
  */
 export function ScorePanel({
@@ -79,6 +82,7 @@ export function ScorePanel({
   teams,
   dispatch,
   playersById,
+  expectedA,
   preview,
   saveText,
   canSave,
@@ -115,6 +119,7 @@ export function ScorePanel({
         <div className="match-panel__slots">
           <RosterSlots draft={draft} dispatch={dispatch} playersById={playersById} />
         </div>
+        <BetPicker draft={draft} dispatch={dispatch} expectedA={expectedA} />
         <div className="match-panel__header">
           <h2 className="match-panel__title">Score</h2>
           <SegmentedControl

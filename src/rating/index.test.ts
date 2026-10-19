@@ -8,7 +8,17 @@ import type { Match, MatchResult, Player, PlayerStats, ReplayResult, Store, Targ
 import type { Match as EngineMatch, Player as EnginePlayer, PlayerDelta, RatingsState } from './engine'
 import { applyMatch, leaderboard, replay as engineReplay, round3, whyFr } from './engine'
 import type { PreviewDraft } from './index'
-import { DEFAULT_CONFIG, previewMatch, rank, replay, useReplay, whyLine } from './index'
+import {
+  betChance,
+  betOutlook,
+  DEFAULT_CONFIG,
+  previewMatch,
+  rank,
+  replay,
+  teamExpectation,
+  useReplay,
+  whyLine,
+} from './index'
 import vectors from './test-vectors.json'
 
 // ---------------------------------------------------------------------------
@@ -632,5 +642,80 @@ describe('useReplay', () => {
     vi.stubGlobal('localStorage', { getItem: () => null, setItem: () => undefined })
     const html = renderToString(createElement(AppStateProvider, null, createElement(Probe)))
     expect(html).toContain('>0|0|0|0|0|0|0|true<')
+  })
+})
+
+// ---------------------------------------------------------------------------
+// Announcements (« annonces d'écart »)
+// ---------------------------------------------------------------------------
+
+describe('announcements', () => {
+  const withBets = (matches: Match[], id: string, bets: Partial<Pick<Match, 'betA' | 'betB'>>): Match[] =>
+    matches.map((m) => (m.id === id ? { ...m, ...bets } : m))
+
+  it('replay lists them in MatchResult.bets, team A first, and adds them to each member', () => {
+    const plain = replay(PLAYERS, fixtureMatches(), { now: NOW })
+    // duo: alice & eve beat bob & fred 5-3 (margin 2) in a race to 5.
+    const matches = withBets(fixtureMatches(), 'duo', { betA: 2, betB: 1 })
+    const result = replay(PLAYERS, matches, { now: NOW })
+    const duo = matchResultOf(result, 'duo')
+    const before = matchResultOf(plain, 'duo')
+    expect(before.bets).toEqual([])
+    const chanceA = betChance(duo.expectedA, 5, 2)
+    const chanceB = betChance(duo.expectedB, 5, 1)
+    expect(duo.bets).toEqual([
+      { team: 'A', n: 2, chance: chanceA, success: true, delta: round3(16 * (1 - chanceA)) },
+      { team: 'B', n: 1, chance: chanceB, success: false, delta: round3(-16 * chanceB) },
+    ])
+    duo.perPlayer.forEach((entry, i) => {
+      const bet = duo.bets.find((b) => b.team === entry.team)?.delta ?? 0
+      expect(entry.delta).toBeCloseTo(before.perPlayer[i].delta + bet, 2)
+      expect(entry.why).toContain(' · annonce +')
+    })
+    expect(matchResultOf(result, 'ab0').bets).toEqual([])
+  })
+
+  it('the exact preview applies them exactly like the appended replay; the what-if columns stay base-only', () => {
+    const matches = fixtureMatches()
+    const result = replay(PLAYERS, matches, { now: NOW })
+    const draft: PreviewDraft = { teamA: ['alice', 'eve'], teamB: ['bob', 'fred'], target: 10, betA: 3, betB: 2 }
+    for (const [winner, loserGoals] of [['A', 6], ['A', 8], ['B', 5]] as const) {
+      const preview = previewMatch(result, PLAYERS, { ...draft, score: { winner, loserGoals } })
+      const scoreA = winner === 'A' ? 10 : loserGoals
+      const scoreB = winner === 'B' ? 10 : loserGoals
+      const next = { ...appended(matches, draft, scoreA, scoreB), betA: 3, betB: 2 }
+      const real = matchResultOf(replay(PLAYERS, [...matches, next], { now: NOW }), 'next')
+      expect('rows' in preview && preview.rows.map((r) => ('delta' in r ? r.delta : null))).toEqual(
+        real.perPlayer.map((p) => p.delta),
+      )
+    }
+    const { betA: _a, betB: _b, ...base } = draft
+    expect(previewMatch(result, PLAYERS, draft)).toEqual(previewMatch(result, PLAYERS, base))
+  })
+
+  it('teamExpectation: the preview expectation after every match, the stored one right before a given match', () => {
+    const matches = fixtureMatches()
+    const result = replay(PLAYERS, matches, { now: NOW })
+    for (const [, draft] of DRAFTS) {
+      expect(teamExpectation(result, draft)).toBe(previewMatch(result, PLAYERS, draft).expectedA)
+    }
+    const duo = matchResultOf(result, 'duo')
+    const roster = { teamA: ['alice', 'eve'], teamB: ['bob', 'fred'], target: 5 as const }
+    expect(teamExpectation(result, roster, 'duo')).toBe(duo.expectedA)
+    expect(teamExpectation(result, { teamA: ['alice'], teamB: ['bob'], target: 10 }, 'ab0')).toBe(0.5)
+    expect(teamExpectation(result, { teamA: ['alice'], teamB: ['bob'], target: 10 }, 'ab5')).toBe(
+      matchResultOf(result, 'ab5').expectedA,
+    )
+    // Unknown players start at 1000: equal teams.
+    expect(teamExpectation(result, { teamA: ['nobody'], teamB: ['zoe'], target: 10 })).toBe(0.5)
+    // A hand-built result (no byMatch) still reads the last rating of each history.
+    const owner = handBuilt(Object.entries(OWNER_RATINGS).map(([id, rating]) => establishedStats(id, rating)))
+    expect(teamExpectation(owner, { teamA: ['strong'], teamB: ['weak'], target: 10 })).toBe(
+      previewMatch(owner, OWNER_PLAYERS, { teamA: ['strong'], teamB: ['weak'], target: 10 }).expectedA,
+    )
+  })
+
+  it('the stepper outlook re-exported for the screens', () => {
+    expect(round3(betOutlook(0.5, 10, 4).success)).toBe(12.364)
   })
 })

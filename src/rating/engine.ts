@@ -24,6 +24,8 @@ export type Match = {
   scoreB: number;
   deletedAt?: number | null; // soft delete: a NUMBER means deleted (ignored by replay, kept for restore)
   comeback?: boolean; // winners came back from 0-4 to win 5-4 (only meaningful on a 5-4 in a race to 5)
+  betA?: number | null; // team A announced « we win by at least N goals » (integer 1..target); missing / null = none
+  betB?: number | null; // same for team B
 };
 
 export type Config = {
@@ -41,6 +43,7 @@ export type Config = {
   startRating: number;
   fannyBonus: number; // extra multiplier on the match when the loser scored 0 (5-0, 10-0)
   comebackBonus: number; // extra multiplier on a 5-4 flagged as a comeback
+  betStake: number; // an announcement pays betStake × (1 - p) to each member on a success, costs betStake × p otherwise
 };
 
 export const DEFAULT_CONFIG: Config = {
@@ -58,7 +61,11 @@ export const DEFAULT_CONFIG: Config = {
   startRating: 1000,
   fannyBonus: 1.2,
   comebackBonus: 1.25,
+  betStake: 16,
 };
+
+// A team's announcement as rated: n = announced minimum margin, chance = p, delta = the points it adds to EACH member.
+export type BetResult = { n: number; chance: number; success: boolean; delta: number };
 
 export type PlayerState = { rating: number; matches: number; wins: number; losses: number; lastPlayedAt: number | null };
 export type RatingsState = Record<string, PlayerState>;
@@ -79,7 +86,8 @@ export type PlayerDelta = { // everything needed to explain one player's delta i
   matchesBefore: number;
   ratingBefore: number;
   ratingAfter: number;
-  delta: number; // ratingAfter - ratingBefore, rounded to 0.001
+  delta: number; // ratingAfter - ratingBefore, rounded to 0.001 (the announcement included)
+  bet: BetResult | null; // the team's announcement, null when it announced nothing
 };
 export type MatchResult = { matchId: string; deltas: PlayerDelta[] };
 export type ReplayResult = { players: RatingsState; matches: MatchResult[] };
@@ -139,6 +147,77 @@ export function teamShares(
   return clamped.map((s) => s / clampedTotal);
 }
 
+// ---------------------------------------------------------------------------
+// Announcements (« on gagne d'au moins N buts »): an independent-goals model calibrated on the Elo expectation.
+// ---------------------------------------------------------------------------
+
+const BISECTION_STEPS = 60;
+
+// P(a side scoring each goal with probability q reaches `target` first while the other side scores at most
+// `maxLoser`) = Σ_{k=0}^{maxLoser} C(target - 1 + k, k) q^target (1 - q)^k (negative binomial).
+function raceWin(q: number, target: number, maxLoser: number): number {
+  let term = Math.pow(q, target); // k = 0
+  let sum = 0;
+  for (let k = 0; k <= maxLoser; k++) {
+    if (k > 0) term *= ((target - 1 + k) / k) * (1 - q);
+    sum += term;
+  }
+  return sum;
+}
+
+// The per-goal probability q whose race to `target` is won with probability `expected` (bisection: deterministic,
+// the race probability grows with q).
+export function goalProbability(expected: number, target: Target): number {
+  let lo = 0;
+  let hi = 1;
+  for (let i = 0; i < BISECTION_STEPS; i++) {
+    const mid = (lo + hi) / 2;
+    if (raceWin(mid, target, target - 1) < expected) lo = mid;
+    else hi = mid;
+  }
+  return (lo + hi) / 2;
+}
+
+// Chance that a side with win expectation `expected` wins by at least `n` goals (the loser scores ≤ target - n).
+// n = 1 gives `expected` back, n = target the chance of a fanny.
+export function betChance(expected: number, target: Target, n: number): number {
+  return raceWin(goalProbability(expected, target), target, target - n);
+}
+
+// What an announcement of `n` is worth to each member: +stake × (1 - p) if it works, -stake × p otherwise. Zero
+// expected value under the model, so announcing cannot be gamed.
+export function betOutlook(
+  expected: number,
+  target: Target,
+  n: number,
+  config: Config = DEFAULT_CONFIG,
+): { chance: number; success: number; failure: number } {
+  const chance = betChance(expected, target, n);
+  return { chance, success: config.betStake * (1 - chance), failure: -config.betStake * chance };
+}
+
+// The announcement of one side, rated: success = that side won with a margin (target - loser goals) of at least n.
+// Added as is to each member: no teammate split, rookie, margin or fanny / comeback multiplier.
+export function rateBet(
+  n: number | null | undefined,
+  side: { won: boolean; expected: number },
+  match: Pick<Match, 'target' | 'scoreA' | 'scoreB'>,
+  config: Config = DEFAULT_CONFIG,
+): BetResult | null {
+  if (n === null || n === undefined) return null;
+  const outlook = betOutlook(side.expected, match.target, n, config);
+  const margin = match.target - Math.min(match.scoreA, match.scoreB);
+  const success = side.won && margin >= n;
+  if (success) return { n, chance: outlook.chance, success, delta: round3(outlook.success) };
+  return { n, chance: outlook.chance, success, delta: round3(outlook.failure) };
+}
+
+// The points an announcement adds to each member of its team (0 without one).
+function betPoints(bet: BetResult | null): number {
+  if (bet === null) return 0;
+  return bet.delta;
+}
+
 export function isDeleted(match: Match): boolean {
   return typeof match.deletedAt === 'number';
 }
@@ -165,6 +244,11 @@ export function validateMatch(match: Match, players?: Player[]): void {
   if (match.teamA.length !== match.teamB.length) fail('both teams must have the same number of players');
   const ids = [...match.teamA, ...match.teamB];
   if (new Set(ids).size !== ids.length) fail('a player cannot appear twice');
+  for (const bet of [match.betA, match.betB]) {
+    if (bet === undefined || bet === null) continue;
+    if (Number.isInteger(bet) && bet >= 1 && bet <= match.target) continue;
+    fail('an announced margin must be an integer in 1..target');
+  }
   if (players === undefined) return;
   const known = new Set(players.map((p) => p.id));
   for (const id of ids) if (!known.has(id)) fail(`unknown player ${id}`);
@@ -224,14 +308,17 @@ export function applyMatch(
     { team: 'A' as const, ids: match.teamA, opp: rB, won: aWon, expected: eA, base: baseA, f: match.scoreA, a: match.scoreB },
     { team: 'B' as const, ids: match.teamB, opp: rA, won: !aWon, expected: 1 - eA, base: -baseA, f: match.scoreB, a: match.scoreA },
   ];
+  const announced = { A: match.betA, B: match.betB };
   const newState: RatingsState = { ...state };
   const deltas: PlayerDelta[] = [];
   for (const side of sides) {
     const shares = teamShares(side.ids.map((id) => get(id).rating), side.opp, side.won, match.target, config);
+    const bet = rateBet(announced[side.team], side, match, config);
+    const betPart = betPoints(bet); // + 0 leaves a match without announcement bit-identical
     side.ids.forEach((id, i) => {
       const before = get(id);
       const rookieK = rookieMultiplier(before.matches, config);
-      const ratingAfter = round3(before.rating + side.ids.length * side.base * shares[i] * rookieK);
+      const ratingAfter = round3(before.rating + side.ids.length * side.base * shares[i] * rookieK + betPart);
       newState[id] = {
         rating: ratingAfter,
         matches: before.matches + 1,
@@ -243,6 +330,7 @@ export function applyMatch(
         playerId: id, team: side.team, won: side.won, target: match.target, scoreFor: side.f, scoreAgainst: side.a,
         expected: side.expected, margin: g, bonus: bonus.multiplier, bonusKind: bonus.kind, teamSize: side.ids.length as 1 | 2, share: shares[i], rookieK,
         matchesBefore: before.matches, ratingBefore: before.rating, ratingAfter, delta: round3(ratingAfter - before.rating),
+        bet,
       });
     });
   }
@@ -322,6 +410,15 @@ export function whyFr(d: PlayerDelta): string {
   if (d.teamSize === 2) parts.push(`part ${Math.round(d.share * 100)} %`);
   if (d.bonusKind !== null) parts.push(`${d.bonusKind} ×${frTrim(d.bonus)}`);
   if (d.rookieK > 1) parts.push(`débutant ×${fr(d.rookieK, 1)}`);
+  if (d.bet) parts.push(betWhy(d.bet));
   const sign = d.delta >= 0 ? '+' : '−';
   return `${parts.join(' · ')} → ${sign}${fr(Math.abs(d.delta), 1)}`;
+}
+
+// « annonce +4 réussie (23 % de chances) +12,4 » / « annonce +4 ratée (23 % de chances) −3,6 »
+function betWhy(bet: BetResult): string {
+  const chance = `(${Math.round(bet.chance * 100)} % de chances)`;
+  const points = Math.abs(bet.delta).toFixed(1).replace('.', ',');
+  if (bet.success) return `annonce +${bet.n} réussie ${chance} +${points}`;
+  return `annonce +${bet.n} ratée ${chance} −${points}`;
 }

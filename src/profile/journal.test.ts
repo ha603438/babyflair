@@ -169,3 +169,22 @@ describe('filterEvents', () => {
     expect(filterEvents(all, 'all')).toHaveLength(4)
   })
 })
+
+describe('scoreChange with announcements', () => {
+  const NNBSP = ' '
+  const updated = (before: MatchSnapshot, after: MatchSnapshot) => event({ action: 'updated', before, after })
+
+  it('« annonce +4 ajoutée / retirée / modifiée », per team', () => {
+    expect(scoreChange(updated(snap(5, 1), snap(5, 1, { betA: 4 })))).toBe(`Blancs${NNBSP}: annonce +4 ajoutée`)
+    expect(scoreChange(updated(snap(5, 1, { betB: 3 }), snap(5, 1)))).toBe(`Noirs${NNBSP}: annonce +3 retirée`)
+    expect(scoreChange(updated(snap(5, 1, { betA: 2 }), snap(5, 1, { betA: 4 })))).toBe(
+      `Blancs${NNBSP}: annonce modifiée +2 → +4`,
+    )
+    expect(scoreChange(updated(snap(5, 1, { betA: 2 }), snap(5, 1, { betA: 2 })))).toBeNull()
+  })
+
+  it('joins them with the score change', () => {
+    const line = scoreChange(updated(snap(5, 3), snap(5, 1, { betA: 4, betB: 1 })))
+    expect(line).toBe(`5 – 3 → 5 – 1 · Blancs${NNBSP}: annonce +4 ajoutée · Noirs${NNBSP}: annonce +1 ajoutée`)
+  })
+})

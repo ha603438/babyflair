@@ -265,3 +265,149 @@
 }
 
 .match-team__swap { margin-top: 6px; background: none; border: 0; color: var(--accent); font-size: 13px; font-weight: 600; padding: 6px 0; cursor: pointer; }
+
+/* ---------- step B: « Annoncer un écart » (one column per team, under the slots) ---------- */
+/* Same two columns as the slot block above: Blancs left, Noirs right. */
+.bets {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  align-items: start;
+  gap: var(--s2);
+}
+
+/* Discreet: a dashed 44 px link-like button, the stepper only appears once tapped. */
+.bet-toggle {
+  min-height: 44px;
+  width: 100%;
+  padding: 0 var(--s2);
+  border: 1px dashed var(--border);
+  border-radius: var(--r-md);
+  background: none;
+  color: var(--accent);
+  font-size: var(--fs-caption);
+  font-weight: 600;
+  line-height: 1.25;
+  cursor: pointer;
+  transition: background-color var(--t-fast) var(--ease);
+}
+
+.bet-toggle:active {
+  background: var(--surface-2);
+}
+
+.bet {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: var(--s1);
+  min-width: 0;
+  padding: var(--s2);
+  border: 2px solid var(--border);
+  border-radius: var(--r-md);
+  background: var(--surface);
+  text-align: center;
+}
+
+.bet--A {
+  border-color: var(--team-1);
+}
+
+.bet--B {
+  border-color: var(--team-2);
+}
+
+/* « 🎯 Couilles sur la table »: the wink, as small as the side names of the score grid. */
+.bet__wink {
+  font-size: var(--fs-tab);
+  font-weight: 700;
+  line-height: 1.3;
+  letter-spacing: .04em;
+  text-transform: uppercase;
+  color: var(--text-3);
+}
+
+.bet__label {
+  font-size: var(--fs-caption);
+  font-weight: 500;
+  color: var(--text-2);
+}
+
+/* [−] « 4 buts » [+]: 40 px steps, the value in the middle. */
+.bet__stepper {
+  display: grid;
+  grid-template-columns: 40px minmax(0, 1fr) 40px;
+  align-items: center;
+  gap: var(--s1);
+  width: 100%;
+}
+
+.bet__step {
+  height: 40px;
+  border: 0;
+  border-radius: 10px;
+  background: var(--surface-2);
+  color: var(--text);
+  font-size: 20px;
+  font-weight: 700;
+  line-height: 1;
+  cursor: pointer;
+  transition: transform var(--t-fast) var(--ease);
+}
+
+.bet__step:active {
+  transform: scale(0.96);
+}
+
+.bet__step:disabled {
+  opacity: .35;
+  cursor: default;
+}
+
+.bet__value {
+  font-size: var(--fs-label);
+  font-weight: 800;
+  font-variant-numeric: tabular-nums;
+  white-space: nowrap;
+}
+
+/* « 23 % · +12 si réussi · −4 sinon »: wraps between the parts only. */
+.bet__odds {
+  font-size: var(--fs-micro);
+  font-weight: 600;
+  line-height: 1.4;
+  color: var(--text-2);
+  font-variant-numeric: tabular-nums;
+}
+
+.bet__odds-part {
+  white-space: nowrap;
+}
+
+.bet__odds-sep {
+  color: var(--text-3);
+}
+
+.bet__status {
+  font-size: var(--fs-micro);
+  font-weight: 700;
+}
+
+.bet__status--won {
+  color: var(--pos);
+}
+
+.bet__status--lost {
+  color: var(--neg);
+}
+
+.bet__remove {
+  min-height: 32px;
+  padding: 0 var(--s2);
+  border: 0;
+  background: none;
+  color: var(--text-3);
+  font-size: var(--fs-micro);
+  font-weight: 600;
+  text-decoration: underline;
+  cursor: pointer;
+}

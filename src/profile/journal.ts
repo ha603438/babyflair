@@ -1,8 +1,9 @@
 // Journal des modifications and match authorship lines: pure French formatting over match_events and the players,
 // so it is tested in node. The screen is src/screens/Journal.tsx.
+import { SIDE_NAME } from '../bets'
 import { fmtDayHeader, fmtScore, fmtTime } from '../format'
 import { teamLabel } from '../stats'
-import type { Match, MatchEvent, MatchEventAction, MatchId, MatchSnapshot, Player, PlayerId } from '../types'
+import type { Match, MatchEvent, MatchEventAction, MatchId, MatchSnapshot, Player, PlayerId, Team } from '../types'
 
 export const JOURNAL_LIMIT = 200
 
@@ -32,7 +33,7 @@ export type JournalRow = {
   title: string
   /** « Alice & Bob 5 – 3 Chloé & Dan », null when the server sent no readable image of the match. */
   summary: string | null
-  /** Updates only, when the score moved: « 5 – 3 → 5 – 4 ». */
+  /** Updates only, when the score, the comeback box or an announcement moved: « 5 – 3 → 5 – 4 ». */
   change: string | null
   matchId: MatchId
   /** The match still exists here: the row opens its detail. */
@@ -76,7 +77,23 @@ function comebackChange(before: MatchSnapshot, after: MatchSnapshot): string | n
   return 'comeback décoché'
 }
 
-/** Updates only: « 5 – 3 → 5 – 4 », « comeback coché », or both joined by « · ». */
+function snapshotBet(snapshot: MatchSnapshot, team: Team): number | undefined {
+  if (team === 'A') return snapshot.betA
+  return snapshot.betB
+}
+
+/** « Blancs : annonce +4 ajoutée », « Noirs : annonce +3 retirée », « Blancs : annonce modifiée +2 → +4 ». */
+function betChange(before: MatchSnapshot, after: MatchSnapshot, team: Team): string | null {
+  const was = snapshotBet(before, team)
+  const is = snapshotBet(after, team)
+  if (was === is) return null
+  const side = `${SIDE_NAME[team]}\u202F:`
+  if (was === undefined) return `${side} annonce +${is} ajoutée`
+  if (is === undefined) return `${side} annonce +${was} retirée`
+  return `${side} annonce modifiée +${was} → +${is}`
+}
+
+/** Updates only: « 5 – 3 → 5 – 4 », « comeback coché », « Blancs : annonce +4 ajoutée »…, joined by « · ». */
 export function scoreChange(event: MatchEvent): string | null {
   if (event.action !== 'updated' || event.before === null || event.after === null) return null
   const { before, after } = event
@@ -84,8 +101,10 @@ export function scoreChange(event: MatchEvent): string | null {
   if (before.scoreA !== after.scoreA || before.scoreB !== after.scoreB) {
     parts.push(`${fmtScore(before.scoreA, before.scoreB)} → ${fmtScore(after.scoreA, after.scoreB)}`)
   }
-  const comeback = comebackChange(before, after)
-  if (comeback !== null) parts.push(comeback)
+  const changes = [comebackChange(before, after), betChange(before, after, 'A'), betChange(before, after, 'B')]
+  for (const change of changes) {
+    if (change !== null) parts.push(change)
+  }
   if (parts.length === 0) return null
   return parts.join(' · ')
 }
