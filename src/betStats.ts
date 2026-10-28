@@ -1,6 +1,6 @@
 import { duoSide } from './duoStats'
 import type { DuoId } from './duo'
-import type { BetOutcome, Match, MatchId, PlayerId, ReplayResult, Team } from './types'
+import type { BetOutcome, Match, MatchId, MatchResult, PlayerId, Team } from './types'
 
 // Statistics on the « annonces d'écart » (src/bets.ts): the « 🎯 Annonces » card of the player and duo pages, the
 // tallies of the Hall of Flair section « Couilles sur la table » (src/records.ts) and the « Annonce du jour » of the
@@ -9,6 +9,12 @@ import type { BetOutcome, Match, MatchId, PlayerId, ReplayResult, Team } from '.
 
 /** One announcement of a match, as rated by the replay. */
 export type RatedBet = { match: Match; bet: BetOutcome }
+
+/**
+ * Match results in replay order: every match judged in its own ranking (useReplay().rankings, a 1v1 by 1V1, a 2v2 by
+ * 2V2 mixte), or one ranking's replay (the duos' ReplayResult).
+ */
+export type RatedMatches = { byMatch: ReadonlyMap<MatchId, MatchResult> }
 
 /** The side a player or a duo played in a match; null when it did not play it. */
 export type SideOf = (match: Match) => Team | null
@@ -43,7 +49,7 @@ function otherTeam(team: Team): Team {
 }
 
 /** The announcements of `matches`, in their order (Blancs first within a match), as rated by `result`. */
-export function betsOf(matches: Iterable<Match>, result: ReplayResult): RatedBet[] {
+export function betsOf(matches: Iterable<Match>, result: RatedMatches): RatedBet[] {
   const bets: RatedBet[] = []
   for (const match of matches) {
     for (const bet of result.byMatch.get(match.id)?.bets ?? []) bets.push({ match, bet })
@@ -52,7 +58,7 @@ export function betsOf(matches: Iterable<Match>, result: ReplayResult): RatedBet
 }
 
 /** The matches `result` replayed, in replay order (the order of byMatch); an id missing from `matches` is skipped. */
-export function replayedMatches(result: ReplayResult, matches: ReadonlyMap<MatchId, Match>): Match[] {
+export function replayedMatches(result: RatedMatches, matches: ReadonlyMap<MatchId, Match>): Match[] {
   const ordered: Match[] = []
   for (const id of result.byMatch.keys()) {
     const match = matches.get(id)
@@ -116,17 +122,20 @@ function playerSide(playerId: PlayerId): SideOf {
   }
 }
 
-/** A player's announcements over the Mixte replay `result` (every match he played, 1v1 and 2v2). */
+/**
+ * A player's announcements over every match he played, 1v1 and 2v2, each judged in its own ranking (pass
+ * useReplay().rankings: a 1v1 announcement is the 1V1 ranking's, a 2v2 one the 2V2 mixte ranking's).
+ */
 export function playerBetRecord(
   playerId: PlayerId,
-  result: ReplayResult,
+  result: RatedMatches,
   matches: ReadonlyMap<MatchId, Match>,
 ): BetRecord {
   return betRecord(betsOf(replayedMatches(result, matches), result), playerSide(playerId))
 }
 
-/** A duo's announcements made together, over the 2V2 replay `result` (its chances and points are the duo's). */
-export function duoBetRecord(id: DuoId, result: ReplayResult, matches: ReadonlyMap<MatchId, Match>): BetRecord {
+/** A duo's announcements made together, over the Équipes replay `result` (its chances and points are the duo's). */
+export function duoBetRecord(id: DuoId, result: RatedMatches, matches: ReadonlyMap<MatchId, Match>): BetRecord {
   return betRecord(betsOf(replayedMatches(result, matches), result), (match) => duoSide(id, match))
 }
 

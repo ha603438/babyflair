@@ -1,7 +1,7 @@
 import { describe, expect, it } from 'vitest'
 import { createElement } from 'react'
 import { renderToStaticMarkup } from 'react-dom/server'
-import { rank, replay } from '../../rating'
+import { replayRankings } from '../../rating/rankings'
 import type { Match, MatchId, Player, PlayerId, Store } from '../../types'
 import { ClassementView } from './ClassementView'
 import type { ReplayData, ScreenContext } from './context'
@@ -41,10 +41,11 @@ function contextOf(players: Player[], matches: Match[]): { app: ScreenContext; r
     toast: { current: null, show: noop, dismiss: noop },
     nav: { get: () => ({}), set: noop, take: () => ({}) },
   }
-  const result = replay(players, matches, { now: NOW })
+  const rankings = replayRankings(players, matches, NOW)
   const data: ReplayData = {
-    result,
-    ranking: rank(result, players),
+    result: rankings.main.result,
+    ranking: rankings.main.ranking,
+    rankings,
     players: new Map<PlayerId, Player>(players.map((player) => [player.id, player])),
     matches: new Map<MatchId, Match>(matches.map((m) => [m.id, m])),
     now: NOW,

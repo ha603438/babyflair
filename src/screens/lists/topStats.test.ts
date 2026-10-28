@@ -2,7 +2,7 @@ import { afterEach, describe, expect, it, vi } from 'vitest'
 import { createElement } from 'react'
 import { renderToStaticMarkup, renderToString } from 'react-dom/server'
 import App from '../../App'
-import { replay } from '../../rating'
+import { replayRankings } from '../../rating/rankings'
 import { topRecords } from '../../records'
 import type { Match, Player, PlayerId, RankingTab, Store, Target } from '../../types'
 import { TopStatsView } from './TopStatsView'
@@ -40,8 +40,7 @@ const MATCHES: Match[] = [
 ]
 
 function renderPage(matches: Match[]): string {
-  const result = replay(PLAYERS, matches, { now: NOW })
-  const records = topRecords(PLAYERS, matches, result)
+  const records = topRecords(PLAYERS, matches, replayRankings(PLAYERS, matches, NOW))
   const players = new Map(PLAYERS.map((player) => [player.id, player]))
   return renderToStaticMarkup(createElement(TopStatsView, { records, players, matchCount: matches.length, now: NOW }))
 }
@@ -54,7 +53,7 @@ function cardOf(html: string, title: string): string {
 }
 
 function cardsOf(matches: Match[], players: Player[] = PLAYERS): CardView[] {
-  const records = topRecords(players, matches, replay(players, matches, { now: NOW }))
+  const records = topRecords(players, matches, replayRankings(players, matches, NOW))
   const byId = new Map(players.map((player) => [player.id, player]))
   return topStatsSections(records, byId, NOW).flatMap((section) => section.cards)
 }
@@ -277,8 +276,10 @@ describe('Hall of Flair page', () => {
       expect(third).toContain(`${cell}<span class="podium-name">${name}</span></a>`)
     }
     expect(third.match(/4 matchs/g)).toHaveLength(1)
+    // 2V2 mixte peaks: Alice & Bob always played together (1st ex æquo), Chloé & Dan too (3rd ex æquo); Alice's 1v1
+    // fanny on Chloé (m4) belongs to the 1V1 ranking.
     const altitude = itemsOf(cardOf(html, 'Altitude record'))
-    expect(altitude.map((item) => item.match(/podium-cell"|podium-cell /g)?.length ?? 0)).toEqual([0, 0, 2])
+    expect(altitude.map((item) => item.match(/podium-cell"|podium-cell /g)?.length ?? 0)).toEqual([2, 2])
   })
 
   it('wraps 3+ ex æquo onto more rows of the same grid, a rivalry keeping one link per opponent', () => {
@@ -326,11 +327,18 @@ describe('Hall of Flair page', () => {
     expect(exploit).toContain('href="#/historique/m3"')
     expect(exploit).toContain('<span class="podium-name">Chloé &amp; Dan</span>')
     expect(exploit).toMatch(new RegExp(`<span class="podium-value">\\d+${NNBSP}% de chances</span>`))
-    // Alice and Bob took the same points in one match, ex æquo: each cell links to that match.
+    // Alice and Bob took the same points in m1 (their first 2v2, a fanny) as Alice in her first 1v1 (m4, a fanny,
+    // rated by the 1V1 ranking): 3 ex æquo, each cell links to its match.
     const jackpot = itemsOf(cardOf(html, 'Le Jackpot'))
-    expect(jackpot[0].match(/<a class="podium-cell podium-entry--link" href="#\/historique\/m\d">/g)).toHaveLength(2)
-    expect(jackpot[1]).toMatch(/<a class="podium-entry podium-entry--link" href="#\/historique\/m\d">/)
+    expect(jackpot[0].match(/<a class="podium-cell podium-entry--link" href="#\/historique\/m\d">/g)).toHaveLength(3)
+    expect(jackpot[0]).toContain('href="#/historique/m4"')
+    expect(jackpot).toHaveLength(1)
     expect(cardOf(html, 'Altitude record')).toMatch(/href="#\/joueurs\/alice"[^]*\d points</)
+  })
+
+  it('says the altitude record is the 2V2 mixte rating’s peak', () => {
+    const altitude = cardOf(renderPage(MATCHES), 'Altitude record')
+    expect(altitude).toContain('<p class="record-rule">Le plus haut total de points jamais atteint en 2V2 mixte</p>')
   })
 
   it('makes each opponent of a rivalry its own link, with the head-to-head', () => {
@@ -445,11 +453,10 @@ describe('Hall of Flair, « Couilles sur la table »', () => {
       [1, 1],
       [2, 4],
     ])
-    // Three successes: m1, m3, m4.
+    // Three successes: m1 (23 %), then m3 (Alice's +3 judged in 1V1, 31 %) and m4 (31 %) ex æquo.
     expect(shapeOf(cards, 'Coup de poker')).toEqual([
       [1, 1],
-      [2, 1],
-      [3, 1],
+      [2, 2],
     ])
     // Alice saw two announcements fail against her (m2, m3); Bob, Chloé, Dan and Eve one each.
     expect(shapeOf(cards, 'Le Briseur de rêves')).toEqual([
@@ -504,8 +511,7 @@ describe('Hall of Flair groups', () => {
       [3, 2],
     ])
     expect(shapeOf(cards, 'Altitude record')).toEqual([
-      [1, 1],
-      [2, 1],
+      [1, 2],
       [3, 2],
     ])
     expect(shapeOf(cards, 'Le Sniper')).toEqual([])

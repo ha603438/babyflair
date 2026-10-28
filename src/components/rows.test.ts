@@ -182,6 +182,12 @@ describe('PlayerRow', () => {
     expect(html).toContain('badge--rookie')
   })
 
+  it('says « 1V1 uniquement » for a player with 1v1 matches but no 2v2 match', () => {
+    expect(playerRow({ soloMatches: 3 })).toContain('1V1 uniquement · 3 matchs')
+    expect(playerRow({ stats: stats('a', { played: 0 }), soloMatches: 1 })).toContain('1V1 uniquement · 1 match')
+    expect(playerRow({})).toContain('Aucun match')
+  })
+
   it('shows inactivity and the no-match line', () => {
     const inactive = stats('a', { status: 'inactive', lastPlayedAt: isoDaysAgo(42, 1) })
     expect(playerRow({ stats: inactive })).toContain('inactif depuis 42 j')

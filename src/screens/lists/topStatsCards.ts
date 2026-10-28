@@ -112,8 +112,8 @@ export const TOP_STATS_COPY = {
   },
   peak: {
     title: 'Altitude record',
-    rule: 'Le plus haut total de points jamais atteint',
-    empty: `Pas encore de match${NNBSP}: 1 minimum`,
+    rule: 'Le plus haut total de points jamais atteint en 2V2 mixte',
+    empty: `Pas encore de match en 2 contre 2${NNBSP}: 1 minimum`,
   },
   exploit: {
     title: 'Le Hold-up',

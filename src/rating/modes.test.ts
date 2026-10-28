@@ -4,8 +4,8 @@ import { canonicalDuoId, duoId, duoLabel, duoMembers, duoTitle, membersByName, t
 import type { Match, Player, Target } from '../types'
 import type { Match as EngineMatch, Player as EnginePlayer } from './engine'
 import { DEFAULT_CONFIG, replay as engineReplay } from './engine'
-import { replay } from './index'
 import { expandDuoResult, isFormat, matchesOfFormat, MODE_CONFIG, MODE_RANKED_AFTER, replayMode } from './modes'
+import { replayMain } from './rankings'
 
 // ---------------------------------------------------------------------------
 // Fixtures
@@ -230,11 +230,12 @@ describe('replayMode 1v1', () => {
     expect(solo.result.byPlayer.get('a')).toMatchObject({ played: 4, wins: 3, losses: 1 })
   })
 
-  it('differs from the Mixte ranking, which counts every match', () => {
-    const mixte = replay(PLAYERS, HISTORY, { now: NOW })
-    expect(mixte.byPlayer.get('a')?.played).toBe(9)
+  it('is separate from the 2V2 mixte ranking, which counts the 2v2 matches only', () => {
+    const mixte = replayMain(PLAYERS, HISTORY, NOW).result
+    expect(mixte.byPlayer.get('a')?.played).toBe(5)
     expect(solo.result.byPlayer.get('a')?.played).toBe(4)
-    expect(mixte.byPlayer.get('a')?.rookieProgress).toBe(9)
+    expect(mixte.byPlayer.get('a')?.rookieProgress).toBe(5)
+    for (const id of solo.result.byMatch.keys()) expect(mixte.byMatch.has(id)).toBe(false)
   })
 
   it('ranks after 3 matches: a and b are classés, c and e not yet', () => {

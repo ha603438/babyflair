@@ -89,6 +89,8 @@ function arrayOf(value: unknown): unknown[] {
   return value
 }
 
+// The values outlive the split of the rankings: 'mixte' (once « Mixte », every match) now opens « 2V2 mixte », the main
+// ranking that replaced it; '2v2' (the duos) is « Équipes », '1v1' is unchanged. A phone keeps its tab.
 function readClassementTab(value: unknown): RankingTab | undefined {
   if (value === 'mixte' || value === '2v2' || value === '1v1') return value
   return undefined

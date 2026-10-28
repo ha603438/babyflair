@@ -110,13 +110,21 @@ export function RankRow({ player, stats, variant, rank, now, href, highlight = f
 
 export type PlayerRowProps = {
   player: Player
+  /** 2V2 mixte stats (the main ranking). */
   stats?: PlayerStats
+  /** 1v1 matches played: a player without 2v2 match still has a career there. */
+  soloMatches?: number
   now: Date
   href: string
 }
 
-function playerSubtitle(stats: PlayerStats | undefined, now: Date): string {
-  if (!stats || stats.played === 0) return 'Aucun match'
+function noMainMatchText(soloMatches: number): string {
+  if (soloMatches === 0) return 'Aucun match'
+  return `1V1 uniquement · ${plural(soloMatches, 'match')}`
+}
+
+function playerSubtitle(stats: PlayerStats | undefined, now: Date, soloMatches: number): string {
+  if (!stats || stats.played === 0) return noMainMatchText(soloMatches)
   if (stats.status === 'inactive' && stats.lastPlayedAt) {
     return `inactif depuis ${fmtInt(daysSince(stats.lastPlayedAt, now))} j`
   }
@@ -124,13 +132,13 @@ function playerSubtitle(stats: PlayerStats | undefined, now: Date): string {
   return `${fmtInt(stats.rating)} · ${plural(stats.played, 'match')}`
 }
 
-export function PlayerRow({ player, stats, now, href }: PlayerRowProps) {
+export function PlayerRow({ player, stats, soloMatches = 0, now, href }: PlayerRowProps) {
   return (
     <ListRow
       className="row--player"
       href={href}
       title={<NameWithBadges player={player} rookie={isRookie(stats)} />}
-      subtitle={playerSubtitle(stats, now)}
+      subtitle={playerSubtitle(stats, now, soloMatches)}
     />
   )
 }

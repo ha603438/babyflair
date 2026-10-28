@@ -1,12 +1,14 @@
 import { describe, expect, it } from 'vitest'
 import { betFields } from './bets'
-import { rank, replay } from './rating'
+import { replayMain, replayRankings } from './rating/rankings'
+import type { Rankings } from './rating/rankings'
 import { groupByDay, localDayKey, recap, RECAP_DAYS_STEP, winnersFirst } from './recap'
-import type { BetOutcome, Match, MatchId, MatchResult, Player, PlayerId, ReplayResult, Target } from './types'
+import type { BetOutcome, Match, MatchId, MatchResult, Player, PlayerId, Target } from './types'
 
 // Récap (src/recap.ts): day grouping on the local calendar, the last days with matches, and each highlight's rule and
-// tie-breaks. Highlights other than « Nouveau n°1 » read only the per-match deltas and chances, so most cases use a
-// hand-made result; the leader change runs the real replay. Dates are built in local time (TZ-independent).
+// tie-breaks. Highlights other than « Nouveau n°1 » read only the per-match deltas and chances (each match in the
+// ranking of its format), so most cases use a hand-made result; the leader change runs the real 2V2 mixte replay.
+// Dates are built in local time (TZ-independent).
 
 const PLAYERS: Player[] = [
   { id: 'alice', name: 'Alice', isGuest: false, createdAt: '2026-09-01T10:00:00.000Z' },
@@ -14,6 +16,7 @@ const PLAYERS: Player[] = [
   { id: 'chloe', name: 'Chloé', isGuest: true, createdAt: '2026-09-01T10:00:00.000Z' },
   { id: 'dan', name: 'Dan', isGuest: false, createdAt: '2026-09-01T10:00:00.000Z' },
   { id: 'eve', name: 'Eve', isGuest: false, createdAt: '2026-09-01T10:00:00.000Z' },
+  { id: 'fred', name: 'Fred', isGuest: false, createdAt: '2026-09-01T10:00:00.000Z' },
 ]
 
 let seq = 0
@@ -44,8 +47,10 @@ function match({ day, hour = 12, minute = 0, a, b, score, target = 10, comeback,
 /** `bets` the announcements as the replay would rate them (chosen freely here, the record only reads them). */
 type Fake = { deltas?: Record<PlayerId, number>; expectedA?: number; bets?: BetOutcome[] }
 
-/** A replay result with the given deltas (0 by default) and team A chances (50 % by default); nobody ever ranked. */
-function resultOf(matches: Match[], fakes: Record<MatchId, Fake> = {}): ReplayResult {
+type Rated = Pick<Rankings, 'main' | 'byMatch'>
+
+/** Match results with the given deltas (0 by default) and team A chances (50 % by default); nobody ever ranked. */
+function resultOf(matches: Match[], fakes: Record<MatchId, Fake> = {}): Rated {
   const byMatch = new Map<MatchId, MatchResult>()
   for (const m of matches) {
     const fake = fakes[m.id] ?? {}
@@ -57,7 +62,8 @@ function resultOf(matches: Match[], fakes: Record<MatchId, Fake> = {}): ReplayRe
     const perPlayer = [...m.teamA.map((id) => row(id, 'A')), ...m.teamB.map((id) => row(id, 'B'))]
     byMatch.set(m.id, { matchId: m.id, expectedA, expectedB: 1 - expectedA, perPlayer, bets: fake.bets ?? [] })
   }
-  return { byPlayer: new Map(), byMatch }
+  const main = { byPlayer: new Map(), byMatch: new Map() }
+  return { main: { result: main, ranking: { ranked: [], rookies: [], inactive: [] }, matches: [] }, byMatch }
 }
 
 /** The single day of a recap over `matches` (all played the same day). */
@@ -287,58 +293,64 @@ describe('« Fanny » and « Comeback »', () => {
   })
 })
 
-describe('« Accro du jour »', () => {
-  it('takes the most matches played that day, 3 at least; ties → more wins, then name', () => {
+describe('without « Accro du jour »', () => {
+  it('has no « most matches of the day » highlight any more', () => {
     const matches = [
       match({ day: 14, a: ['alice'], b: ['bob'], score: [10, 2] }),
       match({ day: 14, a: ['alice'], b: ['bob'], score: [2, 10] }),
       match({ day: 14, a: ['bob'], b: ['alice'], score: [10, 2] }),
-      match({ day: 14, a: ['chloe'], b: ['dan'], score: [10, 2] }),
     ]
-    // Alice and Bob: 3 matches each; Bob has 2 wins.
-    expect(dayOf(matches).addict).toMatchObject({ playerId: 'bob', wins: 2, losses: 1 })
-    const even = matches.slice(0, 2)
-    expect(dayOf(even).addict).toBeNull()
-    const nameTie = [...even, match({ day: 14, a: ['alice'], b: ['bob'], score: [10, 9] })]
-    nameTie.push(match({ day: 14, a: ['bob'], b: ['alice'], score: [10, 9] }))
-    // 4 matches each, 2 wins each: Alice by name.
-    expect(dayOf(nameTie).addict?.playerId).toBe('alice')
+    expect(dayOf(matches)).not.toHaveProperty('addict')
+  })
+})
+
+describe('each match in its own ranking', () => {
+  it('sums the 1V1 deltas of a 1v1 and the 2V2 mixte deltas of a 2v2 (real replay)', () => {
+    const solo = match({ day: 14, a: ['alice'], b: ['bob'], score: [10, 2] })
+    const duo = match({ day: 14, hour: 13, a: ['alice', 'chloe'], b: ['dan', 'eve'], score: [10, 8] })
+    const rankings = replayRankings(PLAYERS, [solo, duo], new Date(2026, 9, 14, 23))
+    const [day] = recap(PLAYERS, [solo, duo], rankings, RECAP_DAYS_STEP).days
+    const soloAlice = rankings.oneVsOne.result.byMatch.get(solo.id)?.perPlayer.find((p) => p.playerId === 'alice')
+    const duoAlice = rankings.main.result.byMatch.get(duo.id)?.perPlayer.find((p) => p.playerId === 'alice')
+    expect(rankings.main.result.byMatch.has(solo.id)).toBe(false)
+    const net = (soloAlice?.delta ?? 0) + (duoAlice?.delta ?? 0)
+    expect(day.hot).toEqual({ playerId: 'alice', net, wins: 2, losses: 0 })
   })
 })
 
 describe('« Nouveau n°1 »', () => {
-  // Day 10: Alice and Bob play their 10 matches (Alice wins 7) → both ranked, Alice 1st, but nobody was ranked before.
-  // Day 11: Bob wins 6 times 10-0 → he takes the lead. Day 12: Chloé, a rookie, beats Bob 3 times (not ranked: no
-  // change); Bob beats Alice once more (still 1st: no change).
+  // The 2V2 mixte leader. Day 10: Alice & Eve play Bob & Dan 10 times (they win 7) → the four are ranked, Alice 1st
+  // (by name, Eve has the same rating), but nobody was ranked before. Day 11: Bob & Dan win 6 times 10-0 → Bob takes
+  // the lead. Day 12: Chloé & Fred, rookies, beat Bob & Dan 3 times (not ranked: no change); Bob & Dan beat Alice &
+  // Eve once more (Bob still 1st: no change).
   function season(): Match[] {
     const matches: Match[] = []
     for (let i = 0; i < 10; i += 1) {
       const aliceWins = i < 7
       const score: [number, number] = aliceWins ? [10, 6] : [6, 10]
-      matches.push(match({ day: 10, hour: 9, minute: i, a: ['alice'], b: ['bob'], score }))
+      matches.push(match({ day: 10, hour: 9, minute: i, a: ['alice', 'eve'], b: ['bob', 'dan'], score }))
     }
     for (let i = 0; i < 6; i += 1) {
-      matches.push(match({ day: 11, hour: 9, minute: i, a: ['bob'], b: ['alice'], score: [10, 0] }))
+      matches.push(match({ day: 11, hour: 9, minute: i, a: ['bob', 'dan'], b: ['alice', 'eve'], score: [10, 0] }))
     }
     for (let i = 0; i < 3; i += 1) {
-      matches.push(match({ day: 12, hour: 9, minute: i, a: ['chloe'], b: ['bob'], score: [10, 0] }))
+      matches.push(match({ day: 12, hour: 9, minute: i, a: ['chloe', 'fred'], b: ['bob', 'dan'], score: [10, 0] }))
     }
-    matches.push(match({ day: 12, hour: 10, a: ['bob'], b: ['alice'], score: [10, 9] }))
+    matches.push(match({ day: 12, hour: 10, a: ['bob', 'dan'], b: ['alice', 'eve'], score: [10, 9] }))
     return matches
   }
 
   function leaderAfter(matches: Match[], day: number): PlayerId | undefined {
     const upTo = matches.filter((m) => new Date(m.playedAt).getDate() <= day)
-    const now = new Date(2026, 9, day, 23)
-    return rank(replay(PLAYERS, upTo, { now }), PLAYERS).ranked[0]
+    return replayMain(PLAYERS, upTo, new Date(2026, 9, day, 23)).ranking.ranked[0]
   }
 
   it('names the end-of-day leader when another one led at the start of the day', () => {
     const matches = season()
-    const result = replay(PLAYERS, matches, { now: new Date(2026, 9, 12, 23) })
-    const days = recap(PLAYERS, matches, result, RECAP_DAYS_STEP).days
+    const rankings = replayRankings(PLAYERS, matches, new Date(2026, 9, 12, 23))
+    const days = recap(PLAYERS, matches, rankings, RECAP_DAYS_STEP).days
     expect(days.map((day) => day.key)).toEqual(['2026-10-12', '2026-10-11', '2026-10-10'])
-    // Same ranking as the Classement at the end of each day.
+    // Same ranking as the Classement (2V2 mixte) at the end of each day.
     expect(leaderAfter(matches, 10)).toBe('alice')
     expect(leaderAfter(matches, 11)).toBe('bob')
     expect(leaderAfter(matches, 12)).toBe('bob')
@@ -347,21 +359,37 @@ describe('« Nouveau n°1 »', () => {
 
   it('skips a day when nobody was ranked before it, and a day that ends with the same leader', () => {
     const matches = season()
-    const result = replay(PLAYERS, matches, { now: new Date(2026, 9, 12, 23) })
-    const [day12, , day10] = recap(PLAYERS, matches, result, RECAP_DAYS_STEP).days
+    const rankings = replayRankings(PLAYERS, matches, new Date(2026, 9, 12, 23))
+    const [day12, , day10] = recap(PLAYERS, matches, rankings, RECAP_DAYS_STEP).days
     expect(day10.newLeader).toBeNull()
     // Chloé's rating is the best of day 12, but with 3 matches she is not ranked yet.
+    const { byPlayer } = rankings.main.result
+    expect(byPlayer.get('chloe')?.rating).toBeGreaterThan(byPlayer.get('bob')?.rating ?? 0)
     expect(day12.newLeader).toBeNull()
+  })
+
+  it('ignores the 1v1 matches: they never move the 2V2 mixte leader', () => {
+    const matches = season().filter((m) => new Date(m.playedAt).getDate() !== 12)
+    // Day 13: Alice crushes Bob 4 times in 1v1, which would have given her the lead when every match counted.
+    for (let i = 0; i < 4; i += 1) {
+      matches.push(match({ day: 13, hour: 9, minute: i, a: ['alice'], b: ['bob'], score: [10, 0] }))
+    }
+    const rankings = replayRankings(PLAYERS, matches, new Date(2026, 9, 13, 23))
+    const [day13] = recap(PLAYERS, matches, rankings, RECAP_DAYS_STEP).days
+    expect(leaderAfter(matches, 13)).toBe('bob')
+    expect(day13.newLeader).toBeNull()
   })
 
   it('judges activity like the Classement: going inactive changes nothing, coming back can take the lead', () => {
     const matches = season().filter((m) => new Date(m.playedAt).getDate() !== 12)
-    // Alice keeps playing Dan (Bob still active on Oct 20, 30 and Nov 9: no change); Bob comes back on Nov 15,
-    // 35 days after his last match: inactive when the day starts (Alice leads), 1st again once he has played.
-    for (const day of [20, 30, 40]) matches.push(match({ day, a: ['alice'], b: ['dan'], score: [10, 9] }))
-    matches.push(match({ day: 46, a: ['bob'], b: ['dan'], score: [10, 9] }))
-    const result = replay(PLAYERS, matches, { now: new Date(2026, 9, 46, 23) })
-    const days = recap(PLAYERS, matches, result, 2 * RECAP_DAYS_STEP).days
+    // Alice & Eve keep playing Chloé & Fred (Bob still active on Oct 20, 30 and Nov 9: no change); Bob & Dan come back
+    // on Nov 15, 35 days after their last match: inactive when the day starts (Alice leads), Bob 1st again once played.
+    for (const day of [20, 30, 40]) {
+      matches.push(match({ day, a: ['alice', 'eve'], b: ['chloe', 'fred'], score: [10, 9] }))
+    }
+    matches.push(match({ day: 46, a: ['bob', 'dan'], b: ['chloe', 'fred'], score: [10, 9] }))
+    const rankings = replayRankings(PLAYERS, matches, new Date(2026, 9, 46, 23))
+    const days = recap(PLAYERS, matches, rankings, 2 * RECAP_DAYS_STEP).days
     const keys = ['2026-11-15', '2026-11-09', '2026-10-30', '2026-10-20', '2026-10-11', '2026-10-10']
     expect(days.map((day) => day.key)).toEqual(keys)
     expect(days.map((day) => day.newLeader)).toEqual(['bob', null, null, null, 'bob', null])

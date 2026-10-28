@@ -12,6 +12,7 @@ import {
   matchToDraft,
   newMatchFromDraft,
   rankMapOf,
+  tabAfterMatch,
   resultDateLine,
   rosterCaption,
   saveLabel,
@@ -353,5 +354,15 @@ describe('announcements through the draft', () => {
     const five = draftReducer(matchToDraft(base), { type: 'setTarget', target: 5 })
     const scored = draftReducer(five, { type: 'setScore', score: { winner: 'A', loserGoals: 2 } })
     expect(draftToMatch(scored, base, NOW_ISO)).toMatchObject({ target: 5, betA: 5 })
+  })
+})
+
+describe('tabAfterMatch', () => {
+  it('opens the ranking the match moved: 1V1 after a 1v1, 2V2 mixte (or the remembered Équipes) after a 2v2', () => {
+    expect(tabAfterMatch('1v1', 'mixte')).toBe('1v1')
+    expect(tabAfterMatch('1v1', '2v2')).toBe('1v1')
+    expect(tabAfterMatch('2v2', '1v1')).toBe('mixte')
+    expect(tabAfterMatch('2v2', 'mixte')).toBe('mixte')
+    expect(tabAfterMatch('2v2', '2v2')).toBe('2v2')
   })
 })

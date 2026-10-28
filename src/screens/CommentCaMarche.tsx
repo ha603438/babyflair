@@ -17,18 +17,21 @@ const SECTIONS: Section[] = [
   {
     title: 'Le classement',
     text:
-      `Tout le monde démarre à 1${NNBSP}000 points, invités compris : seul l'écart entre deux joueurs compte, ` +
-      "pas le chiffre lui-même. Après chaque match, les gagnants prennent des points aux perdants. Le classement " +
-      'se lit par points, puis par nombre de matchs, puis par prénom (sans tenir compte des majuscules ni des ' +
-      'accents).',
+      `Dans chaque classement, tout le monde démarre à 1${NNBSP}000 points, invités compris : seul l'écart entre ` +
+      "deux joueurs compte, pas le chiffre lui-même. Après chaque match, les gagnants prennent des points aux " +
+      'perdants. Le classement se lit par points, puis par nombre de matchs, puis par prénom (sans tenir compte des ' +
+      'majuscules ni des accents).',
   },
   {
-    title: 'Trois classements',
+    title: 'Trois classements séparés',
     text:
-      'Le classement principal, « Mixte », compte tous les matchs, en 1 contre 1 comme en 2 contre 2. Les onglets ' +
-      '« 2V2 » et « 1V1 » en donnent deux autres, calculés de la même façon : en 2V2, chaque duo est noté comme une ' +
-      'seule équipe, avec ses propres points ; en 1V1, seuls les matchs en 1 contre 1 comptent. Dans ces deux-là, ' +
-      'on est classé après 3 matchs.',
+      `Trois onglets, trois classements qui ne se mélangent pas, chacun recalculé depuis le tout premier match avec ` +
+      `ses seuls matchs. «${NNBSP}2V2 mixte${NNBSP}», le classement principal, note chaque joueur sur les matchs ` +
+      `en 2 contre 2, quel que soit son coéquipier${NNBSP}; on y est classé après 10 matchs. ` +
+      `«${NNBSP}Équipes${NNBSP}» note chaque duo comme une seule équipe, avec ses propres points. ` +
+      `«${NNBSP}1V1${NNBSP}» ne compte que les matchs en 1 contre 1. Dans ces deux-là, on est classé après 3 ` +
+      `matchs. Un match en 1 contre 1 ne compte donc que pour le 1V1${NNBSP}: il ne change rien en 2V2 mixte, et ` +
+      `un match en 2 contre 2 ne change rien en 1V1.`,
   },
   {
     title: 'Les points',
@@ -42,8 +45,8 @@ const SECTIONS: Section[] = [
   {
     title: 'Les chances de gagner',
     text:
-      "La force d'une équipe est la moyenne de ses deux joueurs, ou ton classement tout seul en 1 contre 1 ; " +
-      `les deux formats comptent dans le même classement. En partie en 10, 100 points d'écart donnent environ ` +
+      "La force d'une équipe est la moyenne des points 2V2 mixte de ses deux joueurs ; en 1 contre 1, ce sont " +
+      `tes points 1V1. En partie en 10, 100 points d'écart donnent environ ` +
       `64${NNBSP}% de chances, 200 points 76${NNBSP}%, 400 points 91${NNBSP}% ; en partie en 5 le hasard pèse ` +
       `plus, donc 60${NNBSP}%, 69${NNBSP}% et 83${NNBSP}%.`,
   },
@@ -57,9 +60,10 @@ const SECTIONS: Section[] = [
   {
     title: 'Débutants',
     text:
-      "Ton premier match compte ×3, puis de moins en moins, jusqu'à ton 21e match où tu bouges comme tout le " +
-      'monde. Avant ton 10e match, tu portes un « ? » et tu apparais sous le classement, dans la section ' +
-      'Débutants.',
+      "Dans chaque classement, ton premier match compte ×3, puis de moins en moins, jusqu'à ton 21e match où tu " +
+      'bouges comme tout le monde. En 2V2 mixte, avant ton 10e match en 2 contre 2, tu portes un « ? » et tu ' +
+      'apparais sous le classement, dans la section « Pas encore classés » ; en Équipes et en 1V1, 3 matchs ' +
+      'suffisent pour être classé.',
   },
   {
     title: 'Avant et arrière',
@@ -82,8 +86,9 @@ const SECTIONS: Section[] = [
       `feuille de match, «${NNBSP}🎯 Annoncer un écart${NNBSP}» sous son équipe (couilles sur la table, donc). Si ` +
       `elle gagne avec au moins N buts d’écart, chacun de ses joueurs gagne un bonus${NNBSP}; sinon (défaite, ou ` +
       `victoire trop courte), chacun perd des points. Tout dépend des chances de réussir, calculées d’après le ` +
-      `classement${NNBSP}: réussie, l’annonce rapporte 16 × les chances de la rater${NNBSP}; ratée, elle coûte 16 × ` +
-      `les chances de la réussir. Une annonce facile rapporte peu et coûte cher, une annonce osée rapporte gros et ` +
+      `classement du match (1V1 en 1 contre 1, 2V2 mixte en 2 contre 2)${NNBSP}: réussie, l’annonce rapporte 16 × ` +
+      `les chances de la rater${NNBSP}; ratée, elle coûte 16 × les chances de la réussir. Une annonce facile ` +
+      `rapporte peu et coûte cher, une annonce osée rapporte gros et ` +
       `coûte peu${NNBSP}: en moyenne, annoncer ne rapporte rien, ça ne paie que si vous faites mieux que prévu. ` +
       `L’équipe d’en face n’est pas touchée, et l’annonce s’ajoute telle quelle (pas de partage entre coéquipiers, ` +
       `ni ×débutant, ni marge, ni bonus). Exemple${NNBSP}: deux équipes de même niveau en 10, les Blancs annoncent ` +
@@ -96,8 +101,8 @@ const SECTIONS: Section[] = [
   {
     title: 'Partis prendre l’flair',
     text:
-      'Sans match pendant 30 jours, tu pars prendre l’flair (la section des inactifs), sans perdre aucun point. Un match ' +
-      'suffit pour revenir.',
+      'Sans match pendant 30 jours dans un classement, tu y pars prendre l’flair (la section des inactifs), sans ' +
+      'perdre aucun point. Un match suffit pour revenir.',
   },
   {
     title: 'Égalités',
@@ -112,8 +117,8 @@ const SECTIONS: Section[] = [
     text:
       `Toutes les stats sont dans l’onglet Stats. «${NNBSP}Récap${NNBSP}» résume les derniers jours de ` +
       `matchs${NNBSP}: joueur et duo du jour, hold-up, fanny, comebacks, nouveau n°1… «${NNBSP}Courbes${NNBSP}» ` +
-      `trace les points de chacun, match après match, en Mixte, 2V2 ou 1V1${NNBSP}: touche les noms pour comparer ` +
-      'jusqu’à 8 joueurs, et glisse le doigt sur le graphique pour lire chaque match. ' +
+      `trace les points de chacun, match après match, en 2V2 mixte, en Équipes ou en 1V1${NNBSP}: touche les noms ` +
+      'pour comparer jusqu’à 8 joueurs, et glisse le doigt sur le graphique pour lire chaque match. ' +
       `«${NNBSP}Hall of Flair${NNBSP}» rassemble les records de tous les temps.`,
   },
   {
@@ -125,7 +130,7 @@ const SECTIONS: Section[] = [
   {
     title: 'Modifier ou supprimer un match',
     text:
-      "N'importe qui peut corriger ou supprimer n'importe quel match. Tout le classement est alors recalculé " +
+      "N'importe qui peut corriger ou supprimer n'importe quel match. Les classements sont alors recalculés " +
       "depuis le tout premier match, et un match corrigé garde sa place dans l'historique.",
   },
   {
@@ -142,9 +147,9 @@ const SECTIONS: Section[] = [
       'Depuis le classement, « Je flaire un baby » envoie, au nom de ton profil, une notification à tous les ' +
       'téléphones qui ont activé les notifications dans Réglages. Chacun répond « Chauuud 🔥 » ou « Non je fais ' +
       'semblant de bosser » ; dès que 4 joueurs sont là, « Former les équipes » compose les équipes les plus ' +
-      'équilibrées selon le classement, tire les postes et les couleurs au sort, et ouvre le match. L’appel liste ' +
-      'les « Chauds », les « Pas chauds » et ceux qui n’ont pas encore répondu, et chacun peut changer d’avis tant ' +
-      'qu’il reste ouvert. Sans 4 joueurs au bout de 5 minutes, l’appel est annulé.',
+      'équilibrées selon le classement 2V2 mixte, tire les postes et les couleurs au sort, et ouvre le match. ' +
+      'L’appel liste les « Chauds », les « Pas chauds » et ceux qui n’ont pas encore répondu, et chacun peut ' +
+      'changer d’avis tant qu’il reste ouvert. Sans 4 joueurs au bout de 5 minutes, l’appel est annulé.',
   },
   {
     title: 'Tes données',

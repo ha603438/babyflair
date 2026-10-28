@@ -6,12 +6,14 @@ import { Check } from '../components/icons'
 import { MatchSummary } from '../components/MatchSummary'
 import { useShowsTimes } from '../profile/useShowsTimes'
 import { useWriteGuard } from '../profile/useWriteGuard'
-import { teamExpectation } from '../rating'
+import { draftExpectation, formatOfMatch, matchResult, ofFormat, rankedAfterOf } from '../rating/rankings'
+import type { Rankings } from '../rating/rankings'
 import { useReplay } from '../rating/useReplay'
 import { navigate } from '../router'
 import { useAppState, visibleSlots } from '../store'
-import type { Match as MatchRecord, MatchId, Player, PlayerId, Ranking, ReplayResult } from '../types'
-import { draftTeams, newMatchFromDraft, rankMapOf, resultDateLine, saveLabel } from './match/draftMatch'
+import type { Match as MatchRecord, MatchId, Player, PlayerId } from '../types'
+import { tabOf } from './lists/modeLabels'
+import { draftTeams, newMatchFromDraft, rankMapOf, resultDateLine, saveLabel, tabAfterMatch } from './match/draftMatch'
 import { MatchPreview } from './match/MatchPreview'
 import { PlayersStep } from './match/PlayersStep'
 import { computePreview } from './match/preview'
@@ -44,8 +46,7 @@ function NoPlayers() {
 
 type ResultViewProps = {
   match: MatchRecord
-  result: ReplayResult
-  ranking: Ranking
+  rankings: Rankings
   playersById: Map<PlayerId, Player>
   now: Date
   rankBefore: Map<PlayerId, number> | undefined
@@ -56,11 +57,16 @@ type ResultViewProps = {
   onCancelMatch: () => void
 }
 
-/** Step C (spec §4): check + « Match enregistré », the MatchSummary from the fresh replay, the three actions and the undo. */
+/**
+ * Step C (spec §4): check + « Match enregistré », the MatchSummary from the fresh replay, the three actions and the
+ * undo. Deltas and ranks are the match's own ranking's: 1V1 for a 1v1, 2V2 mixte for a 2v2.
+ */
 function ResultView(props: ResultViewProps) {
-  const { match, result, ranking, playersById, now, rankBefore } = props
-  const matchResult = result.byMatch.get(match.id)
-  const rankAfter = rankMapOf(ranking, [...match.teamA, ...match.teamB])
+  const { match, rankings, playersById, now, rankBefore } = props
+  const format = formatOfMatch(match)
+  const own = ofFormat(rankings, format)
+  const result = matchResult(rankings, match.id)
+  const rankAfter = rankMapOf(own.ranking, [...match.teamA, ...match.teamB])
   const dateLine = resultDateLine(match.playedAt, match.target, now, useShowsTimes())
   return (
     <div className="match-screen match-screen--done">
@@ -69,13 +75,14 @@ function ResultView(props: ResultViewProps) {
           <Check size={28} className="match-result__check" />
           <h1 className="match-result__heading">Match enregistré</h1>
         </div>
-        {matchResult === undefined && <p className="match-result__caption">{dateLine}</p>}
-        {matchResult !== undefined && (
+        {result === undefined && <p className="match-result__caption">{dateLine}</p>}
+        {result !== undefined && (
           <MatchSummary
             match={match}
-            result={matchResult}
+            result={result}
             players={playersById}
-            byPlayer={result.byPlayer}
+            byPlayer={own.result.byPlayer}
+            rankedAfter={rankedAfterOf(format)}
             rankBefore={rankBefore}
             rankAfter={rankAfter}
             dateLine={dateLine}
@@ -108,7 +115,7 @@ function ResultView(props: ResultViewProps) {
 /** Nouveau match (spec §3.2, §4): steps A players → B score → C done, all on #/match, driven by the shared draft. */
 export function Match() {
   const { store, dispatch, draft, draftDispatch, toast, nav } = useAppState()
-  const { result, ranking, players: playersById, matches: matchesById, now } = useReplay()
+  const { rankings, players: playersById, matches: matchesById, now } = useReplay()
   // Ranks captured right before addMatch; the result view needs them next to the fresh ranking (spec §4 step C).
   const [rankBefore, setRankBefore] = useState<RankSnapshot | null>(null)
   const teams = draftTeams(draft)
@@ -133,6 +140,8 @@ export function Match() {
   function save() {
     if (draft.score === null || teams === null) return
     const created = newMatchFromDraft(draft, crypto.randomUUID(), new Date().toISOString())
+    // The ranks in the ranking that rates this match (1V1 or 2V2 mixte), right before it.
+    const { ranking } = ofFormat(rankings, formatOfMatch(created))
     setRankBefore({ matchId: created.id, ranks: rankMapOf(ranking, [...created.teamA, ...created.teamB]) })
     dispatch({ type: 'addMatch', match: created })
     dispatch({ type: 'setSetting', patch: { lastFormat: draft.format, lastTarget: draft.target } })
@@ -149,7 +158,11 @@ export function Match() {
     draftDispatch({ type: 'prefill', teamA: match.teamA, teamB: match.teamB, target: match.target })
   }
 
+  // The Classement opens on the ranking the match moved (1V1 after a 1v1), the highlighted rows included.
   function onShowRanking(match: MatchRecord, ranks: Map<PlayerId, number> | undefined) {
+    const current = tabOf(store.settings)
+    const tab = tabAfterMatch(formatOfMatch(match), current)
+    if (tab !== current) dispatch({ type: 'setSetting', patch: { classementTab: tab } })
     nav.set({ highlightIds: [...match.teamA, ...match.teamB], rankBefore: ranks })
     navigate({ name: 'classement' })
   }
@@ -172,8 +185,7 @@ export function Match() {
     return (
       <ResultView
         match={savedMatch}
-        result={result}
-        ranking={ranking}
+        rankings={rankings}
         playersById={playersById}
         now={now}
         rankBefore={ranks}
@@ -189,6 +201,8 @@ export function Match() {
   if (draft.step === 'score' && teams !== null) {
     const bets = betFields(draft.betA, draft.betB)
     const comeback = draft.comeback === true
+    // The draft is judged in the ranking of its format: 1V1 ratings for a 1v1, 2V2 mixte ratings for a 2v2.
+    const { result } = ofFormat(rankings, draft.format)
     const preview = computePreview(result, store.players, teams, draft.target, draft.score, comeback, bets)
     return (
       <ScorePanel
@@ -196,7 +210,7 @@ export function Match() {
         teams={teams}
         dispatch={draftDispatch}
         playersById={playersById}
-        expectedA={teamExpectation(result, { ...teams, target: draft.target })}
+        expectedA={draftExpectation(rankings, { ...teams, target: draft.target })}
         preview={
           preview && <MatchPreview preview={preview} teams={teams} target={draft.target} playersById={playersById} />
         }
@@ -208,5 +222,7 @@ export function Match() {
     )
   }
 
-  return <PlayersStep draft={draft} dispatch={draftDispatch} playersById={playersById} byPlayer={result.byPlayer} />
+  return (
+    <PlayersStep draft={draft} dispatch={draftDispatch} playersById={playersById} byPlayer={rankings.presence} />
+  )
 }

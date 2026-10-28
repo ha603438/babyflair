@@ -1,4 +1,5 @@
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest'
+import { TAB_OPTIONS, tabOf } from '../screens/lists/modeLabels'
 import type { Store } from '../types'
 import { loadStore, normaliseSettings, normaliseStore, saveStore, STORAGE_KEY } from './persistence'
 import { initialStore, reducer } from './reducer'
@@ -308,5 +309,16 @@ describe('normaliseSettings · classementTab', () => {
     expect(normaliseSettings({ classementTab: 'mixte' }).classementTab).toBe('mixte')
     expect(normaliseSettings({ classementTab: '3v3' }).classementTab).toBeUndefined()
     expect(normaliseSettings({}).classementTab).toBeUndefined()
+  })
+
+  it('keeps the old « Mixte » value: it now opens « 2V2 mixte », the main ranking that replaced it', () => {
+    const labelOf = (stored: unknown) =>
+      TAB_OPTIONS.find((option) => option.value === tabOf(normaliseSettings({ classementTab: stored })))?.label
+    expect(tabOf(normaliseSettings({ classementTab: 'mixte' }))).toBe('mixte')
+    expect(labelOf('mixte')).toBe('2V2 mixte')
+    // Nothing stored: the same default tab. The old « 2V2 » (duos) value is the « Équipes » tab, unchanged.
+    expect(labelOf(undefined)).toBe('2V2 mixte')
+    expect(labelOf('2v2')).toBe('Équipes')
+    expect(labelOf('1v1')).toBe('1V1')
   })
 })

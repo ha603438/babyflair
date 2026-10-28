@@ -2,7 +2,8 @@ import { afterEach, describe, expect, it, vi } from 'vitest'
 import { createElement } from 'react'
 import { renderToStaticMarkup, renderToString } from 'react-dom/server'
 import App from '../../App'
-import { betChance, replay } from '../../rating'
+import { betChance } from '../../rating'
+import { replayRankings } from '../../rating/rankings'
 import { recap, RECAP_DAYS_STEP } from '../../recap'
 import type { Match, Player, Store, Target } from '../../types'
 import { matchText } from './recapLines'
@@ -47,8 +48,7 @@ const MATCHES: Match[] = [
 ]
 
 function renderRecap(matches: Match[], dayCount = RECAP_DAYS_STEP): string {
-  const result = replay(PLAYERS, matches, { now: NOW })
-  const data = recap(PLAYERS, matches, result, dayCount)
+  const data = recap(PLAYERS, matches, replayRankings(PLAYERS, matches, NOW), dayCount)
   return renderToStaticMarkup(createElement(RecapView, { recap: data, players: BY_ID, now: NOW, onMore: () => {} }))
 }
 
@@ -77,11 +77,12 @@ describe('Récap view', () => {
     expect(all).not.toContain('recap-more')
   })
 
-  it('sums the day up: « 3 matchs · 5 joueurs · 1 fanny », no fanny part without one', () => {
+  it('sums the day up without the match count: « 5 joueurs · 1 fanny », no fanny part without one', () => {
     const html = renderRecap(MATCHES)
     const today = cardOf(html, 'Aujourd&#x27;hui')
-    expect(today).toContain('<p class="recap-day__summary">3 matchs · 5 joueurs · 1 fanny</p>')
-    expect(cardOf(html, 'Hier')).toContain('<p class="recap-day__summary">1 match · 2 joueurs</p>')
+    expect(today).toContain('<p class="recap-day__summary">5 joueurs · 1 fanny</p>')
+    expect(cardOf(html, 'Hier')).toContain('<p class="recap-day__summary">2 joueurs</p>')
+    expect(html).not.toMatch(/\d+ match/)
   })
 
   it('links the fanny and the comeback to their match, winners first', () => {
@@ -121,13 +122,13 @@ describe('Récap view', () => {
   })
 
   it('shows the « Annonce du jour » (announcers, score, chance) linked to its match; the summary counts them', () => {
-    // Everybody even in m1: Alice & Bob's +3 makes it. Eve's +4 in m2 fails (10-8), and does not count.
+    // Everybody even in m1: Alice & Bob's +3 makes it. Eve & Chloé's +4 in m2 fails (10-8), and does not count.
     const matches = [
       { ...match(1, 15, { a: ['alice', 'bob'], b: ['chloe', 'dan'], score: [10, 5] }), betA: 3 },
-      { ...match(2, 15, { a: ['eve'], b: ['alice'], score: [10, 8] }), betA: 4 },
+      { ...match(2, 15, { a: ['eve', 'chloe'], b: ['alice', 'dan'], score: [10, 8] }), betA: 4 },
     ]
     const today = cardOf(renderRecap(matches), 'Aujourd&#x27;hui')
-    expect(today).toContain('<p class="recap-day__summary">2 matchs · 5 joueurs · 2 annonces</p>')
+    expect(today).toContain('<p class="recap-day__summary">5 joueurs · 2 annonces</p>')
     const bet = lineOf(today, 'Annonce du jour')
     expect(bet).toContain('href="#/historique/m1"')
     expect(bet).toContain('<span class="recap-line__emoji" aria-hidden="true">🎯</span>')
@@ -135,9 +136,18 @@ describe('Récap view', () => {
     const chance = betChance(0.5, 10, 3)
     expect(bet).toContain(`<span class="recap-line__value">${Math.round(chance * 100)}${NNBSP}%</span>`)
     expect(bet).not.toContain('recap-line__detail')
-    // Right after the hold-up (Eve's upset of Alice).
+    // Right after the hold-up (Eve & Chloé's upset of Alice & Dan).
     expect(today).toContain('Hold-up du jour')
     expect(today.indexOf('Annonce du jour')).toBeGreaterThan(today.indexOf('Hold-up du jour'))
+  })
+
+  it('judges a 1v1 in the 1V1 ranking: Alice’s 2v2 win does not make Eve’s 1v1 win a hold-up', () => {
+    const matches = [
+      match(1, 15, { a: ['alice', 'bob'], b: ['chloe', 'dan'], score: [10, 0] }),
+      match(2, 15, { a: ['eve'], b: ['alice'], score: [10, 8] }),
+    ]
+    // Both start their first 1v1 at 1 000: a 50 % match is no hold-up.
+    expect(cardOf(renderRecap(matches), 'Aujourd&#x27;hui')).not.toContain('Hold-up du jour')
   })
 
   it('has no « Annonce du jour » without a successful one, and no annonce part without an announcement', () => {
@@ -146,15 +156,14 @@ describe('Récap view', () => {
     expect(html).not.toContain('annonce')
     const failed = [{ ...match(1, 15, { a: ['alice'], b: ['bob'], score: [10, 8] }), betA: 3 }]
     const card = cardOf(renderRecap(failed), 'Aujourd&#x27;hui')
-    expect(card).toContain('<p class="recap-day__summary">1 match · 2 joueurs · 1 annonce</p>')
+    expect(card).toContain('<p class="recap-day__summary">2 joueurs · 1 annonce</p>')
     expect(card).not.toContain('Annonce du jour')
   })
 
-  it('names the addict of the day only from 3 matches: Alice played all 3 today', () => {
-    const addict = lineOf(cardOf(renderRecap(MATCHES), 'Aujourd&#x27;hui'), 'Accro du jour')
-    expect(addict).toContain('href="#/joueurs/alice"')
-    expect(addict).toContain('<span class="recap-line__value">3 matchs</span>')
-    expect(cardOf(renderRecap(MATCHES), 'Hier')).not.toContain('Accro du jour')
+  it('has no « Accro du jour » line any more, even when Alice played all 3 matches today', () => {
+    const html = renderRecap(MATCHES, 2 * RECAP_DAYS_STEP)
+    expect(html).not.toContain('Accro du jour')
+    expect(html).not.toContain('🏃')
   })
 
   it('never shows a time of day', () => {

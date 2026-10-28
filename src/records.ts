@@ -1,16 +1,19 @@
 import { betsOf, betTallies } from './betStats'
-import type { PlayerBetTally, RatedBet } from './betStats'
+import type { PlayerBetTally, RatedBet, RatedMatches } from './betStats'
 import { duoId, duoLabel } from './duo'
 import type { DuoId, DuoMembers } from './duo'
 import { isComeback, isFanny, positionOf } from './stats'
 import type { Position } from './stats'
+import type { Rankings } from './rating/rankings'
 import type { HistoryPoint, Match, MatchId, MatchResult, Player, PlayerId, ReplayResult, Team } from './types'
 
-// Hall of Flair (`#/top`): all-time records over every match of the Mixte history, every player included (guests and
-// inactive ones too). Each record is a podium in competition ranking (ex æquo share their rank number, the next rank
-// skips: 1, 1, 3): EVERY line ranked 3rd or better, so all the ex æquo of a podium rank are shown (1, 2, 2, 2…) and a
-// podium can hold more than 3 lines. Pure, no React: the page memoises topRecords() on the store's players / matches
-// and the Mixte replay result.
+// Hall of Flair (`#/top`): all-time records over every match of the history (1v1 and 2v2), every player included
+// (guests and inactive ones too). The counting records read the matches only; the points records read the rankings:
+// the peak is the 2V2 mixte rating's (the main ranking), upsets, gains and announcements are judged match by match in
+// the ranking of their format (a 1v1 by 1V1, a 2v2 by 2V2 mixte). Each record is a podium in competition ranking (ex
+// æquo share their rank number, the next rank skips: 1, 1, 3): EVERY line ranked 3rd or better, so all the ex æquo of
+// a podium rank are shown (1, 2, 2, 2…) and a podium can hold more than 3 lines. Pure, no React: the page memoises
+// topRecords() on the store's players / matches and the replay.
 
 /** The last rank on a podium: every line ranked PODIUM_SIZE or better is kept, ex æquo included. */
 export const PODIUM_SIZE = 3
@@ -356,7 +359,7 @@ function countRanking(context: Context): Ranking<CountLine> {
 }
 
 // ---------------------------------------------------------------------------
-// Points (Mixte replay): peak rating, biggest upsets, biggest single-match gains
+// Points: peak 2V2 mixte rating, biggest upsets and single-match gains (each match in the ranking of its format)
 // ---------------------------------------------------------------------------
 
 /** The point with the highest ratingAfter (the first one on a tie). */
@@ -403,7 +406,7 @@ function exploitLine(match: Match, result: MatchResult | undefined): ExploitLine
   return { matchId: match.id, winners: sideOf(match, winner), chance, playedAt: match.playedAt }
 }
 
-function exploitLines(ordered: Match[], result: ReplayResult): ExploitLine[] {
+function exploitLines(ordered: Match[], result: RatedMatches): ExploitLine[] {
   const lines: ExploitLine[] = []
   for (const match of ordered) {
     const line = exploitLine(match, result.byMatch.get(match.id))
@@ -427,7 +430,7 @@ function exploitRanking(context: Context): Ranking<ExploitLine> {
   }
 }
 
-function gainLines(ordered: Match[], result: ReplayResult): GainLine[] {
+function gainLines(ordered: Match[], result: RatedMatches): GainLine[] {
   const lines: GainLine[] = []
   for (const match of ordered) {
     const players = result.byMatch.get(match.id)?.perPlayer ?? []
@@ -652,8 +655,15 @@ function contextOf(players: Player[], ordered: Match[]): Context {
   }
 }
 
-/** Every record of the Hall of Flair page, over all `matches` (the Mixte history) and its replay `result`. */
-export function topRecords(players: Player[], matches: Match[], result: ReplayResult): TopRecords {
+/**
+ * Every record of the Hall of Flair page, over all `matches` and the replay (useReplay().rankings): `main` for the
+ * 2V2 mixte peak, `byMatch` for each match's result in its own ranking.
+ */
+export function topRecords(
+  players: Player[],
+  matches: Match[],
+  rated: Pick<Rankings, 'main' | 'byMatch'>,
+): TopRecords {
   const ordered = replayOrder(matches)
   const context = contextOf(players, ordered)
   const runs = playerRuns(ordered)
@@ -667,13 +677,13 @@ export function topRecords(players: Player[], matches: Match[], result: ReplayRe
     fannyTaken: podium(countLines(counts.fannyTaken), countRanking(context)),
     comebacks: podium(countLines(counts.comebacks), countRanking(context)),
     comebacksTaken: podium(countLines(counts.comebacksTaken), countRanking(context)),
-    peak: podium(peakLines(result), peakRanking(context)),
-    exploit: podium(exploitLines(ordered, result), exploitRanking(context)),
-    gain: podium(gainLines(ordered, result), gainRanking(context)),
+    peak: podium(peakLines(rated.main.result), peakRanking(context)),
+    exploit: podium(exploitLines(ordered, rated), exploitRanking(context)),
+    gain: podium(gainLines(ordered, rated), gainRanking(context)),
     played: podium(countLines(counts.played), countRanking(context)),
     duo: podium(duoLines(ordered), duoRanking(context)),
     rivalry: podium(rivalryLines(ordered, context), rivalryRanking(context)),
     duoRivalry: podium(duoRivalryLines(ordered, context), duoRivalryRanking(context)),
-    ...betRecords(betsOf(ordered, result), context),
+    ...betRecords(betsOf(ordered, rated), context),
   }
 }

@@ -22,14 +22,15 @@ export type RecapLineView = {
   subject: string
   /** Under the subject: « 4 V · 1 D », « 28 % de chances ». */
   detail: string | null
-  /** On the right: « +45 », « 3 V · 0 D », « 9 matchs ». */
+  /** On the right: « +45 », « 3 V · 0 D », « 28 % ». */
   value: string | null
   tone: Tone
   /** Player, duo or match page. */
   href: string
 }
 
-export type RecapCardView = { key: string; title: string; summary: string; lines: RecapLineView[] }
+/** `summary`: « 9 joueurs · 6 fanny · 2 annonces », null when there is nothing to sum up. */
+export type RecapCardView = { key: string; title: string; summary: string | null; lines: RecapLineView[] }
 
 type Players = ReadonlyMap<PlayerId, Player>
 
@@ -44,7 +45,6 @@ export const RECAP_COPY = {
   fanny: { emoji: '🍑', label: 'Fanny' },
   comeback: { emoji: '🔁', label: 'Comeback' },
   leader: { emoji: '👑', label: 'Nouveau n°1' },
-  addict: { emoji: '🏃', label: 'Accro du jour' },
   more: 'Jours précédents',
   emptyTitle: 'Pas encore de récap',
   emptyBody: 'Enregistre un match pour voir le récap de la journée.',
@@ -66,12 +66,14 @@ export function matchText(match: Match, players: Players): string {
   return `${teamText(players, winners)} ${fmtInt(won)}${EN_DASH}${fmtInt(lost)} ${teamText(players, losers)}`
 }
 
-/** « 12 matchs · 9 joueurs · 2 fanny · 3 annonces » (no fanny or annonce part on a day without one). */
-export function summaryText(day: RecapDay): string {
-  const parts = [plural(day.matches.length, 'match'), plural(day.playerCount, 'joueur')]
+/** « 9 joueurs · 2 fanny · 3 annonces » (no fanny or annonce part on a day without one); null when nothing is left. */
+export function summaryText(day: RecapDay): string | null {
+  const parts: string[] = []
+  if (day.playerCount > 0) parts.push(plural(day.playerCount, 'joueur'))
   const fannys = day.fannys.length
   if (fannys > 0) parts.push(plural(fannys, 'fanny', 'fanny'))
   if (day.betCount > 0) parts.push(plural(day.betCount, 'annonce'))
+  if (parts.length === 0) return null
   return parts.join(' · ')
 }
 
@@ -142,12 +144,6 @@ function leaderLine(id: PlayerId | null, players: Players): RecapLineView[] {
   return [line('leader', RECAP_COPY.leader, { subject, detail: null, value: null, tone: null, href: playerHref(id) })]
 }
 
-function addictLine(day: PlayerDay | null, players: Players): RecapLineView[] {
-  if (day === null) return []
-  const parts = { subject: nameOf(players, day.playerId), detail: null, tone: null, href: playerHref(day.playerId) }
-  return [line('addict', RECAP_COPY.addict, { ...parts, value: plural(day.wins + day.losses, 'match') })]
-}
-
 /** The highlight lines of a day, each only when it applies, in the order of the spec. */
 export function recapLines(day: RecapDay, players: Players): RecapLineView[] {
   return [
@@ -159,7 +155,6 @@ export function recapLines(day: RecapDay, players: Players): RecapLineView[] {
     ...betLine(day.bet, players),
     ...matchLines('fanny', day.fannys, players),
     ...matchLines('comeback', day.comebacks, players),
-    ...addictLine(day.addict, players),
   ]
 }
 

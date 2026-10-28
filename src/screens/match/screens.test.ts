@@ -14,6 +14,8 @@ import { Joueur } from '../Joueur'
 import { MatchEdit } from '../MatchEdit'
 import { MatchPreview } from './MatchPreview'
 import { computePreview } from './preview'
+import { MatchSummary } from '../../components/MatchSummary'
+import { replayRankings } from '../../rating/rankings'
 
 // Server-rendered markup only (vitest runs in node, no DOM): these are smoke tests of the initial render of each
 // screen with a seeded store, the same way src/App.test.ts covers the shell. Interactions are covered by the pure
@@ -303,5 +305,73 @@ describe('annonces d’écart', () => {
     const teams = { teamA: ['a', 'b'], teamB: ['c', 'd'] }
     const { deltas } = applyMatch(state, { ...example, ...teams, scoreA: 10, scoreB: 5, betA: 4 })
     expect(BET_WHY_LINE.replaceAll(NNBSP, ' ')).toBe(whyFr(deltas[0]))
+  })
+})
+
+describe('a 1v1 is rated by the 1V1 ranking', () => {
+  // m1: Alice & Bob beat Chloé & Dan (2v2). m2: Alice beats Dan in 1v1, their first 1v1 each.
+  const SOLO: Match = {
+    ...MATCH,
+    id: 'm2',
+    seq: 2,
+    playedAt: '2025-10-02T12:00:00.000Z',
+    createdAt: '2025-10-02T12:00:00.000Z',
+    updatedAt: '2025-10-02T12:00:00.000Z',
+    teamA: ['alice'],
+    teamB: ['dan'],
+    scoreA: 10,
+    scoreB: 4,
+  }
+
+  it('the match detail shows the 1V1 deltas: an even first 1v1, whatever the 2v2 before', () => {
+    const copy = plain(render(createElement(MatchDetail, { id: 'm2' }), storeOf(PLAYERS, [MATCH, SOLO])))
+    const rankings = replayRankings(PLAYERS, [MATCH, SOLO], new Date())
+    const alice = rankings.oneVsOne.result.byMatch.get('m2')?.perPlayer[0]
+    expect(alice?.why).toContain('50 % de chances')
+    expect(copy).toContain(alice?.why ?? 'missing')
+    expect(copy).toContain('débutant ×3,0')
+    // 1 000 → 1 000 + delta: the 1V1 rating, not Alice's 2V2 mixte one.
+    expect(alice?.before).toBe(1000)
+  })
+
+  it('the new-match sheet gives a 1v1 its 1V1 chances in the Flair-o-mètre', () => {
+    const store = storeOf(PLAYERS, [MATCH])
+    const draft = { version: 1, format: '1v1', target: 10, slots: ['alice', null, 'dan', null], betA: null, betB: null }
+    const data: Record<string, string> = {
+      [STORAGE_KEY]: JSON.stringify(store),
+      [DRAFT_STORAGE_KEY]: JSON.stringify(draft),
+    }
+    vi.stubGlobal('window', { location: { hash: '#/match' }, history: { back: vi.fn() } })
+    vi.stubGlobal('localStorage', { getItem: (key: string) => data[key] ?? null, setItem: () => undefined })
+    const copy = plain(renderToString(createElement(AppStateProvider, null, createElement(MatchScreen))))
+    // Alice beat Dan in 2v2, but neither played a 1v1 yet.
+    expect(copy).toContain(`Alice : ${fmtPercent(0.5)} · Dan : ${fmtPercent(0.5)}`)
+  })
+
+  it('the edit sheet takes a 1v1 announcement chance from the 1V1 ratings', () => {
+    // Even 1V1 ratings before m2: +4 in 10 → 23 %, as for fresh players.
+    const html = render(createElement(MatchEdit, { id: 'm2' }), storeOf(PLAYERS, [MATCH, { ...SOLO, betA: 4 }]))
+    expect(plain(html)).toContain(`23${'\u202F'}%`)
+    expect(plain(html)).toContain('+12 si réussi')
+  })
+
+  it('the summary counts a rookie’s matches against the threshold of the ranking (3 in 1V1)', () => {
+    const rankings = replayRankings(PLAYERS, [MATCH, SOLO], new Date('2025-10-03T12:00:00.000Z'))
+    const result = rankings.byMatch.get('m2')
+    if (result === undefined) throw new Error('m2 missing')
+    const html = renderToString(
+      createElement(MatchSummary, {
+        match: SOLO,
+        result,
+        players: new Map(PLAYERS.map((player) => [player.id, player])),
+        byPlayer: rankings.oneVsOne.result.byPlayer,
+        rankedAfter: 3,
+        rankBefore: new Map(),
+        rankAfter: new Map(),
+        dateLine: 'hier · en 10',
+      }),
+    )
+    expect(plain(html)).toContain('1/3 matchs')
+    expect(plain(html)).not.toContain('/10 matchs')
   })
 })

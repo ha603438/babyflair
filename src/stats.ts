@@ -70,8 +70,9 @@ export function sevenDayDelta(stats: PlayerStats, now: Date): number | null {
   return total
 }
 
+/** The run of wins or losses ending with the last point of `stats.history` (2 at least); reads the match ids only. */
 export function currentStreak(
-  stats: PlayerStats,
+  stats: Pick<PlayerStats, 'playerId' | 'history'>,
   matches: Map<MatchId, Match>,
 ): { kind: 'win' | 'loss'; length: number } | null {
   let kind: Outcome | null = null
@@ -132,7 +133,11 @@ export function favouritePartner(
 // Ordering
 // ---------------------------------------------------------------------------
 
-export function chipOrder(players: Player[], byPlayer: Map<PlayerId, PlayerStats>): Player[] {
+/** Last match first (`lastPlayedAt`, any format), then the players who never played, newest first. */
+export function chipOrder(
+  players: Player[],
+  byPlayer: ReadonlyMap<PlayerId, Pick<PlayerStats, 'lastPlayedAt'>>,
+): Player[] {
   const played: Array<{ player: Player; at: number }> = []
   const neverPlayed: Player[] = []
   for (const player of players) {

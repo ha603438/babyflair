@@ -22,13 +22,14 @@ import type { Hint, InstallEnv } from './hints'
 import { promptInstall } from './install'
 import { contextStripText, latestMatch } from './labels'
 import { useShowsTimes } from '../../profile/useShowsTimes'
-import { TAB_OPTIONS } from './modeLabels'
+import { MAIN_EMPTY, MAIN_OBSERVATION, TAB_OPTIONS } from './modeLabels'
 import { ModeBody } from './ModeRanking'
 import { sideRecord } from '../../stats'
 
-// Classement screen body (spec §3.1): the « Mixte » | « 2V2 » | « 1V1 » tabs, context strip, one HintCard,
-// observation card, ranked list, rookie and inactive sections, empty states and the post-match highlight. Engine data
-// arrives through `replay` (Mixte) and `mode` (the 2V2 / 1V1 replay of the selected tab).
+// Classement screen body (spec §3.1): the « 2V2 mixte » | « Équipes » | « 1V1 » tabs (three separate rankings),
+// context strip, one HintCard, observation card, ranked list, rookie and inactive sections, empty states and the
+// post-match highlight. Engine data arrives through `replay` (2V2 mixte, the main ranking) and `mode` (the Équipes /
+// 1V1 replay of the selected tab).
 
 export type ClassementViewProps = {
   app: ScreenContext
@@ -38,10 +39,10 @@ export type ClassementViewProps = {
   onPropose?: () => void
   /** Mode invité: the « Mode invité · Choisir mon profil » badge; absent → no badge. */
   onChooseProfile?: () => void
-  /** Selected tab (remembered on the phone); « Mixte » when absent. */
+  /** Selected tab (remembered on the phone); « 2V2 mixte » when absent. */
   tab?: RankingTab
   onTabChange?: (tab: RankingTab) => void
-  /** Ranking of the selected 2V2 / 1V1 tab; null (or absent) on « Mixte ». */
+  /** Ranking of the selected Équipes / 1V1 tab; null (or absent) on « 2V2 mixte ». */
   mode?: ModeReplay | null
 }
 
@@ -50,7 +51,6 @@ const INSTALL_BODY_IOS =
   "Dans Safari : Partager, puis « Sur l'écran d'accueil ». " +
   "L'app s'ouvre en plein écran, même hors ligne, et tes données restent."
 const INSTALL_BODY_CHROMIUM = "Ouvre l'app en plein écran, même sans réseau."
-const OBSERVATION_TEXT = 'Tout le monde est encore en observation : 10 matchs chacun pour entrer au classement.'
 const MIN_PLAYERS_FOR_MATCH = 2
 
 type Dispatch = (action: Action) => void
@@ -70,11 +70,11 @@ function ClassementTabs({ tab, onChange }: { tab: RankingTab; onChange: ((tab: R
   )
 }
 
-/** What the strip and the Blancs / Noirs line count: every match, or the selected format's. */
+/** What the strip and the Blancs / Noirs line count: the matches of the selected ranking (2v2 or 1v1 ones). */
 type Scope = { matches: Match[]; rankedCount: number }
 
-function scopeOf(app: ScreenContext, replay: ReplayData, mode: ModeReplay | null): Scope {
-  if (mode === null) return { matches: app.store.matches, rankedCount: replay.ranking.ranked.length }
+function scopeOf(replay: ReplayData, mode: ModeReplay | null): Scope {
+  if (mode === null) return { matches: replay.rankings.main.matches, rankedCount: replay.ranking.ranked.length }
   return { matches: mode.matches, rankedCount: mode.ranking.ranked.length }
 }
 
@@ -192,7 +192,7 @@ function ObservationCard({ ranking }: { ranking: Ranking }) {
   return (
     <div className="content lists-block">
       <Card>
-        <p className="obs-text">{OBSERVATION_TEXT}</p>
+        <p className="obs-text">{MAIN_OBSERVATION}</p>
       </Card>
     </div>
   )
@@ -261,6 +261,15 @@ function NoMatchesYet({ playerCount }: { playerCount: number }) {
   )
 }
 
+type MainEmptyProps = { matchCount: number; ownCount: number; playerCount: number }
+
+/** No match at all: the « Nouveau match » action; only 1v1 matches so far: 2V2 mixte has nothing to rank yet. */
+function MainEmpty({ matchCount, ownCount, playerCount }: MainEmptyProps) {
+  if (matchCount === 0) return <NoMatchesYet playerCount={playerCount} />
+  if (ownCount > 0) return null
+  return <EmptyState compact title={MAIN_EMPTY.title} body={MAIN_EMPTY.body} />
+}
+
 function NoPlayersYet() {
   return (
     <EmptyState
@@ -278,9 +287,10 @@ function Body({ app, replay, mode, highlight }: BodyProps) {
   if (players.length === 0) return <NoPlayersYet />
   if (mode !== null) return <ModeBody mode={mode} now={replay.now} highlight={highlight} />
   const { ranking } = replay
+  const ownCount = replay.rankings.main.matches.length
   return (
     <>
-      {matches.length === 0 && <NoMatchesYet playerCount={players.length} />}
+      <MainEmpty matchCount={matches.length} ownCount={ownCount} playerCount={players.length} />
       <ObservationCard ranking={ranking} />
       <RankRows ids={ranking.ranked} variant="ranked" replay={replay} highlight={highlight} />
       <RankSection
@@ -354,7 +364,7 @@ export function ClassementView(props: ClassementViewProps) {
   const rootRef = useRef<HTMLDivElement>(null)
   const highlight = useHighlight(app.nav, rootRef)
   const hint = pickHint(installEnv, app.store.settings, replay.now)
-  const scope = scopeOf(app, replay, mode)
+  const scope = scopeOf(replay, mode)
   return (
     <div ref={rootRef} className="lists-screen classement">
       <ClassementTabs tab={tab} onChange={tabsChange(app, onTabChange)} />

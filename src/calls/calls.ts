@@ -175,7 +175,8 @@ function isPending(player: Player, answered: Set<PlayerId>, status: PlayerStatus
 /**
  * The call dialog's lists: « Chauds » (organizer first, then by answer time), « Pas chauds » (by answer time) and
  * « Pas encore répondu » (the office's players without an answer, guests and inactive players left out, A→Z).
- * `byPlayer` is the replay's (useReplay().result.byPlayer), for the inactive status; deleted players are skipped.
+ * `byPlayer` is useReplay().rankings.presence (inactive = no match of any format for 30 days); deleted players are
+ * skipped.
  */
 export function callResponses(
   call: Call,

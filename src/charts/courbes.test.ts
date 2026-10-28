@@ -3,9 +3,11 @@ import { createElement } from 'react'
 import type { ReactElement } from 'react'
 import { renderToString } from 'react-dom/server'
 import App from '../App'
+import { replayRankings } from '../rating/rankings'
 import { AppStateProvider } from '../store'
 import type { Match, Player, Store } from '../types'
 import { Courbes } from '../screens/Courbes'
+import { buildChartData } from './curves'
 
 // Server-rendered smoke tests of the Courbes screen and its place in the Stats tab (vitest runs in node, no DOM):
 // interactions are covered by the pure helpers in curves.test.ts and layout.test.ts.
@@ -120,15 +122,22 @@ describe('Courbes in the Stats tab', () => {
     expect(html.match(/aria-current="page"/g)).toHaveLength(1)
   })
 
-  it('has a compact « Mixte » | « 2V2 » | « 1V1 » selector above the chips, on the remembered ranking', () => {
+  it('has a compact « 2V2 mixte » | « Équipes » | « 1V1 » selector above the chips, on the remembered ranking', () => {
     const html = render(createElement(Courbes), storeOf(PLAYERS, MATCHES))
     expect(html).toContain('class="content courbes-mode"')
-    expect(checkedIn(html, 'Classement')).toBe('Mixte')
-    for (const label of ['Mixte', '2V2', '1V1']) expect(html).toContain(`>${label}</button>`)
+    expect(checkedIn(html, 'Classement')).toBe('2V2 mixte')
+    for (const label of ['2V2 mixte', 'Équipes', '1V1']) expect(html).toContain(`>${label}</button>`)
     expect(html.indexOf('courbes-mode')).toBeLessThan(html.indexOf('curve-chips'))
     const store = storeOf(PLAYERS, MATCHES)
     const duos: Store = { ...store, settings: { ...store.settings, classementTab: '2v2' } }
-    expect(checkedIn(render(createElement(Courbes), duos), 'Classement')).toBe('2V2')
+    expect(checkedIn(render(createElement(Courbes), duos), 'Classement')).toBe('Équipes')
+  })
+
+  it('draws the 2V2 mixte curves over the 2v2 matches only (the two 1v1 are not points of the chart)', () => {
+    const rankings = replayRankings(PLAYERS, MATCHES, new Date('2026-10-14T12:00:00.000Z'))
+    const byId = new Map(MATCHES.map((m) => [m.id, m]))
+    expect(buildChartData(rankings.main.result.byPlayer, byId).matches.map((m) => m.id)).toEqual(['m1', 'm4'])
+    expect(buildChartData(rankings.oneVsOne.result.byPlayer, byId).matches.map((m) => m.id)).toEqual(['m2', 'm3'])
   })
 
   it('keeps the selector above the empty state, so a ranking without matches can be left', () => {

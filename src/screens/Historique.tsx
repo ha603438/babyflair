@@ -4,6 +4,7 @@ import { useMemo } from 'react'
 import { EmptyState } from '../components/EmptyState'
 import { HistoryRow } from '../components/rows'
 import { fmtDayHeader } from '../format'
+import { matchResult } from '../rating/rankings'
 import type { ReplayView } from '../rating/useReplay'
 import { useReplay } from '../rating/useReplay'
 import { hrefOf, navigate } from '../router'
@@ -50,7 +51,7 @@ function DayList({ groups, replay }: DayListProps) {
         <HistoryRow
           key={match.id}
           match={match}
-          result={replay.result.byMatch.get(match.id)}
+          result={matchResult(replay.rankings, match.id)}
           players={replay.players}
           href={hrefOf({ name: 'match-detail', id: match.id })}
         />

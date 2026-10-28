@@ -47,7 +47,7 @@ export function playerCountText(players: Player[]): string {
   return `${base} · ${plural(guests, 'invité')}`
 }
 
-/** Matches before entering the main ranking (the 2V2 and 1V1 rankings use 3, see src/rating/modes.ts). */
+/** Matches before entering the main ranking, 2V2 mixte (the Équipes and 1V1 rankings use 3, src/rating/modes.ts). */
 export const RANKED_AFTER = 10
 
 /**
@@ -99,7 +99,7 @@ export function recordText(record: { wins: number; losses: number }): string {
 }
 
 /** « 60 % » (0 % before the first match). */
-export function winRateText(stats: PlayerStats): string {
+export function winRateText(stats: Pick<PlayerStats, 'played' | 'wins'>): string {
   if (stats.played === 0) return fmtPercent(0)
   return fmtPercent(stats.wins / stats.played)
 }
@@ -129,8 +129,8 @@ export function hasTwoVsTwo(playerId: PlayerId, matches: Match[]): boolean {
   )
 }
 
-/** The player's last `limit` match ids, newest first. */
-export function recentMatchIds(stats: PlayerStats, limit = RECENT_MATCHES): MatchId[] {
+/** The last `limit` match ids of a history (a player's career, a duo's), newest first. */
+export function recentMatchIds(stats: Pick<PlayerStats, 'history'>, limit = RECENT_MATCHES): MatchId[] {
   return stats.history
     .slice(-limit)
     .reverse()

@@ -69,6 +69,7 @@ function PlayerList({ players, replay }: { players: Player[]; replay: ReplayData
           key={player.id}
           player={player}
           stats={replay.result.byPlayer.get(player.id)}
+          soloMatches={replay.rankings.oneVsOne.result.byPlayer.get(player.id)?.played ?? 0}
           now={replay.now}
           href={hrefOf({ name: 'joueur', id: player.id })}
         />

@@ -6,6 +6,17 @@ export type ChangelogEntry = { id: string; date: string; title: string; items: s
 
 export const CHANGELOG: ChangelogEntry[] = [
   {
+    id: '2026-10-28-1',
+    date: '2026-10-28',
+    title: 'Classements séparés',
+    items: [
+      'Le 1V1 devient un classement à part\u202F: un match en 1 contre 1 ne compte plus que pour lui.',
+      '«\u202FMixte\u202F» devient «\u202F2V2 mixte\u202F»\u202F: chaque joueur y est noté sur les matchs en ' +
+        '2 contre 2, quel que soit son coéquipier. Tous les classements sont recalculés depuis le premier match.',
+      'Le Récap ne compte plus les matchs du jour et perd l’«\u202FAccro du jour\u202F».',
+    ],
+  },
+  {
     id: '2026-10-19-1',
     date: '2026-10-19',
     title: 'Annonces d’écart',

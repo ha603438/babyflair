@@ -4,7 +4,7 @@
 import { useCallback, useMemo, useState } from 'react'
 import { profileId } from '../profile/profile'
 import { useProfile } from '../profile/useWriteGuard'
-import { replay } from '../rating'
+import { replayMain } from '../rating/rankings'
 import { navigate } from '../router'
 import { useAppState } from '../store'
 import { toastTextFor } from '../store/remote-sync'
@@ -85,7 +85,8 @@ export function useCalls(): CallsApi {
       const ids = participantIdsOf(call.id, store.callPlayers).slice(0, CALL_CAPACITY)
       if (ids.length < CALL_CAPACITY) return
       const now = new Date()
-      const { byPlayer } = replay(store.players, store.matches, { now })
+      // A 2v2 to come: balanced on the 2V2 mixte ratings (the 2v2 matches only).
+      const { byPlayer } = replayMain(store.players, store.matches, now).result
       const teams = balanceTeams(ids, (id) => byPlayer.get(id)?.rating ?? 1000, Math.random)
       draftDispatch({ type: 'prefill', teamA: teams.teamA, teamB: teams.teamB, target: store.settings.lastTarget })
       dispatch({ type: 'closeCall', id: call.id, closedAt: now.toISOString() })

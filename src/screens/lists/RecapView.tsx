@@ -62,11 +62,16 @@ function Lines({ lines }: { lines: RecapLineView[] }) {
   )
 }
 
+function Summary({ text }: { text: string | null }) {
+  if (text === null) return null
+  return <p className="recap-day__summary">{text}</p>
+}
+
 function DayCard({ card }: { card: RecapCardView }) {
   return (
     <section className="card recap-day">
       <h2 className="recap-day__title">{card.title}</h2>
-      <p className="recap-day__summary">{card.summary}</p>
+      <Summary text={card.summary} />
       <Lines lines={card.lines} />
     </section>
   )

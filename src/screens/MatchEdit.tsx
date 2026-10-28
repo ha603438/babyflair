@@ -1,7 +1,7 @@
 import { useEffect, useReducer } from 'react'
 import { SegmentedControl } from '../components/SegmentedControl'
 import { useWriteGuard } from '../profile/useWriteGuard'
-import { teamExpectation } from '../rating'
+import { draftExpectation } from '../rating/rankings'
 import { useReplay } from '../rating/useReplay'
 import { back, navigate } from '../router'
 import { draftReducer, useAppState } from '../store'
@@ -32,11 +32,12 @@ function editReducer(state: EditState, action: DraftAction): EditState {
 
 /**
  * « Modifier le match » (spec §3.5): a local draft seeded from the stored match; the shared draft is never touched.
- * The announcements are edited with the same stepper, their chances taken right before this match in the replay.
+ * The announcements are edited with the same stepper, their chances taken right before this match in the replay of
+ * the ranking of the draft's format (1V1 or 2V2 mixte).
  */
 function MatchEditForm({ stored }: { stored: Match }) {
   const { dispatch, toast } = useAppState()
-  const { result, players: playersById } = useReplay()
+  const { rankings, players: playersById } = useReplay()
   const [{ draft, visitedPlayers }, draftDispatch] = useReducer(editReducer, stored, initialEditState)
   const teams = draftTeams(draft)
   const canSave = isDraftChanged(draft, stored)
@@ -61,7 +62,7 @@ function MatchEditForm({ stored }: { stored: Match }) {
         teams={teams}
         dispatch={draftDispatch}
         playersById={playersById}
-        expectedA={teamExpectation(result, { ...teams, target: draft.target }, stored.id)}
+        expectedA={draftExpectation(rankings, { ...teams, target: draft.target }, stored.id)}
         saveText="Enregistrer les modifications"
         canSave={canSave}
         onSave={() => guard('modifier ce match', save)}
@@ -88,7 +89,7 @@ function MatchEditForm({ stored }: { stored: Match }) {
       draft={draft}
       dispatch={draftDispatch}
       playersById={playersById}
-      byPlayer={result.byPlayer}
+      byPlayer={rankings.presence}
       formatControl={formatControl}
     />
   )

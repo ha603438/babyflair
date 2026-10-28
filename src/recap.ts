@@ -1,26 +1,26 @@
 import { announcedBets } from './bets'
 import { betsOf, longestShot } from './betStats'
-import type { RatedBet } from './betStats'
+import type { RatedBet, RatedMatches } from './betStats'
 import { duoId, duoLabel } from './duo'
 import type { DuoMembers } from './duo'
 import { leaderBefore } from './rating'
+import type { Rankings } from './rating/rankings'
 import { EXPLOIT_MAX_CHANCE, replayOrder } from './records'
 import { isComeback, isFanny } from './stats'
 import type { Match, MatchResult, Player, PlayerId, ReplayResult, Team } from './types'
 
 // Récap (`#/stats`, default segment of the Stats tab): one entry per local calendar day with at least one match, most
 // recent first, with the day's highlights (Joueur du jour, Dans le dur, Duo du jour, Hold-up, Annonce du jour, fanny,
-// comebacks, Nouveau n°1, Accro du jour). Pure, no React and no copy: lists/recapLines.ts words it,
-// lists/RecapView.tsx lays it out. Points and chances are the Mixte replay `result`'s. Days only, never a time of day.
+// comebacks, Nouveau n°1). Pure, no React and no copy: lists/recapLines.ts words it, lists/RecapView.tsx lays it out.
+// Points and chances are each match's in the ranking of its format (a 1v1 by 1V1, a 2v2 by 2V2 mixte); the leader is
+// the 2V2 mixte one. Days only, never a time of day.
 
 /** Days shown at first, and added by each « Jours précédents ». */
 export const RECAP_DAYS_STEP = 3
 /** « Duo du jour »: matches played together that day, at least. */
 export const DUO_MIN_MATCHES = 2
-/** « Accro du jour »: matches played that day, at least. */
-export const ADDICT_MIN_MATCHES = 3
 
-/** One player's day: net points (sum of his Mixte deltas, 0.001-rounded like the engine) and record. */
+/** One player's day: net points (sum of his deltas, each in its match's ranking, 0.001-rounded) and record. */
 export type PlayerDay = { playerId: PlayerId; net: number; wins: number; losses: number }
 /** One duo's day (2v2 matches together): the net points of both members together and the record. */
 export type DuoDay = { members: DuoMembers; net: number; wins: number; losses: number }
@@ -50,16 +50,15 @@ export type RecapDay = {
   /** « 🍑 Fanny » and « 🔁 Comeback »: every one of the day, in replay order. */
   fannys: Match[]
   comebacks: Match[]
-  /** « 👑 Nouveau n°1 »: the Mixte leader at the end of the day, when another one led at its start. */
+  /** « 👑 Nouveau n°1 »: the 2V2 mixte leader at the end of the day, when another one led at its start. */
   newLeader: PlayerId | null
-  /** « 🏃 Accro du jour »: most matches played (ADDICT_MIN_MATCHES at least). */
-  addict: PlayerDay | null
 }
 
 export type Recap = { days: RecapDay[]; hasMore: boolean }
 
 type DayGroup = { key: string; matches: Match[] }
-type Context = { players: Player[]; byId: ReadonlyMap<PlayerId, Player>; result: ReplayResult }
+/** `main`: the 2V2 mixte replay (Nouveau n°1); `rated`: every match's result in the ranking of its format. */
+type Context = { players: Player[]; byId: ReadonlyMap<PlayerId, Player>; main: ReplayResult; rated: RatedMatches }
 type Compare<T> = (a: T, b: T) => number
 
 // ---------------------------------------------------------------------------
@@ -157,10 +156,10 @@ function playedOf(line: { wins: number; losses: number }): number {
 }
 
 // ---------------------------------------------------------------------------
-// Players: Joueur du jour, Dans le dur, Accro du jour
+// Players: Joueur du jour, Dans le dur
 // ---------------------------------------------------------------------------
 
-function playerDays(day: Match[], result: ReplayResult): PlayerDay[] {
+function playerDays(day: Match[], result: RatedMatches): PlayerDay[] {
   const byPlayer = new Map<PlayerId, PlayerDay>()
   for (const match of day) {
     const deltas = deltasOf(result.byMatch.get(match.id))
@@ -193,17 +192,11 @@ function coldOf(lines: PlayerDay[], context: Context): PlayerDay | null {
   return bestOf(losers, (a, b) => shown(a.net) - shown(b.net) || b.losses - a.losses || byName(context)(a, b))
 }
 
-/** Most matches first; ex æquo → more wins, then name. */
-function addictOf(lines: PlayerDay[], context: Context): PlayerDay | null {
-  const regulars = lines.filter((line) => playedOf(line) >= ADDICT_MIN_MATCHES)
-  return bestOf(regulars, (a, b) => playedOf(b) - playedOf(a) || b.wins - a.wins || byName(context)(a, b))
-}
-
 // ---------------------------------------------------------------------------
 // Duo du jour
 // ---------------------------------------------------------------------------
 
-function duoDays(day: Match[], result: ReplayResult): DuoDay[] {
+function duoDays(day: Match[], result: RatedMatches): DuoDay[] {
   const byDuo = new Map<string, DuoDay>()
   for (const match of day) {
     if (match.teamA.length !== 2) continue
@@ -226,7 +219,7 @@ function duoName(context: Context, line: DuoDay): string {
 
 /** Most wins first; ex æquo → better net points, then the duo's name (« A & B »). */
 function duoOf(day: Match[], context: Context): DuoDay | null {
-  const lines = duoDays(day, context.result).filter((line) => playedOf(line) >= DUO_MIN_MATCHES && line.wins > 0)
+  const lines = duoDays(day, context.rated).filter((line) => playedOf(line) >= DUO_MIN_MATCHES && line.wins > 0)
   return bestOf(
     lines,
     (a, b) =>
@@ -248,7 +241,7 @@ function winnersChance(match: Match, result: MatchResult | undefined): number | 
 }
 
 /** Lowest chance first; ex æquo → the later match of the day. */
-function holdUpOf(day: Match[], result: ReplayResult): HoldUp | null {
+function holdUpOf(day: Match[], result: RatedMatches): HoldUp | null {
   const lines: Array<HoldUp & { order: number }> = []
   for (const [order, match] of day.entries()) {
     const chance = winnersChance(match, result.byMatch.get(match.id))
@@ -273,7 +266,7 @@ function betCountOf(day: Match[]): number {
 // ---------------------------------------------------------------------------
 
 /**
- * The Mixte leader after the day's matches when it differs from the leader before them. Both rankings are judged at
+ * The 2V2 mixte leader after the day's matches when it differs from the leader before them. Both rankings are judged at
  * the day's last match (ranked after 10 matches, inactive after 30 days, like the Classement), so only the day's
  * matches can change the leader. Nobody ranked before the day → no new leader.
  */
@@ -282,9 +275,9 @@ function newLeaderOf(day: Match[], context: Context): PlayerId | null {
   const last = day.at(-1)
   if (first === undefined || last === undefined) return null
   const at = Date.parse(last.playedAt)
-  const before = leaderBefore(context.result, context.players, localMidnight(first.playedAt, 0), at)
+  const before = leaderBefore(context.main, context.players, localMidnight(first.playedAt, 0), at)
   if (before === null) return null
-  const after = leaderBefore(context.result, context.players, localMidnight(first.playedAt, 1), at)
+  const after = leaderBefore(context.main, context.players, localMidnight(first.playedAt, 1), at)
   if (after === null || after === before) return null
   return after
 }
@@ -299,7 +292,7 @@ function playerCountOf(day: Match[]): number {
 
 function recapDay(group: DayGroup, context: Context): RecapDay {
   const { matches } = group
-  const players = playerDays(matches, context.result)
+  const players = playerDays(matches, context.rated)
   return {
     key: group.key,
     date: matches[0].playedAt,
@@ -308,20 +301,28 @@ function recapDay(group: DayGroup, context: Context): RecapDay {
     hot: hotOf(players, context),
     cold: coldOf(players, context),
     duo: duoOf(matches, context),
-    holdUp: holdUpOf(matches, context.result),
+    holdUp: holdUpOf(matches, context.rated),
     betCount: betCountOf(matches),
-    bet: longestShot(betsOf(matches, context.result)),
+    bet: longestShot(betsOf(matches, context.rated)),
     fannys: matches.filter(isFanny),
     comebacks: matches.filter(isComeback),
     newLeader: newLeaderOf(matches, context),
-    addict: addictOf(players, context),
   }
 }
 
-/** The `dayCount` most recent days with at least one match, most recent first; `hasMore` when older days exist. */
-export function recap(players: Player[], matches: Match[], result: ReplayResult, dayCount: number): Recap {
+/**
+ * The `dayCount` most recent days with at least one match, most recent first; `hasMore` when older days exist.
+ * `rankings`: useReplay().rankings (main = 2V2 mixte, byMatch = each match in the ranking of its format).
+ */
+export function recap(
+  players: Player[],
+  matches: Match[],
+  rankings: Pick<Rankings, 'main' | 'byMatch'>,
+  dayCount: number,
+): Recap {
   const groups = groupByDay(matches)
-  const context: Context = { players, byId: new Map(players.map((player) => [player.id, player])), result }
+  const byId = new Map(players.map((player) => [player.id, player]))
+  const context: Context = { players, byId, main: rankings.main.result, rated: rankings }
   const days = groups.slice(0, dayCount).map((group) => recapDay(group, context))
   return { days, hasMore: groups.length > dayCount }
 }

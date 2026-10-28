@@ -1,6 +1,7 @@
 import { beforeEach, describe, expect, it } from 'vitest'
 
-import { replay } from './rating'
+import { replayRankings } from './rating/rankings'
+import type { Rankings } from './rating/rankings'
 import { MIN_POSITION_MATCHES, MIN_STREAK, PODIUM_SIZE, podium, replayOrder, topRecords } from './records'
 import type { Podium, Ranking, TopRecords } from './records'
 import type {
@@ -11,7 +12,6 @@ import type {
   Player,
   PlayerId,
   PlayerStats,
-  ReplayResult,
   Target,
   Team,
 } from './types'
@@ -71,7 +71,7 @@ function times(n: number, make: () => Match): Match[] {
 }
 
 function recordsOf(matches: Match[], players: Player[] = PLAYERS): TopRecords {
-  return topRecords(players, matches, replay(players, matches, { now: NOW }))
+  return topRecords(players, matches, replayRankings(players, matches, NOW))
 }
 
 /** [rank, …identifying fields] of each podium place, for compact expectations. */
@@ -432,11 +432,11 @@ function resultOf(matchId: MatchId, expectedA: number, deltas: Array<[PlayerId, 
   return { matchId, expectedA, expectedB: 1 - expectedA, perPlayer, bets: [] }
 }
 
-function fabricated(byPlayer: PlayerStats[], byMatch: MatchResult[]): ReplayResult {
-  return {
-    byPlayer: new Map(byPlayer.map((stats) => [stats.playerId, stats])),
-    byMatch: new Map(byMatch.map((result) => [result.matchId, result])),
-  }
+/** `byPlayer`: the 2V2 mixte histories (the peak); `byMatch`: each match's result in its own ranking. */
+function fabricated(byPlayer: PlayerStats[], byMatch: MatchResult[]): Pick<Rankings, 'main' | 'byMatch'> {
+  const results = new Map(byMatch.map((result) => [result.matchId, result]))
+  const result = { byPlayer: new Map(byPlayer.map((stats) => [stats.playerId, stats])), byMatch: results }
+  return { main: { result, ranking: { ranked: [], rookies: [], inactive: [] }, matches: [] }, byMatch: results }
 }
 
 /** Match n on October n: Alice & Bob (team A) against Chloé & Dan (team B), team B winning the even ones. */
@@ -536,16 +536,23 @@ describe('Plus gros gain en un match', () => {
 })
 
 describe('Points from the real replay', () => {
-  it('finds the upset, the gains and the peaks of the engine’s result', () => {
-    const matches = [
+  // Alice beats Bob 3 times in 1v1, then Bob wins the 4th; on day 5 Chloé & Dan beat Alice & Eve in 2v2.
+  function mixed(): Match[] {
+    return [
       game(['alice'], ['bob'], { at: day(1) }),
       game(['alice'], ['bob'], { at: day(2) }),
       game(['alice'], ['bob'], { at: day(3) }),
       game(['bob'], ['alice'], { at: day(4) }),
+      game(['chloe', 'dan'], ['alice', 'eve'], { at: day(5) }),
     ]
-    const result = replay(PLAYERS, matches, { now: NOW })
-    const records = topRecords(PLAYERS, matches, result)
-    const upset = result.byMatch.get('m4')
+  }
+
+  it('judges the upsets and the gains match by match, each in the ranking of its format', () => {
+    const matches = mixed()
+    const rankings = replayRankings(PLAYERS, matches, NOW)
+    const records = topRecords(PLAYERS, matches, rankings)
+    // The 1v1 upset is the 1V1 ranking's.
+    const upset = rankings.oneVsOne.result.byMatch.get('m4')
     expect(records.exploit.places).toHaveLength(1)
     expect(records.exploit.places[0].line).toEqual({
       matchId: 'm4',
@@ -554,14 +561,25 @@ describe('Points from the real replay', () => {
       chance: upset?.expectedA,
       playedAt: day(4),
     })
-    const deltas = [...result.byMatch.values()].flatMap((r) => r.perPlayer.map((p) => p.delta))
+    const deltas = [...rankings.byMatch.values()].flatMap((r) => r.perPlayer.map((p) => p.delta))
     expect(records.gain.places[0].line.delta).toBe(Math.max(...deltas))
-    const alice = result.byPlayer.get('alice')?.history ?? []
-    expect(records.peak.places[0].line).toMatchObject({
-      playerId: 'alice',
-      rating: Math.round(Math.max(...alice.map((p) => p.ratingAfter))),
-      matchId: 'm3',
-    })
+  })
+
+  it('takes the peak of the 2V2 mixte rating only: Alice’s 1v1 run does not count', () => {
+    const matches = mixed()
+    const rankings = replayRankings(PLAYERS, matches, NOW)
+    const records = topRecords(PLAYERS, matches, rankings)
+    const winner = rankings.main.result.byPlayer.get('chloe')?.history ?? []
+    expect(ranksOf(records.peak, (l) => [l.playerId, l.matchId])).toEqual([
+      [1, ['chloe', 'm5']],
+      [1, ['dan', 'm5']],
+      [3, ['alice', 'm5']],
+      [3, ['eve', 'm5']],
+    ])
+    expect(records.peak.places[0].line.rating).toBe(Math.round(winner[0].ratingAfter))
+    const alice = records.peak.places.find((place) => place.line.playerId === 'alice')
+    expect(alice?.line.rating).toBeLessThan(1000)
+    expect(rankings.oneVsOne.result.byPlayer.get('alice')?.rating).toBeGreaterThan(1000)
   })
 })
 

@@ -9,14 +9,21 @@ import { Delta } from './Delta'
 import { ListRow } from './ListRow'
 import { MatchPills } from './MatchPills'
 
+/** The main ranking's threshold (2V2 mixte); a 1v1 is summed up with the 1V1 ranking's (3). */
 const ROOKIE_MATCHES = 10
 
 export type MatchSummaryProps = {
   match: Match
+  /** The match in the ranking of its format (1V1 for a 1v1, 2V2 mixte for a 2v2): deltas, why lines, announcements. */
   result: MatchResult
   players: Map<PlayerId, Player>
-  /** Current stats; enables the « ? » badge and the rookie / newly ranked / returning movement variants. */
+  /**
+   * Current stats in that same ranking; enables the « ? » badge and the rookie / newly ranked / returning movement
+   * variants.
+   */
   byPlayer?: Map<PlayerId, PlayerStats>
+  /** Matches needed to be ranked in that ranking: 10 (2V2 mixte, the default) or 3 (1V1). */
+  rankedAfter?: number
   /** Ranks (1-based, ranked players only) captured right before addMatch; movement needs both maps. */
   rankBefore?: Map<PlayerId, number>
   rankAfter?: Map<PlayerId, number>
@@ -33,32 +40,29 @@ function sidesOf(match: Match): Sides {
   return { winners: match.teamB, losers: match.teamA, winScore: match.scoreB, loseScore: match.scoreA }
 }
 
-function isRookie(stats: PlayerStats | undefined): boolean {
+function isRookie(stats: PlayerStats | undefined, rankedAfter: number): boolean {
   if (!stats) return false
-  return stats.rookieProgress < ROOKIE_MATCHES
+  return stats.rookieProgress < rankedAfter
 }
 
-// Before this match the player had played - 1 matches; fewer than 10 means they were still a rookie, otherwise
-// they were unranked because inactive (the result view is only reached right after the match was saved).
-function wasRookieBefore(stats: PlayerStats | undefined): boolean {
+// Before this match the player had played - 1 matches; fewer than `rankedAfter` means they were still a rookie,
+// otherwise they were unranked because inactive (the result view is only reached right after the match was saved).
+function wasRookieBefore(stats: PlayerStats | undefined, rankedAfter: number): boolean {
   if (!stats) return true
-  return stats.played - 1 < ROOKIE_MATCHES
+  return stats.played - 1 < rankedAfter
 }
 
-function rankPart(
-  entry: MatchPlayerResult,
-  stats: PlayerStats | undefined,
-  rankBefore: Map<PlayerId, number>,
-  rankAfter: Map<PlayerId, number>,
-): string | null {
-  const after = rankAfter.get(entry.playerId)
-  const before = rankBefore.get(entry.playerId)
+type Ranks = { before: Map<PlayerId, number>; after: Map<PlayerId, number>; rankedAfter: number }
+
+function rankPart(entry: MatchPlayerResult, stats: PlayerStats | undefined, ranks: Ranks): string | null {
+  const after = ranks.after.get(entry.playerId)
+  const before = ranks.before.get(entry.playerId)
   if (after === undefined) {
-    if (stats?.status === 'rookie') return `${fmtInt(stats.rookieProgress)}/10 matchs`
+    if (stats?.status === 'rookie') return `${fmtInt(stats.rookieProgress)}/${fmtInt(ranks.rankedAfter)} matchs`
     return null
   }
   if (before !== undefined) return `${fmtOrdinal(before)} → ${fmtOrdinal(after)}`
-  if (wasRookieBefore(stats)) return `classé : ${fmtOrdinal(after)}`
+  if (wasRookieBefore(stats, ranks.rankedAfter)) return `classé : ${fmtOrdinal(after)}`
   return 'de retour dans le classement'
 }
 
@@ -67,10 +71,11 @@ function movementLine(
   stats: PlayerStats | undefined,
   rankBefore: Map<PlayerId, number> | undefined,
   rankAfter: Map<PlayerId, number> | undefined,
+  rankedAfter: number,
 ): string {
   const ratings = `${fmtInt(entry.before)} → ${fmtInt(entry.after)}`
   if (!rankBefore || !rankAfter) return ratings
-  const rank = rankPart(entry, stats, rankBefore, rankAfter)
+  const rank = rankPart(entry, stats, { before: rankBefore, after: rankAfter, rankedAfter })
   if (rank === null) return ratings
   return `${ratings} · ${rank}`
 }
@@ -134,7 +139,8 @@ function BetBlock({ bet, match }: { bet: BetOutcome; match: Match }) {
 }
 
 /** Score hero, team names, the announcements and per-player rows with the engine's why line (spec §3.4, §4 step C). */
-export function MatchSummary({ match, result, players, byPlayer, rankBefore, rankAfter, dateLine }: MatchSummaryProps) {
+export function MatchSummary(props: MatchSummaryProps) {
+  const { match, result, players, byPlayer, rankedAfter = ROOKIE_MATCHES, rankBefore, rankAfter, dateLine } = props
   const sides = sidesOf(match)
   const winnersLabel = teamLabel(sides.winners, players)
   const losersLabel = teamLabel(sides.losers, players)
@@ -174,9 +180,9 @@ export function MatchSummary({ match, result, players, byPlayer, rankBefore, ran
               key={entry.playerId}
               entry={entry}
               player={players.get(entry.playerId)}
-              rookie={isRookie(stats)}
+              rookie={isRookie(stats, rankedAfter)}
               why={entry.why}
-              movement={movementLine(entry, stats, rankBefore, rankAfter)}
+              movement={movementLine(entry, stats, rankBefore, rankAfter, rankedAfter)}
               position={(() => { const p = positionOf(entry.playerId, match); return p === null ? null : POSITION_LABEL[p] })()}
             />
           )

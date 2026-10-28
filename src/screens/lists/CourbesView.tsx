@@ -18,17 +18,18 @@ import type { ReplayData, ScreenContext } from './context'
 import { CURVE_WORDING, TAB_OPTIONS } from './modeLabels'
 import type { CurveWording } from './modeLabels'
 
-// Courbes du classement (`#/courbes`, Stats tab): a compact « Mixte » | « 2V2 » | « 1V1 » selector, name chips
-// (legend + toggles), the rating chart and its table view. The visible set lives in component state only; until the
-// user touches it, it follows the current top 3. The selector shares the Classement tab (Settings.classementTab):
-// `replay` is then the 2V2 / 1V1 ranking, whose « players » are the duos (« A & B ») or the players with a 1v1 match.
+// Courbes du classement (`#/courbes`, Stats tab): a compact « 2V2 mixte » | « Équipes » | « 1V1 » selector, name
+// chips (legend + toggles), the rating chart and its table view. The visible set lives in component state only; until
+// the user touches it, it follows the current top 3. The selector shares the Classement tab (Settings.classementTab):
+// `replay` is 2V2 mixte (each player over the 2v2 matches) by default, else the Équipes / 1V1 ranking, whose
+// « players » are the duos (« A & B ») or the players with a 1v1 match.
 
 export type CourbesViewProps = {
   app: Pick<ScreenContext, 'toast'>
   replay: ReplayData
-  /** Player or duo copy (chart label, table column, 8-curve cap, empty state); the Mixte wording when absent. */
+  /** Player or duo copy (chart label, table column, 8-curve cap, empty state); the 2V2 mixte wording when absent. */
   wording?: CurveWording
-  /** Selected ranking (« Mixte » when absent); the selector shows only with `onTabChange`. */
+  /** Selected ranking (« 2V2 mixte » when absent); the selector shows only with `onTabChange`. */
   tab?: RankingTab
   onTabChange?: (tab: RankingTab) => void
 }

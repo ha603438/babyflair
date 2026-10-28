@@ -12,8 +12,9 @@ import type { Route } from '../../router'
 import type { Player } from '../../types'
 import { MODE_EMPTY, MODE_OBSERVATION, MODE_ROOKIES_SUBTITLE } from './modeLabels'
 
-// Body of the « 2V2 » and « 1V1 » Classement tabs: same sections as « Mixte » (classés, pas encore classés,
-// inactifs), ranked after 3 matches. A 2V2 row is a duo « A & B » linking to its page; a 1V1 row links to the player.
+// Body of the « Équipes » and « 1V1 » Classement tabs: same sections as « 2V2 mixte » (classés, pas encore classés,
+// inactifs), ranked after 3 matches. An Équipes row is a duo « A & B » linking to its page; a 1V1 row links to the
+// player.
 
 export type ModeBodyProps = {
   mode: ModeReplay

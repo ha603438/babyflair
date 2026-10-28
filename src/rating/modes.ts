@@ -1,11 +1,12 @@
-// 2V2 and 1V1 rankings (the Classement tabs next to « Mixte »): the same engine maths as the main ranking (team-mean
-// Elo, margin, fanny / comeback bonus, rookie multiplier), replayed over one format only, with a lower section
-// threshold: ranked after 3 matches instead of 10. The rookie multiplier does not depend on that threshold (it reads
-// rookieK0 / rookieSpan), so it keeps its default values. engine.ts is untouched: this module only adapts the input.
+// « 2V2 équipes » and « 1V1 » rankings (the Classement tabs next to « 2V2 mixte », see ./rankings.ts): the same
+// engine maths as the main ranking (team-mean Elo, margin, fanny / comeback bonus, rookie multiplier), replayed over
+// one format only, with a lower section threshold: ranked after 3 matches instead of 10. The rookie multiplier does
+// not depend on that threshold (it reads rookieK0 / rookieSpan), so it keeps its default values. engine.ts is
+// untouched: this module only adapts the input.
 //
-// 2V2: every unordered pair of teammates is one entity (a duo), mapped to a synthetic engine player whose id is the
-// two player ids sorted and joined with '+'; each 2v2 match reaches the engine as a 1v1 duo vs duo, so there is no
-// teammate split.
+// 2V2 équipes: every unordered pair of teammates is one entity (a duo), mapped to a synthetic engine player whose id
+// is the two player ids sorted and joined with '+'; each 2v2 match reaches the engine as a 1v1 duo vs duo, so there is
+// no teammate split.
 import { duoLabel, duoMembers, teamDuoId } from '../duo'
 import type { DuoId, DuoMembers } from '../duo'
 import type { Format, Match, MatchResult, Player, PlayerId, Ranking, ReplayResult, Team } from '../types'
@@ -113,7 +114,7 @@ function replayDuos(players: Player[], matches: Match[], now: Date): ModeReplay 
   return { ...rated('2v2', roster, duoMatches, own, now), duos }
 }
 
-/** The 2V2 or 1V1 ranking, from the store's players and matches (pure: the screens memoise it). */
+/** The 2V2 équipes or 1V1 ranking, from the store's players and matches (pure: the screens memoise it). */
 export function replayMode(format: Format, players: Player[], matches: Match[], now: Date): ModeReplay {
   if (format === '1v1') return replayOneVsOne(players, matches, now)
   return replayDuos(players, matches, now)

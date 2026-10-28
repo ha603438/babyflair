@@ -44,11 +44,11 @@ function ShownCall({ shown, viewerId, onDismiss }: ShownCallProps) {
   const calls = useCalls()
   const guard = useWriteGuard()
   const chooseProfile = useChooseProfile()
-  const { result, players } = useReplay()
+  const { rankings, players } = useReplay()
   const { id, call } = shown
   const { callPlayers } = store
   const roster = call === null ? null : rosterOf(call, callPlayers, players)
-  const responses = call === null ? NO_RESPONSES : callResponses(call, callPlayers, store.players, result.byPlayer)
+  const responses = call === null ? NO_RESPONSES : callResponses(call, callPlayers, store.players, rankings.presence)
 
   function formTeams(): void {
     if (call === null) return

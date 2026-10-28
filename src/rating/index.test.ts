@@ -612,6 +612,8 @@ describe('useReplay', () => {
       view.ranking.inactive.length,
       view.result.byPlayer.size,
       view.result.byMatch.size,
+      view.rankings.byMatch.size,
+      view.rankings.oneVsOne.ranking.ranked.join('+'),
       view.players.size,
       view.matches.size,
       view.now instanceof Date,
@@ -635,13 +637,15 @@ describe('useReplay', () => {
     })
     vi.setSystemTime(NOW)
     const html = renderToString(createElement(AppStateProvider, null, createElement(Probe)))
-    expect(html).toContain('>2|5|3|10|24|10|24|true<')
+    // 2V2 mixte rates the one 2v2 only (nobody ranked yet: 1 match each); every match keeps its result in its own
+    // ranking, and alice / bob are ranked in 1V1 (ten 1v1 each).
+    expect(html).toContain('>0|7|3|10|1|24|alice+bob|10|24|true<')
   })
 
   it('renders an empty store without players or matches', () => {
     vi.stubGlobal('localStorage', { getItem: () => null, setItem: () => undefined })
     const html = renderToString(createElement(AppStateProvider, null, createElement(Probe)))
-    expect(html).toContain('>0|0|0|0|0|0|0|true<')
+    expect(html).toContain('>0|0|0|0|0|0||0|0|true<')
   })
 })
 

@@ -8,14 +8,15 @@ import { StatsTabs } from './StatsTabs'
 
 /**
  * Hall of Flair (`#/top`, « Hall of Flair » segment of the Stats tab): hooks only; the body lives in
- * lists/TopStatsView.tsx. The records are recomputed only when the store's players or matches, or the Mixte replay
- * result, change.
+ * lists/TopStatsView.tsx. The records are recomputed only when the store's players or matches, or the rankings
+ * (2V2 mixte for the peak, each match in its own ranking for the points records), change.
  */
 export function TopStats() {
   const { store } = useAppState()
   const replay: ReplayData = useReplay()
   const { players, matches } = store
-  const records = useMemo(() => topRecords(players, matches, replay.result), [players, matches, replay.result])
+  const { rankings } = replay
+  const records = useMemo(() => topRecords(players, matches, rankings), [players, matches, rankings])
   return (
     <>
       <StatsTabs current="top" />

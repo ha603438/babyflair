@@ -166,7 +166,8 @@ function toMatchResult(result: EngineMatchResult): MatchResult {
   }
 }
 
-// `config` defaults to the engine's; the 2V2 / 1V1 rankings (./modes.ts) only change its section threshold.
+// Replays whatever it is given: ./rankings.ts feeds it the 2v2 matches (« 2V2 mixte »), ./modes.ts the duos or the
+// 1v1 matches. `config` defaults to the engine's; the 2V2 équipes / 1V1 rankings only change its section threshold.
 export function replay(players: Player[], matches: Match[], opts: { now: Date; config?: Config }): ReplayResult {
   const config = opts.config ?? DEFAULT_CONFIG
   const roster = players.map(toEnginePlayer)
@@ -254,8 +255,9 @@ function stateBefore(result: ReplayResult, until: number): RatingsState {
 }
 
 /**
- * The 1st of the main ranking counting only the matches played before `until` (ms), its sections (ranked after 10
- * matches, inactive after 30 days) judged at `at` (ms) exactly like the Classement; null when nobody is ranked.
+ * The 1st of the main ranking (« 2V2 mixte »: pass rankings.main.result) counting only the matches played before
+ * `until` (ms), its sections (ranked after 10 matches, inactive after 30 days) judged at `at` (ms) exactly like the
+ * Classement; null when nobody is ranked.
  */
 export function leaderBefore(result: ReplayResult, players: Player[], until: number, at: number): PlayerId | null {
   const board = leaderboard(players.map(toEnginePlayer), stateBefore(result, until), at)

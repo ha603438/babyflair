@@ -4,9 +4,10 @@ import { renderToString } from 'react-dom/server'
 import App from '../../App'
 import type { BetRecord, RatedBet } from '../../betStats'
 import { fmtDelta } from '../../format'
-import { replay } from '../../rating'
+import { betChance } from '../../rating'
 import { replayMode } from '../../rating/modes'
-import type { Match, MatchId, Player, ReplayResult, Store } from '../../types'
+import { replayRankings } from '../../rating/rankings'
+import type { Match, MatchId, MatchResult, Player, Store } from '../../types'
 import { betCardView, bestBetText, betSuccessText, facedText } from './betLabels'
 
 // « 🎯 Annonces » card of the player and duo pages: its copy (betLabels.ts) and server renders of both pages through
@@ -87,7 +88,10 @@ function teamsOf(ids: MatchId[]): (id: MatchId) => 'A' | null {
 }
 
 /** Net bet points of the team `teamOf` names in each match (none: null) in a replay `result`. */
-function betPoints(result: ReplayResult, teamOf: (id: MatchId) => 'A' | 'B' | null): number {
+function betPoints(
+  result: { byMatch: ReadonlyMap<MatchId, MatchResult> },
+  teamOf: (id: MatchId) => 'A' | 'B' | null,
+): number {
   let total = 0
   for (const [id, outcome] of result.byMatch) {
     for (const bet of outcome.bets) if (bet.team === teamOf(id)) total += bet.delta
@@ -152,9 +156,13 @@ describe('Player page, « 🎯 Annonces »', () => {
     expect(card).toContain('<div class="tiles tiles--2">')
     expect(card).toContain(tile('Annonces', '3'))
     expect(card).toContain(tile('Réussies', `2/3 · 67${NNBSP}%`))
-    const result = replay(PLAYERS, MATCHES, { now: new Date() })
-    const points = fmtDelta(betPoints(result, teamsOf(['m1', 'm2', 'm3'])))
+    // Each announcement in the ranking of its match: m1 and m2 in 2V2 mixte, her 1v1 +2 (m3) in 1V1.
+    const rankings = replayRankings(PLAYERS, MATCHES, new Date())
+    const points = fmtDelta(betPoints(rankings, teamsOf(['m1', 'm2', 'm3'])))
     expect(card).toContain(tile('Points d’annonce', points))
+    const solo = rankings.oneVsOne.result.byMatch.get('m3')?.bets[0]
+    expect(rankings.byMatch.get('m3')?.bets[0]).toEqual(solo)
+    expect(solo?.chance).toBeCloseTo(betChance(0.5, 10, 2), 10)
     expect(card).toContain(
       '<a class="tile tile--link" href="#/historique/m1"><span class="tile-label">Plus belle annonce</span>' +
         `<span class="tile-value t-num">+4 à 23${NNBSP}%</span></a>`,

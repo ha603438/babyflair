@@ -10,7 +10,7 @@
 /* Three segments on a 320–375 px phone: tighter side padding so « Hall of Flair » fits its third. */
 .stats-tabs .segmented__option { padding-inline: var(--s2); }
 
-/* ---------- Courbes: « Mixte » | « 2V2 » | « 1V1 », compact and centred above the chips ---------- */
+/* ---------- Courbes: « 2V2 mixte » | « Équipes » | « 1V1 », compact and centred above the chips ---------- */
 .courbes-mode {
   display: flex;
   justify-content: center;

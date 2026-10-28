@@ -8,7 +8,8 @@ import type { PlayerFormValue } from '../../components/InlinePlayerForm'
 import { chipOrder } from '../../stats'
 import { draftReducer, isDraftComplete, useAppState } from '../../store'
 import type { DraftAction } from '../../store'
-import type { Draft, Player, PlayerId, PlayerStats } from '../../types'
+import type { Draft, Player, PlayerId } from '../../types'
+import type { Presence } from '../../rating/rankings'
 import { chipStateOf, draftTeams, entryCaption } from './draftMatch'
 import { RosterSlots } from './RosterSlots'
 import { useShake } from './useShake'
@@ -17,7 +18,8 @@ export type PlayersStepProps = {
   draft: Draft
   dispatch: (action: DraftAction) => void
   playersById: Map<PlayerId, Player>
-  byPlayer: Map<PlayerId, PlayerStats>
+  /** Each player's latest match and status, whatever the format (useReplay().rankings.presence). */
+  byPlayer: ReadonlyMap<PlayerId, Presence>
   /** Edit screen only: its local [1v1 | 2v2] control (the new-match flow has it in the shell header). */
   formatControl?: ReactNode
 }

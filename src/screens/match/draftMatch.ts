@@ -6,7 +6,7 @@ import type { ChipState } from '../../components/Chip'
 import { fmtDayHeader, fmtScore, fmtTime, plural } from '../../format'
 import { isComeback, rankIndexOf } from '../../stats'
 import { canBeComeback, NO_ACTIVE_SLOT, visibleSlots } from '../../store/draft'
-import type { Draft, Format, Match, MatchId, PlayerId, Ranking, Score, Target } from '../../types'
+import type { Draft, Format, Match, MatchId, PlayerId, Ranking, RankingTab, Score, Target } from '../../types'
 
 /** Slot indices of each team (spec §4: 0-1 = Équipe 1, 2-3 = Équipe 2). */
 export const TEAM_A_FIRST_SLOT = 0
@@ -172,6 +172,16 @@ export function resultDateLine(playedAt: string, target: Target, now: Date, with
   const day = lowerFirst(fmtDayHeader(playedAt, now))
   if (!withTime) return `${day} · en ${target}`
   return `${day} · ${fmtTime(playedAt)} · en ${target}`
+}
+
+/**
+ * The Classement tab « Voir le classement » opens after a match: a ranking that rated it. A 1v1 → « 1V1 »; a 2v2 →
+ * « Équipes » when that tab is the one remembered (the duos moved too), « 2V2 mixte » otherwise.
+ */
+export function tabAfterMatch(format: Format, current: RankingTab): RankingTab {
+  if (format === '1v1') return '1v1'
+  if (current === '2v2') return '2v2'
+  return 'mixte'
 }
 
 /** 1-based ranks of the given players among the ranked list; rookies and inactive players are simply absent. */

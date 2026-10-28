@@ -5,7 +5,11 @@ export type PlayerId = string
 export type MatchId = string
 export type Target = 5 | 10
 export type Format = '1v1' | '2v2'
-/** Classement tabs: « Mixte » (every match, the main ranking), « 2V2 » (duos) and « 1V1 » (1v1 matches only). */
+/**
+ * Classement tabs, three separate rankings: 'mixte' = « 2V2 mixte » (the main ranking: players on the 2v2 matches,
+ * whoever the partner), '2v2' = « Équipes » (duos as entities) and '1v1' = « 1V1 » (players on the 1v1 matches). The
+ * stored values predate the split (« Mixte » used to count every match) and are kept as is: no migration needed.
+ */
 export type RankingTab = 'mixte' | Format
 export type Team = 'A' | 'B'
 
@@ -57,7 +61,7 @@ export type Settings = {
   /** This phone holds a push subscription on the server (Réglages › Notifications). */
   pushEnabled?: boolean
   notifHintDismissedAt?: string
-  /** Classement tab last chosen on this phone (absent = « Mixte »). Local only, never synced. */
+  /** Classement tab last chosen on this phone (absent = « 2V2 mixte »). Local only, never synced. */
   classementTab?: RankingTab
 }
 
@@ -149,7 +153,7 @@ export type PlayerStats = {
   losses: number
   lastPlayedAt?: string
   status: PlayerStatus
-  /** 0..rankedAfter (10 in the main ranking, 3 in the 2V2 and 1V1 rankings) */
+  /** 0..rankedAfter (10 in the main ranking, 2V2 mixte; 3 in the 2V2 équipes and 1V1 rankings) */
   rookieProgress: number
   history: HistoryPoint[]
 }

@@ -6,6 +6,7 @@ import { MatchSummary } from '../components/MatchSummary'
 import { fmtDateLine } from '../format'
 import { useShowsTimes } from '../profile/useShowsTimes'
 import { useWriteGuard } from '../profile/useWriteGuard'
+import { formatOfMatch, matchResult, ofFormat, rankedAfterOf } from '../rating/rankings'
 import { useReplay } from '../rating/useReplay'
 import { back, hrefOf, navigate } from '../router'
 import { useAppState } from '../store'
@@ -28,7 +29,7 @@ function emptyResult(matchId: MatchId): MatchResult {
 
 export function MatchDetail({ id }: { id: MatchId }) {
   const { store, dispatch, toast } = useAppState()
-  const { result, players } = useReplay()
+  const { rankings, players } = useReplay()
   const showTime = useShowsTimes()
   const guard = useWriteGuard()
   const [confirming, setConfirming] = useState(false)
@@ -63,14 +64,17 @@ export function MatchDetail({ id }: { id: MatchId }) {
   }
 
   if (match === undefined) return null
+  // Deltas, why lines and announcements in the ranking of the match's format: 1V1 for a 1v1, 2V2 mixte for a 2v2.
+  const format = formatOfMatch(match)
 
   return (
     <div className="md-col">
       <MatchSummary
         match={match}
-        result={result.byMatch.get(id) ?? emptyResult(id)}
+        result={matchResult(rankings, id) ?? emptyResult(id)}
         players={players}
-        byPlayer={result.byPlayer}
+        byPlayer={ofFormat(rankings, format).result.byPlayer}
+        rankedAfter={rankedAfterOf(format)}
         dateLine={fmtDateLine(match.playedAt, match.target, showTime)}
       />
       <div className="md-actions">
