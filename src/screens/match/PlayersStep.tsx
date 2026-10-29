@@ -5,7 +5,7 @@ import { Button } from '../../components/Button'
 import { Chip } from '../../components/Chip'
 import { InlinePlayerForm } from '../../components/InlinePlayerForm'
 import type { PlayerFormValue } from '../../components/InlinePlayerForm'
-import { chipOrder } from '../../stats'
+import { sortByName } from '../../stats'
 import { draftReducer, isDraftComplete, useAppState } from '../../store'
 import type { DraftAction } from '../../store'
 import type { Draft, Player, PlayerId } from '../../types'
@@ -32,7 +32,7 @@ export function PlayersStep({ draft, dispatch, playersById, byPlayer, formatCont
   const { store, dispatch: storeDispatch } = useAppState()
   const { shaking, shake } = useShake()
   const [adding, setAdding] = useState(false)
-  const ordered = useMemo(() => chipOrder(store.players, byPlayer), [store.players, byPlayer])
+  const ordered = useMemo(() => sortByName(store.players), [store.players])
   const existingNames = useMemo(() => store.players.map((player) => player.name), [store.players])
   const complete = isDraftComplete(draft)
 

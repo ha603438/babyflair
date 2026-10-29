@@ -1,6 +1,7 @@
 // PostgREST client for the shared mode, over plain fetch (no supabase-js). Everything is injected (fetch, config,
 // office code, profile) so the client is unit-testable in node with a fake fetch. Rows are snake_case on the server and
 // mapped to the app types here; dates are normalised back to the `...Z` ISO form the app writes everywhere.
+import { readPhotoUrl } from '../avatar'
 import { readBet } from '../bets'
 import { parseCallResponse } from '../calls/calls'
 import type { Call, CallPlayer, Match, MatchEvent, MatchEventAction, MatchSnapshot, Player, Target } from '../types'
@@ -63,7 +64,8 @@ export type RemoteApi = {
 // Row mapping
 // ---------------------------------------------------------------------------
 
-export type PlayerRow = { id: string; name: string; is_guest: boolean; created_at: string }
+/** `photo_url` is absent from rows written before docs/supabase/photos.sql. */
+export type PlayerRow = { id: string; name: string; is_guest: boolean; created_at: string; photo_url?: string | null }
 
 export type MatchRow = {
   id: string
@@ -131,11 +133,21 @@ function targetOf(value: number): Target {
 }
 
 export function playerFromRow(row: PlayerRow): Player {
-  return { id: row.id, name: row.name, isGuest: row.is_guest, createdAt: toIso(row.created_at) }
+  const player: Player = { id: row.id, name: row.name, isGuest: row.is_guest, createdAt: toIso(row.created_at) }
+  const photoUrl = readPhotoUrl(row.photo_url)
+  if (photoUrl !== undefined) player.photoUrl = photoUrl
+  return player
 }
 
+/** Always carries `photo_url` (null when none): a bulk insert (replaceAll) needs the same keys on every row. */
 export function playerToRow(player: Player): PlayerRow {
-  return { id: player.id, name: player.name, is_guest: player.isGuest, created_at: player.createdAt }
+  return {
+    id: player.id,
+    name: player.name,
+    is_guest: player.isGuest,
+    created_at: player.createdAt,
+    photo_url: player.photoUrl ?? null,
+  }
 }
 
 function nonEmptyString(value: unknown): string | undefined {

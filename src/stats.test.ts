@@ -3,7 +3,6 @@ import { describe, expect, it } from 'vitest'
 import type { ImportResult } from './stats'
 import {
   buildExport,
-  chipOrder,
   currentStreak,
   favouritePartner,
   isInactive,
@@ -100,10 +99,6 @@ function matchMap(matches: Match[]): Map<MatchId, Match> {
 
 function playerMap(players: Player[]): Map<PlayerId, Player> {
   return new Map(players.map((p): [PlayerId, Player] => [p.id, p]))
-}
-
-function statsMap(entries: PlayerStats[]): Map<PlayerId, PlayerStats> {
-  return new Map(entries.map((s): [PlayerId, PlayerStats] => [s.playerId, s]))
 }
 
 function ids(players: Player[]): PlayerId[] {
@@ -266,49 +261,8 @@ describe('favouritePartner', () => {
 })
 
 // ---------------------------------------------------------------------------
-// chipOrder / sortByName
+// sortByName
 // ---------------------------------------------------------------------------
-
-describe('chipOrder', () => {
-  it('orders by last match desc, then never-played players by creation desc', () => {
-    const old = player('old', 'Old', { createdAt: daysAgo(50) })
-    const fresh = player('fresh', 'Fresh', { createdAt: daysAgo(2) })
-    const recent = player('recent', 'Recent')
-    const earlier = player('earlier', 'Earlier')
-    const byPlayer = statsMap([
-      stats(recent.id, [point('m2', daysAgo(1), 5)]),
-      stats(earlier.id, [point('m1', daysAgo(3), 5)]),
-    ])
-    expect(ids(chipOrder([old, earlier, fresh, recent], byPlayer))).toEqual(['recent', 'earlier', 'fresh', 'old'])
-  })
-
-  it('breaks ties by name, accent- and case-insensitively', () => {
-    const same = daysAgo(1)
-    const played = [player('z', 'zoé'), player('e', 'Émile'), player('b', 'bob')]
-    const byPlayer = statsMap(played.map((p) => stats(p.id, [point('m', same, 1)])))
-    expect(ids(chipOrder(played, byPlayer))).toEqual(['b', 'e', 'z'])
-
-    const created = daysAgo(4)
-    const never = [
-      player('z2', 'zoé', { createdAt: created }),
-      player('e2', 'Émile', { createdAt: created }),
-      player('b2', 'bob', { createdAt: created }),
-    ]
-    expect(ids(chipOrder(never, new Map()))).toEqual(['b2', 'e2', 'z2'])
-  })
-
-  it('treats a player with stats but no match as never played', () => {
-    const p = player('p', 'P', { createdAt: daysAgo(9) })
-    const q = player('q', 'Q', { createdAt: daysAgo(1) })
-    expect(ids(chipOrder([p, q], statsMap([stats(p.id, [])])))).toEqual(['q', 'p'])
-  })
-
-  it('does not mutate the input', () => {
-    const input = [player('b', 'Bob'), player('a', 'Alice')]
-    chipOrder(input, new Map())
-    expect(ids(input)).toEqual(['b', 'a'])
-  })
-})
 
 describe('sortByName', () => {
   it('sorts with French collation, ignoring case and accents', () => {
@@ -596,6 +550,14 @@ describe('validateImport', () => {
     expectOk(result)
     expect(result.players[0]).toEqual(sampleStore().players[0])
     expect(result.matches[0]).toEqual(sampleStore().matches[0])
+  })
+
+  it('keeps an https photo link and silently drops any other', () => {
+    const url = 'https://avatars.slack-edge.com/2024-12-23/1_abc_192.jpg'
+    const kept = validateImport(withPlayer(withPlayer(validFile(), 0, { photoUrl: url }), 1, { photoUrl: 'ftp://x' }))
+    expectOk(kept)
+    expect(kept.players[0].photoUrl).toBe(url)
+    expect('photoUrl' in kept.players[1]).toBe(false)
   })
 
   it('reads the announcements: absent or null = none, clamped to the target, round-tripped through an export', () => {

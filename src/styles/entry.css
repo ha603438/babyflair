@@ -483,3 +483,74 @@
 /* Position caption inside a 2v2 slot. */
 .slot__position { display: block; font-size: 10px; font-weight: 700; text-transform: uppercase; letter-spacing: .06em; color: var(--text-3); line-height: 1; margin-bottom: 2px; }
 .slot.is-filled .slot__main, .slot.is-active .slot__main { flex-direction: column; align-items: flex-start; justify-content: center; gap: 1px; }
+
+/* ---------- Avatar: Slack photo or initials (src/components/Avatar.tsx) ---------- */
+.avatar {
+  flex: none;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: var(--avatar-size);
+  height: var(--avatar-size);
+  border-radius: 50%;
+  object-fit: cover;
+  background: var(--surface-2);
+}
+
+.avatar--initials {
+  font-size: calc(var(--avatar-size) * 0.38);
+  font-weight: 700;
+  line-height: 1;
+  letter-spacing: 0.02em;
+  color: var(--text-2);
+}
+
+/* Player chip: photo above the name, so a face is found before a name is read. Kept to ~64 px so five rows (13
+   players and « + Nouveau joueur ») still fit under the slots on a 375 × 812 phone. */
+.chip--player {
+  flex-direction: column;
+  gap: 2px;
+  min-height: 0;
+  padding: 5px 6px;
+  line-height: 1.15;
+}
+
+.chip--player.chip--team1,
+.chip--player.chip--team2 {
+  padding: 4px 5px;
+}
+
+.chip__label {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  justify-content: center;
+  column-gap: 4px;
+  max-width: 100%;
+  min-width: 0;
+}
+
+.chip--player .chip__name {
+  max-width: 100%;
+}
+
+/* Filled slot: photo, then the position caption over the name. */
+.slot.is-filled .slot__main {
+  flex-direction: row;
+  align-items: center;
+  justify-content: flex-start;
+  gap: var(--s2);
+}
+
+.slot__text {
+  display: flex;
+  flex-direction: column;
+  justify-content: center;
+  gap: 1px;
+  min-width: 0;
+}
+
+/* As tall as the player chips now: « + Nouveau joueur » gets two lines instead of an ellipsis. */
+.chip--add .chip__name {
+  white-space: normal;
+}

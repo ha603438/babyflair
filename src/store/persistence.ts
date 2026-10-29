@@ -1,3 +1,4 @@
+import { readPhotoUrl } from '../avatar'
 import { readBet } from '../bets'
 import { parseCallResponse } from '../calls/calls'
 import { isComebackScore } from '../stats'
@@ -29,7 +30,10 @@ function normalisePlayer(value: unknown): Player | null {
   if (!isRecord(value)) return null
   if (typeof value.id !== 'string' || typeof value.name !== 'string') return null
   const createdAt = typeof value.createdAt === 'string' ? value.createdAt : EPOCH
-  return { id: value.id, name: value.name, isGuest: value.isGuest === true, createdAt }
+  const player: Player = { id: value.id, name: value.name, isGuest: value.isGuest === true, createdAt }
+  const photoUrl = readPhotoUrl(value.photoUrl)
+  if (photoUrl !== undefined) player.photoUrl = photoUrl
+  return player
 }
 
 function normaliseMatch(value: unknown): Match | null {

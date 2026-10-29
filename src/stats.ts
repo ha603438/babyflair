@@ -11,6 +11,7 @@ import type {
   Store,
   Target,
 } from './types'
+import { readPhotoUrl } from './avatar'
 import { readBet } from './bets'
 
 const DAY_MS = 24 * 60 * 60 * 1000
@@ -133,27 +134,6 @@ export function favouritePartner(
 // Ordering
 // ---------------------------------------------------------------------------
 
-/** Last match first (`lastPlayedAt`, any format), then the players who never played, newest first. */
-export function chipOrder(
-  players: Player[],
-  byPlayer: ReadonlyMap<PlayerId, Pick<PlayerStats, 'lastPlayedAt'>>,
-): Player[] {
-  const played: Array<{ player: Player; at: number }> = []
-  const neverPlayed: Player[] = []
-  for (const player of players) {
-    const last = byPlayer.get(player.id)?.lastPlayedAt
-    const at = last === undefined ? null : parseTime(last)
-    if (at === null) {
-      neverPlayed.push(player)
-      continue
-    }
-    played.push({ player, at })
-  }
-  played.sort((a, b) => b.at - a.at || compareNames(a.player.name, b.player.name))
-  neverPlayed.sort((a, b) => Date.parse(b.createdAt) - Date.parse(a.createdAt) || compareNames(a.name, b.name))
-  return [...played.map((entry) => entry.player), ...neverPlayed]
-}
-
 export function sortByName(players: Player[]): Player[] {
   return [...players].sort((a, b) => compareNames(a.name, b.name))
 }
@@ -251,10 +231,11 @@ function readPlayer(raw: unknown, position: number): { ok: true; player: Player 
   if (typeof raw.name !== 'string' || raw.name.trim() === '') return ko(`${label} : nom manquant.`)
   if (raw.isGuest !== undefined && typeof raw.isGuest !== 'boolean') return ko(`${label} : champ « isGuest » invalide.`)
   if (!isIsoDate(raw.createdAt)) return ko(`${label} : date de création invalide.`)
-  return {
-    ok: true,
-    player: { id: raw.id, name: raw.name.trim(), isGuest: raw.isGuest === true, createdAt: raw.createdAt },
-  }
+  const player: Player = { id: raw.id, name: raw.name.trim(), isGuest: raw.isGuest === true, createdAt: raw.createdAt }
+  // Optional and never blocking: a missing or odd photo link just falls back to the initials.
+  const photoUrl = readPhotoUrl(raw.photoUrl)
+  if (photoUrl !== undefined) player.photoUrl = photoUrl
+  return { ok: true, player }
 }
 
 type MatchesResult = { ok: true; matches: Match[] } | ImportKo

@@ -64,6 +64,19 @@ describe('with a working localStorage', () => {
     expect(loadStore()).toEqual(store)
   })
 
+  it('keeps a player photo link, drops one that is not https', () => {
+    const url = 'https://avatars.slack-edge.com/2024-12-23/1_abc_192.jpg'
+    const store = sample()
+    const [alice, bob] = store.players
+    storage.data.set(
+      STORAGE_KEY,
+      JSON.stringify({ ...store, players: [{ ...alice, photoUrl: url }, { ...bob, photoUrl: 'data:image/png;base64,' }] }),
+    )
+    const loaded = loadStore()
+    expect(loaded.players[0].photoUrl).toBe(url)
+    expect('photoUrl' in loaded.players[1]).toBe(false)
+  })
+
   it('falls back to initialStore when the key is missing', () => {
     expect(loadStore()).toBe(initialStore)
   })

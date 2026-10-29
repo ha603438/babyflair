@@ -1,4 +1,5 @@
 import type { Player } from '../types'
+import { Avatar } from './Avatar'
 
 export type SlotProps = {
   team: 1 | 2
@@ -42,15 +43,42 @@ function CloseIcon() {
   )
 }
 
-function SlotContent({ player, active }: { player?: Player; active: boolean }) {
-  if (player !== undefined) return <span className="slot__name">{truncateName(player.name)}</span>
-  if (active) return <span className="slot__placeholder">Choisis un joueur</span>
-  return <PlusIcon />
+function Position({ position }: { position?: string }) {
+  if (!position) return null
+  return <span className="slot__position">{position}</span>
+}
+
+function SlotContent({ player, active, position }: { player?: Player; active: boolean; position?: string }) {
+  if (player !== undefined) {
+    return (
+      <>
+        <Avatar player={player} size={32} />
+        <span className="slot__text">
+          <Position position={position} />
+          <span className="slot__name">{truncateName(player.name)}</span>
+        </span>
+      </>
+    )
+  }
+  if (active) {
+    return (
+      <>
+        <Position position={position} />
+        <span className="slot__placeholder">Choisis un joueur</span>
+      </>
+    )
+  }
+  return (
+    <>
+      <Position position={position} />
+      <PlusIcon />
+    </>
+  )
 }
 
 /**
  * One roster position of step A. Empty = dashed « + »; active = accent border (pulse while empty);
- * filled = team bar + name + « × ». Tapping the name activates the slot without clearing it (next chip replaces).
+ * filled = team bar + photo + name + « × ». Tapping the name activates the slot without clearing it (next chip replaces).
  */
 export function Slot({ team, player, active, onActivate, onClear, position }: SlotProps) {
   const filled = player !== undefined
@@ -59,8 +87,7 @@ export function Slot({ team, player, active, onActivate, onClear, position }: Sl
   return (
     <div className={classNameOf(team, filled, active)}>
       <button type="button" className="slot__main" aria-label={mainLabel} aria-pressed={active} onClick={onActivate}>
-        {position && <span className="slot__position">{position}</span>}
-        <SlotContent player={player} active={active} />
+        <SlotContent player={player} active={active} position={position} />
       </button>
       {filled && (
         <button type="button" className="slot__clear" aria-label={`Retirer ${player.name}`} onClick={onClear}>

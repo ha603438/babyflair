@@ -83,16 +83,29 @@ describe('Match screen, step A', () => {
     expect(html).toContain('+ Nouveau joueur')
     expect(html).not.toContain('Continuer')
     expect(html).not.toContain('class="preview')
-    // chipOrder: the four players of the last match first (same time → by name), then Eve who never played.
+    // Alphabetical, whoever played last.
     const order = ['>Alice<', '>Bob<', '>Chloé<', '>Dan<', '>Eve<'].map((name) => html.indexOf(name))
     expect(order.every((index) => index !== -1)).toBe(true)
     expect([...order].sort((a, b) => a - b)).toEqual(order)
     expect(html).toContain('class="chip')
     expect(html).not.toContain('chip--team')
     // The seeded match is months old: its four players are inactive (opacity .6), Eve never played.
-    expect(html).toContain('class="chip is-inactive"')
+    expect(html).toContain('class="chip chip--player is-inactive"')
+    // No photo: the initials stand in.
+    expect(html).toContain('<span class="avatar avatar--initials" style="--avatar-size:32px" aria-hidden="true">A</span>')
     expect(html).toContain('invité')
     expect(html).toContain('class="match-screen match-screen--players"')
+  })
+
+  it('lists the chips alphabetically, whoever played last, with the photo when there is one', () => {
+    const photo = 'https://avatars.slack-edge.com/2024-12-23/1_abc_192.jpg'
+    const players = [{ ...PLAYERS[4], photoUrl: photo }, ...PLAYERS.slice(0, 4)]
+    const recent: Match = { ...MATCH, id: 'm2', seq: 2, teamA: ['eve', 'dan'], teamB: ['bob', 'alice'] }
+    const html = render(createElement(MatchScreen), storeOf(players, [MATCH, recent]))
+    const order = ['>Alice<', '>Bob<', '>Chloé<', '>Dan<', '>Eve<'].map((name) => html.indexOf(name))
+    expect([...order].sort((a, b) => a - b)).toEqual(order)
+    expect(html).toContain(`<img class="avatar" style="--avatar-size:32px" src="${photo}" alt="" width="32" height="32"`)
+    expect(html).toContain('referrerPolicy="no-referrer"')
   })
 
   it('reads « Encore 1 joueur à ajouter » with a single player', () => {

@@ -99,7 +99,15 @@ describe('remoteConfigFrom', () => {
 describe('row mapping', () => {
   it('maps players both ways and normalises dates to the Z form', () => {
     expect(playerFromRow(playerRow)).toEqual(player)
-    expect(playerToRow(player)).toEqual({ ...playerRow, created_at: player.createdAt })
+    expect(playerToRow(player)).toEqual({ ...playerRow, created_at: player.createdAt, photo_url: null })
+  })
+
+  it('carries the photo link both ways and drops anything but an https link', () => {
+    const url = 'https://avatars.slack-edge.com/2024-12-23/1_abc_192.jpg'
+    expect(playerFromRow({ ...playerRow, photo_url: url })).toEqual({ ...player, photoUrl: url })
+    expect(playerToRow({ ...player, photoUrl: url }).photo_url).toBe(url)
+    expect(playerFromRow({ ...playerRow, photo_url: null })).not.toHaveProperty('photoUrl')
+    expect(playerFromRow({ ...playerRow, photo_url: 'javascript:alert(1)' })).not.toHaveProperty('photoUrl')
   })
 
   it('maps matches both ways; seq is only sent when present', () => {

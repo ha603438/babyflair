@@ -6,6 +6,16 @@ export type ChangelogEntry = { id: string; date: string; title: string; items: s
 
 export const CHANGELOG: ChangelogEntry[] = [
   {
+    id: '2026-10-29-1',
+    date: '2026-10-29',
+    title: 'Les têtes des joueurs',
+    items: [
+      'Sur la feuille de match, chaque joueur a sa photo Slack (ses initiales s’il n’en a pas)\u202F: on retrouve ' +
+        'les têtes d’un coup d’œil.',
+      'Les joueurs y sont rangés par ordre alphabétique.',
+    ],
+  },
+  {
     id: '2026-10-28-1',
     date: '2026-10-28',
     title: 'Classements séparés',

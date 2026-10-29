@@ -13,7 +13,14 @@ export type Format = '1v1' | '2v2'
 export type RankingTab = 'mixte' | Format
 export type Team = 'A' | 'B'
 
-export type Player = { id: PlayerId; name: string; isGuest: boolean; createdAt: string }
+export type Player = {
+  id: PlayerId
+  name: string
+  isGuest: boolean
+  createdAt: string
+  /** Profile photo (the colleague's Slack picture, 192 px); initials when absent or broken. */
+  photoUrl?: string
+}
 
 export type Match = {
   id: MatchId

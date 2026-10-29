@@ -1,4 +1,5 @@
 import type { Player } from '../types'
+import { Avatar } from './Avatar'
 
 export type ChipState = 'default' | 'team1' | 'team2'
 
@@ -28,7 +29,7 @@ function badgeOf(state: ChipState): string | null {
 }
 
 function classNameOf(state: ChipState, inactive: boolean): string {
-  const parts = ['chip']
+  const parts = ['chip', 'chip--player']
   if (state !== 'default') parts.push(`chip--${state}`)
   if (inactive) parts.push('is-inactive')
   return parts.join(' ')
@@ -39,7 +40,10 @@ function accessibleName(player: Player): string {
   return player.name
 }
 
-/** One player in the bottom-anchored grid of step A. Pressed = placed in a slot (badge « 1 » / « 2 »). */
+/**
+ * One player in the bottom-anchored grid of step A: photo above the name. Pressed = placed in a slot (badge « 1 » /
+ * « 2 »).
+ */
 export function Chip({ player, state, inactive = false, disabled = false, onClick }: ChipProps) {
   const badge = badgeOf(state)
   return (
@@ -51,8 +55,11 @@ export function Chip({ player, state, inactive = false, disabled = false, onClic
       disabled={disabled}
       onClick={onClick}
     >
-      <span className="chip__name">{truncateName(player.name)}</span>
-      {player.isGuest && <span className="chip__tag">invité</span>}
+      <Avatar player={player} size={32} />
+      <span className="chip__label">
+        <span className="chip__name">{truncateName(player.name)}</span>
+        {player.isGuest && <span className="chip__tag">invité</span>}
+      </span>
       {badge !== null && (
         <span className="chip__badge" aria-hidden="true">
           {badge}
