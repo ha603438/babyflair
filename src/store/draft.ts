@@ -15,7 +15,7 @@ export type DraftAction =
   | { type: 'swapTeam'; team: 1 | 2 } /* 2v2: swaps arrière and avant of a team */
   | { type: 'keepWinners'; winner: Team; teamA: PlayerId[]; teamB: PlayerId[]; target: Target } /* winners stay on their side */
   | { type: 'setComeback'; value: boolean } /* « Comeback » box, only kept on a 5-4 in 5 */
-  | { type: 'setBet'; team: Team; n: number | null } /* « Annoncer un écart » (1..target), null = « Retirer » */
+  | { type: 'setBet'; team: Team; n: number | null } /* « Annoncer un écart » (2..target), null = « Retirer » */
 
 /** `activeSlot` value meaning "no slot is active" (every required slot is filled). */
 export const NO_ACTIVE_SLOT = -1
@@ -229,7 +229,7 @@ function clampedBets(draft: Draft): Draft {
 
 /**
  * Announcements belong to one roster before one match: a change of team (or of format), an emptied slot or the next
- * match after a save drops them; a new target clamps them to 1..target.
+ * match after a save drops them; a new target clamps them to 2..target.
  */
 function keepBets(before: Draft, after: Draft): Draft {
   if (after === before || !hasBets(after)) return after

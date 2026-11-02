@@ -64,7 +64,7 @@ export function backfillSeq(matches: Match[]): Match[] {
   })
 }
 
-/** A comeback flag only on a 5-4 in 5, announcements in 1..target: the match itself when nothing needs a fix. */
+/** A comeback flag only on a 5-4 in 5, announcements in 2..target: the match itself when nothing needs a fix. */
 function withValidFlags(match: Match): Match {
   return withValidBets(withValidComeback(match))
 }

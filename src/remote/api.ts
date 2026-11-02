@@ -80,7 +80,7 @@ export type MatchRow = {
   score_b: number
   /** « Comeback » box (docs/supabase/comeback.sql, not null default false); absent before that migration. */
   comeback?: boolean
-  /** « Annonces d'écart » (docs/supabase/bets.sql, smallint null, 1..target); absent before that migration. */
+  /** « Annonces d'écart » (docs/supabase/bets.sql, smallint null; the app reads 2..target); absent before that migration. */
   bet_a?: number | null
   bet_b?: number | null
   /** Filled by the server trigger (docs/supabase/profiles.sql); absent before that migration. */

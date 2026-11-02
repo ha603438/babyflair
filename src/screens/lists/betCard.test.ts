@@ -35,12 +35,12 @@ function match(seq: number, days: number, teamA: string[], teamB: string[], scor
 }
 
 // m1: everybody even, Alice & Bob make their +4 (23 %). m2: both teams miss. m3: Alice makes her +2 against Eve,
-// who announced nothing. m4: Bob & Dan miss their +1 against Alice & Chloé. Fred never played.
+// who announced nothing. m4: Bob & Dan miss their +2 against Alice & Chloé. Fred never played.
 const MATCHES: Match[] = [
   { ...match(1, 3, ['alice', 'bob'], ['chloe', 'dan'], 10, 2), betA: 4 },
   { ...match(2, 2, ['alice', 'bob'], ['chloe', 'dan'], 10, 7), betA: 5, betB: 3 },
   { ...match(3, 1, ['alice'], ['eve'], 10, 4), betA: 2 },
-  { ...match(4, 0.5, ['alice', 'chloe'], ['bob', 'dan'], 10, 9), betB: 1 },
+  { ...match(4, 0.5, ['alice', 'chloe'], ['bob', 'dan'], 10, 9), betB: 2 },
 ]
 
 function storeOf(matches: Match[]): Store {
@@ -167,7 +167,7 @@ describe('Player page, « 🎯 Annonces »', () => {
       '<a class="tile tile--link" href="#/historique/m1"><span class="tile-label">Plus belle annonce</span>' +
         `<span class="tile-value t-num">+4 à 23${NNBSP}%</span></a>`,
     )
-    // Chloé & Dan's +3 (m2) and Bob & Dan's +1 (m4) both failed against her.
+    // Chloé & Dan's +3 (m2) and Bob & Dan's +2 (m4) both failed against her.
     expect(card).toContain('<p class="tiles-note">A fait tomber 2 annonces adverses sur 2</p>')
     // After « Fanny et comebacks ».
     expect(html.indexOf('>Fanny et comebacks<')).toBeLessThan(html.indexOf('>Annonces</h2>'))

@@ -6,6 +6,12 @@ export type ChangelogEntry = { id: string; date: string; title: string; items: s
 
 export const CHANGELOG: ChangelogEntry[] = [
   {
+    id: '2026-11-02-2',
+    date: '2026-11-02',
+    title: 'Annonce à partir de +2',
+    items: ['On ne peut plus annoncer +1\u202F: ça voulait juste dire «\u202Fon gagne\u202F». L’écart démarre à 2 buts.'],
+  },
+  {
     id: '2026-11-02-1',
     date: '2026-11-02',
     title: 'Annonces plus douces',

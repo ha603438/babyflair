@@ -40,7 +40,8 @@ export type Match = {
   comeback?: boolean
   /**
    * « Annonce d'écart » of the Blancs (team A) / Noirs (team B), set before playing: « on gagne d'au moins N buts ».
-   * An integer in 1..target; absent or null = no announcement. Rated by the engine (BetOutcome in MatchResult.bets).
+   * An integer in 2..target (MIN_BET); absent or null = no announcement. Rated by the engine (BetOutcome in
+   * MatchResult.bets).
    */
   betA?: number | null
   betB?: number | null
@@ -181,7 +182,7 @@ export type MatchPlayerResult = {
 /** A team's « annonce d'écart » as rated by the engine (src/rating/engine.ts, rateBet). */
 export type BetOutcome = {
   team: Team
-  /** Announced minimum winning margin, 1..target. */
+  /** Announced minimum winning margin, 2..target (MIN_BET, src/bets.ts). */
   n: number
   /** Pre-match chance of success (0..1) under the engine's independent-goals model, from the team's expectation. */
   chance: number
@@ -223,7 +224,7 @@ export type Draft = {
   lastSavedMatchId?: MatchId
   /** « Comeback » box under the score; only true while the score is a 5-4 in 5, cleared by any other change. */
   comeback?: boolean
-  /** « Annoncer un écart » of each team (1..target), on a complete roster only; absent = none; a team change resets. */
+  /** « Annoncer un écart » of each team (2..target), on a complete roster only; absent = none; a team change resets. */
   betA?: number | null
   betB?: number | null
 }

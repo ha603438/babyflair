@@ -6,8 +6,11 @@ import { fmtDelta, fmtPercent, plural } from './format'
 import { DEFAULT_CONFIG, shortCut } from './rating/engine'
 import type { BetOutcome, Match, Score, Target, Team } from './types'
 
+/** The smallest announcement: « +1 » would only mean « on gagne », so the stepper starts at 2 goals. */
+export const MIN_BET = 2
+
 /** The stepper's value when « Annoncer un écart » is tapped. */
-export const DEFAULT_BET = 2
+export const DEFAULT_BET = MIN_BET
 
 /** U+202F before « : » and « % » (French typography, spec §7). */
 const NNBSP = ' '
@@ -21,21 +24,24 @@ export type Announcement = { team: Team; n: number }
 type BetFields = Pick<Match, 'betA' | 'betB'>
 type ScoreFields = Pick<Match, 'target' | 'scoreA' | 'scoreB'>
 
-/** A stored or received announcement: an integer ≥ 1 is kept, clamped to the target; anything else means none. */
+/**
+ * A stored or received announcement: an integer ≥ MIN_BET is kept, clamped to the target; anything else means none
+ * (an old « +1 », only « on gagne », is dropped).
+ */
 export function readBet(raw: unknown, target: Target): number | undefined {
-  if (typeof raw !== 'number' || !Number.isInteger(raw) || raw < 1) return undefined
+  if (typeof raw !== 'number' || !Number.isInteger(raw) || raw < MIN_BET) return undefined
   return Math.min(raw, target)
 }
 
-/** The stepper's range 1..target; null (no announcement) for null, undefined or a non-number. */
+/** The stepper's range MIN_BET..target; null (no announcement) for null, undefined or a non-number. */
 export function clampBet(n: number | null | undefined, target: Target): number | null {
   if (n === null || n === undefined || !Number.isFinite(n)) return null
-  return Math.min(target, Math.max(1, Math.round(n)))
+  return Math.min(target, Math.max(MIN_BET, Math.round(n)))
 }
 
 function isValidBet(n: number | null | undefined, target: Target): boolean {
   if (n === null || n === undefined) return true
-  return Number.isInteger(n) && n >= 1 && n <= target
+  return Number.isInteger(n) && n >= MIN_BET && n <= target
 }
 
 /** The announcement of one team (null when it announced nothing). */

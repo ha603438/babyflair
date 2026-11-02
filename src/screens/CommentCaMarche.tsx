@@ -82,7 +82,8 @@ const SECTIONS: Section[] = [
   {
     title: 'Annonces',
     text:
-      `Avant de jouer, chaque équipe peut annoncer «${NNBSP}on gagne d’au moins N buts${NNBSP}»${NNBSP}: sur la ` +
+      `Avant de jouer, chaque équipe peut annoncer «${NNBSP}on gagne d’au moins N buts${NNBSP}» (2 au minimum, ` +
+      `+1 voudrait juste dire «${NNBSP}on gagne${NNBSP}»)${NNBSP}: sur la ` +
       `feuille de match, «${NNBSP}🎯 Annoncer un écart${NNBSP}» sous son équipe (couilles sur la table, donc). Tout ` +
       `dépend des chances de réussir, calculées d’après le classement du match (1V1 en 1 contre 1, 2V2 mixte en 2 ` +
       `contre 2). Réussie (victoire avec au moins N buts d’écart)${NNBSP}: chacun de ses joueurs gagne en plus 16 × ` +

@@ -342,13 +342,13 @@ function readMatch(raw: unknown, position: number, playerIds: Set<PlayerId>): { 
 
 type BetsRead = { ok: true; fields: Pick<Match, 'betA' | 'betB'> } | ImportKo
 
-// Optional (older exports have none); null means no announcement. An integer ≥ 1 is clamped to the target (the same
-// rule as a change of target), anything else rejects the file.
+// Optional (older exports have none); null means no announcement. An integer ≥ 2 is clamped to the target (the same
+// rule as a change of target), an old « +1 » (allowed before 2026-11-02) is dropped, anything else rejects the file.
 function readImportBets(raw: Record<string, unknown>, target: Target, label: string): BetsRead {
   const fields: Pick<Match, 'betA' | 'betB'> = {}
   for (const [key, side] of [['betA', 'Blancs'], ['betB', 'Noirs']] as const) {
     const value = raw[key]
-    if (value === undefined || value === null) continue
+    if (value === undefined || value === null || value === 1) continue
     const n = readBet(value, target)
     if (n === undefined) return ko(`${label} : annonce des ${side} invalide (${String(value)}).`)
     fields[key] = n

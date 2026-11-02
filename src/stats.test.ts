@@ -578,6 +578,9 @@ describe('validateImport', () => {
     expectKo(validateImport(withMatch(validFile(), 0, { betA: 0 })), /Match n°1 : annonce des Blancs invalide \(0\)/)
     expectKo(validateImport(withMatch(validFile(), 1, { betB: 'deux' })), /Match n°2 : annonce des Noirs invalide/)
     expectKo(validateImport(withMatch(validFile(), 1, { betB: 1.5 })), /annonce des Noirs invalide/)
+    const old = validateImport(withMatch(validFile(), 1, { betA: 1 }))
+    expectOk(old)
+    expect('betA' in old.matches[1]).toBe(false)
   })
 
   it('keeps a comeback on a 5-4 in 5 and round-trips it through an export', () => {

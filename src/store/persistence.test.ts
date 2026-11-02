@@ -284,7 +284,7 @@ describe('comeback', () => {
 })
 
 describe('announcements', () => {
-  it('normaliseStore keeps integers ≥ 1 clamped to the target and drops anything else', () => {
+  it('normaliseStore keeps integers ≥ 2 clamped to the target and drops anything else, an old +1 too', () => {
     const match = {
       id: 'm1',
       seq: 1,
@@ -306,7 +306,7 @@ describe('announcements', () => {
       ],
     })
     expect(store?.matches.map((m) => [m.betA, m.betB])).toEqual([
-      [3, 1],
+      [3, undefined],
       [5, undefined],
       [undefined, undefined],
       [undefined, undefined],

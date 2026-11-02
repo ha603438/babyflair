@@ -13,6 +13,7 @@ import {
   draftBetShort,
   draftBetSucceeds,
   goalsLabel,
+  MIN_BET,
   readBet,
   shortCutText,
   withValidBets,
@@ -37,17 +38,19 @@ const MATCH: Match = {
 }
 
 describe('reading and clamping announcements', () => {
-  it('readBet keeps integers ≥ 1, clamped to the target, and reads anything else as none', () => {
+  it('readBet keeps integers ≥ 2, clamped to the target, and reads anything else as none (an old +1 too)', () => {
     expect(readBet(3, 10)).toBe(3)
     expect(readBet(7, 5)).toBe(5)
-    expect(readBet(1, 5)).toBe(1)
-    for (const bad of [0, -2, 2.5, '3', null, undefined, Number.NaN, true]) expect(readBet(bad, 10)).toBeUndefined()
+    expect(readBet(2, 5)).toBe(2)
+    expect(MIN_BET).toBe(2)
+    for (const bad of [1, 0, -2, 2.5, '3', null, undefined, Number.NaN, true]) expect(readBet(bad, 10)).toBeUndefined()
   })
 
-  it('clampBet keeps the stepper in 1..target', () => {
+  it('clampBet keeps the stepper in 2..target', () => {
     expect(clampBet(null, 10)).toBeNull()
     expect(clampBet(undefined, 10)).toBeNull()
-    expect(clampBet(0, 10)).toBe(1)
+    expect(clampBet(0, 10)).toBe(2)
+    expect(clampBet(1, 10)).toBe(2)
     expect(clampBet(11, 10)).toBe(10)
     expect(clampBet(7, 5)).toBe(5)
     expect(clampBet(4, 5)).toBe(4)

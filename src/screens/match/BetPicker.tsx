@@ -1,5 +1,14 @@
 import { Fragment } from 'react'
-import { betOddsParts, DEFAULT_BET, draftBetShort, draftBetSucceeds, goalsLabel, shortCutText, SIDE_NAME } from '../../bets'
+import {
+  betOddsParts,
+  DEFAULT_BET,
+  draftBetShort,
+  draftBetSucceeds,
+  goalsLabel,
+  MIN_BET,
+  shortCutText,
+  SIDE_NAME,
+} from '../../bets'
 import { fmtDelta } from '../../format'
 import { betOutlook } from '../../rating'
 import type { DraftAction } from '../../store'
@@ -82,7 +91,7 @@ function BetToggle({ team, dispatch }: Pick<SideProps, 'team' | 'dispatch'>) {
   )
 }
 
-/** The compact stepper « Gagner d'au moins N buts » (1..target) with its live stake and « Retirer ». */
+/** The compact stepper « Gagner d'au moins N buts » (MIN_BET..target) with its live stake and « Retirer ». */
 function BetStepper({ team, n, draft, dispatch, expected }: SideProps & { n: number }) {
   const outlook = betOutlook(expected, draft.target, n)
   const set = (value: number | null) => dispatch({ type: 'setBet', team, n: value })
@@ -95,7 +104,7 @@ function BetStepper({ team, n, draft, dispatch, expected }: SideProps & { n: num
           type="button"
           className="bet__step"
           aria-label="Un but de moins"
-          disabled={n <= 1}
+          disabled={n <= MIN_BET}
           onClick={() => set(n - 1)}
         >
           −

@@ -349,11 +349,12 @@ describe('announcements (« Annoncer un écart »)', () => {
   const full = (): Draft => pickAll(initialDraft(SETTINGS), 'a', 'b', 'c', 'd') // 2v2 in 10, score step
   const announced = (): Draft => run(full(), { type: 'setBet', team: 'A', n: 4 }, { type: 'setBet', team: 'B', n: 2 })
 
-  it('sets, clamps to 1..target and removes each team independently', () => {
+  it('sets, clamps to 2..target and removes each team independently', () => {
     const d = announced()
     expect([d.betA, d.betB]).toEqual([4, 2])
     expect(draftReducer(d, { type: 'setBet', team: 'A', n: 14 }).betA).toBe(10)
-    expect(draftReducer(d, { type: 'setBet', team: 'B', n: 0 }).betB).toBe(1)
+    expect(draftReducer(d, { type: 'setBet', team: 'B', n: 0 }).betB).toBe(2)
+    expect(draftReducer(d, { type: 'setBet', team: 'A', n: 1 }).betA).toBe(2)
     const removed = draftReducer(d, { type: 'setBet', team: 'A', n: null })
     expect('betA' in removed).toBe(false)
     expect(removed.betB).toBe(2)
