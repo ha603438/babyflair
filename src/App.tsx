@@ -7,7 +7,7 @@ import type { TabName } from './components/TabBar'
 import { Toast } from './components/Toast'
 import { IconButton } from './components/Button'
 import { Help, Settings } from './components/icons'
-import { hrefOf, navigate, useRoute } from './router'
+import { hrefOf, useRoute } from './router'
 import { applyUpdate, checkForUpdate, isUpdateAvailable, UPDATE_TOASTS } from './update'
 import type { Route } from './router'
 import { AppStateProvider, isGateNeeded, useAppState } from './store'
@@ -80,20 +80,6 @@ function Screen({ route }: { route: Route }): ReactNode {
   }
 }
 
-/** « ＋ Match » in the tab-root headers: the shortest way to record a match from anywhere. */
-function NewMatchShortcut() {
-  const { draft, draftDispatch } = useAppState()
-  function open(): void {
-    if (draft.step === 'done') draftDispatch({ type: 'reset' })
-    navigate({ name: 'match' })
-  }
-  return (
-    <button type="button" className="header-newmatch" onClick={open} aria-label="Nouveau match">
-      <span aria-hidden="true">＋</span> Match
-    </button>
-  )
-}
-
 /** Stats tab roots (Récap, Courbes, Hall of Flair): the gear to Réglages, where the players are managed. */
 function SettingsLink() {
   return (
@@ -118,7 +104,6 @@ function AppHeader({ route }: { route: Route }) {
         <Header
           onBrandDoubleTap={onBrandDoubleTap}
           title="Classement"
-          left={<NewMatchShortcut />}
           right={
             <IconButton label="Flair Play, les règles" href={hrefOf({ name: 'comment-ca-marche' })}>
               <Help />
@@ -144,7 +129,7 @@ function AppHeader({ route }: { route: Route }) {
     case 'match-edit':
       return <Header title="Modifier le match" back />
     case 'historique':
-      return <Header title="Historique" onBrandDoubleTap={onBrandDoubleTap} left={<NewMatchShortcut />} />
+      return <Header title="Historique" onBrandDoubleTap={onBrandDoubleTap} />
     case 'match-detail':
       return <Header title="Match" back />
     case 'joueurs':
@@ -160,9 +145,9 @@ function AppHeader({ route }: { route: Route }) {
     case 'comment-ca-marche':
       return <Header title="Flair Play" back />
     case 'nouveautes':
-      return <Header title="Nouveautés" onBrandDoubleTap={onBrandDoubleTap} left={<NewMatchShortcut />} />
+      return <Header title="Nouveautés" onBrandDoubleTap={onBrandDoubleTap} />
     case 'journal':
-      return <Header title={JOURNAL_COPY.title} onBrandDoubleTap={onBrandDoubleTap} left={<NewMatchShortcut />} />
+      return <Header title={JOURNAL_COPY.title} onBrandDoubleTap={onBrandDoubleTap} />
     case 'stats':
     case 'courbes':
     case 'top':
@@ -170,7 +155,6 @@ function AppHeader({ route }: { route: Route }) {
         <Header
           title="Stats"
           onBrandDoubleTap={onBrandDoubleTap}
-          left={<NewMatchShortcut />}
           right={<SettingsLink />}
         />
       )
@@ -215,6 +199,11 @@ function AppShell() {
     return () => document.removeEventListener('visibilitychange', check)
   }, [showToast])
 
+  // The round « + » after a saved match (its result view): a fresh sheet, not the result again.
+  function onSelect(tab: TabName) {
+    if (tab === 'match' && draft.step === 'done') draftDispatch({ type: 'reset' })
+  }
+
   // Tapping the active tab scrolls to top; on « Match » it also resets an empty draft (spec §2).
   function onReselect(tab: TabName) {
     mainRef.current?.scrollTo({ top: 0 })
@@ -229,7 +218,7 @@ function AppShell() {
       <main ref={mainRef}>
         <Screen route={route} />
       </main>
-      <TabBar current={route.name} onReselect={onReselect} newsBadge={newsBadge} />
+      <TabBar current={route.name} onSelect={onSelect} onReselect={onReselect} newsBadge={newsBadge} />
       <Toast toast={toast.current} onDismiss={toast.dismiss} />
       <CallWatcher route={route} />
     </div>

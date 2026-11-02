@@ -15,8 +15,6 @@ export type HeaderProps = {
   onBrandDoubleTap?: () => void
   /** Tab roots only: a full-width row under the title (the Match screen puts its 1v1 | 2v2 control there). */
   below?: ReactNode
-  /** Tab roots only: a compact action on the left (the « ＋ Match » shortcut). */
-  left?: ReactNode
 }
 
 /** « BabyFlair » with the B in blue and the R in red, like the logo. */
@@ -43,7 +41,7 @@ function PushedHeader({ title, right }: Pick<HeaderProps, 'title' | 'right'>) {
 }
 
 /** Tab roots: the brand (mark + wordmark) centred on top, the screen title under it, the right slot on the side. */
-export function Header({ title, back: isBack = false, right, onBrandDoubleTap, below, left }: HeaderProps) {
+export function Header({ title, back: isBack = false, right, onBrandDoubleTap, below }: HeaderProps) {
   if (isBack) return <PushedHeader title={title} right={right} />
   return (
     <header className="header header-root">
@@ -53,7 +51,6 @@ export function Header({ title, back: isBack = false, right, onBrandDoubleTap, b
           <Wordmark />
         </div>
         <h1 className="header-title">{title}</h1>
-        {left && <div className="header-left">{left}</div>}
         <div className="header-right">{right}</div>
         {below && <div className="header-below">{below}</div>}
       </div>

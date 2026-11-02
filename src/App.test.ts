@@ -80,7 +80,7 @@ describe('App shell', () => {
       const html = renderAt(hash)
       expect(html).toContain('class="header header-root"')
       expect(html).toContain('<h1 class="header-title">Stats</h1>')
-      expect(html).toContain('aria-label="Nouveau match"')
+      expect(html).not.toContain('header-newmatch')
       expect(html).toContain('href="#/reglages" aria-label="Réglages"')
       expect(html).not.toContain('aria-label="Retour"')
       const tabs = html.match(/<a [^>]*class="tab[^"]*"[^>]*>/g) ?? []

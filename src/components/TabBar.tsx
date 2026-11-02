@@ -7,6 +7,8 @@ export type TabName = 'classement' | 'match' | 'historique' | 'stats' | 'nouveau
 
 export type TabBarProps = {
   current: Route['name']
+  /** Fired on every tap, before the link navigates (the round « + » resets a saved match's result view). */
+  onSelect?: (tab: TabName) => void
   /** Fired when the user taps the tab of the screen he is already on (scroll to top / reset an empty draft, §2). */
   onReselect?: (tab: TabName) => void
   /** Unread count shown on the Nouveautés tab (hidden when 0). */
@@ -67,8 +69,13 @@ function sectionOf(name: Route['name']): TabName {
   return 'classement'
 }
 
-export function TabBar({ current, onReselect, newsBadge = 0 }: TabBarProps) {
+export function TabBar({ current, onSelect, onReselect, newsBadge = 0 }: TabBarProps) {
   const active = sectionOf(current)
+
+  function onTap(tab: TabName, isSameScreen: boolean): void {
+    onSelect?.(tab)
+    if (isSameScreen) onReselect?.(tab)
+  }
 
   return (
     <nav className="tabbar" aria-label="Navigation principale">
@@ -82,7 +89,7 @@ export function TabBar({ current, onReselect, newsBadge = 0 }: TabBarProps) {
               className={tabClass(tab, isActive)}
               href={hrefOf(tab.route)}
               aria-current={isActive ? 'page' : undefined}
-              onClick={isSameScreen && onReselect ? () => onReselect(tab.name) : undefined}
+              onClick={() => onTap(tab.name, isSameScreen)}
             >
               <TabContent tab={tab} newsBadge={newsBadge} />
             </a>
