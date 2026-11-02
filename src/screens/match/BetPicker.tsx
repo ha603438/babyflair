@@ -1,5 +1,5 @@
 import { Fragment } from 'react'
-import { betOddsParts, DEFAULT_BET, draftBetSucceeds, goalsLabel, SIDE_NAME } from '../../bets'
+import { betOddsParts, DEFAULT_BET, draftBetShort, draftBetSucceeds, goalsLabel, shortCutText, SIDE_NAME } from '../../bets'
 import { fmtDelta } from '../../format'
 import { betOutlook } from '../../rating'
 import type { DraftAction } from '../../store'
@@ -27,9 +27,12 @@ function betIn(draft: Draft, team: Team): number | null {
 
 type Outlook = ReturnType<typeof betOutlook>
 
-/** « 23 % · +12 si réussi · −4 sinon », each part kept on one line so a narrow column wraps between them. */
-function Odds({ outlook }: { outlook: Outlook }) {
-  const parts = betOddsParts(outlook)
+/**
+ * « 23 % · +12 si réussi · −4 si perdu · −20 % par but manquant », each part kept on one line so a narrow column wraps
+ * between them.
+ */
+function Odds({ outlook, target }: { outlook: Outlook; target: Target }) {
+  const parts = betOddsParts(outlook, target)
   return (
     <p className="bet__odds">
       {parts.map((part, index) => (
@@ -44,11 +47,22 @@ function Odds({ outlook }: { outlook: Outlook }) {
 
 type StatusProps = { score: Score | null; target: Target; team: Team; n: number; outlook: Outlook }
 
-/** Once the score is chosen: « ✓ Réussie : +12 » or « ✗ Ratée : −4 » (the preview below has the exact totals). */
+/**
+ * Once the score is chosen: « ✓ Réussie : +12 », « ✗ Ratée à 1 but près : victoire −20 % » or « ✗ Ratée : −4 » (the
+ * preview below has the exact totals).
+ */
 function Status({ score, target, team, n, outlook }: StatusProps) {
   if (score === null) return null
   if (draftBetSucceeds(score, target, team, n)) {
     return <p className="bet__status bet__status--won">✓ Réussie{' '}: {fmtDelta(outlook.success)}</p>
+  }
+  const short = draftBetShort(score, target, team, n)
+  if (short > 0) {
+    return (
+      <p className="bet__status bet__status--short">
+        ✗ Ratée à {goalsLabel(short)} près{' '}: victoire {shortCutText(short, target)}
+      </p>
+    )
   }
   return <p className="bet__status bet__status--lost">✗ Ratée{' '}: {fmtDelta(outlook.failure)}</p>
 }
@@ -99,7 +113,7 @@ function BetStepper({ team, n, draft, dispatch, expected }: SideProps & { n: num
           +
         </button>
       </div>
-      <Odds outlook={outlook} />
+      <Odds outlook={outlook} target={draft.target} />
       <Status score={draft.score} target={draft.target} team={team} n={n} outlook={outlook} />
       <button type="button" className="bet__remove" onClick={() => set(null)}>
         Retirer

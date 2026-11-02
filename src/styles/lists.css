@@ -662,6 +662,11 @@
   border-left-color: var(--neg);
 }
 
+/* Won, but by less than announced: only a cut of the win. */
+.ms-bet--short {
+  border-left-color: var(--warn);
+}
+
 .ms-bet__title {
   font-size: var(--fs-label);
   font-weight: 600;

@@ -187,9 +187,12 @@ export type BetOutcome = {
   chance: number
   /** The team won with target − loser goals ≥ n. */
   success: boolean
+  /** Goals missing on a win by less than n (0 on a success or a loss). */
+  short: number
   /**
    * Points added to EACH member of the team, on top of the normal delta (already included in MatchPlayerResult.delta):
-   * betStake × (1 − chance) on a success, −betStake × chance otherwise, rounded to 0.001.
+   * betStake × (1 − chance) on a success, −betStake × chance on a loss, and on a win by less than n only a cut of the
+   * team's base win (short / target of it: the win still earns points), rounded to 0.001.
    */
   delta: number
 }

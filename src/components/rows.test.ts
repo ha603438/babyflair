@@ -347,8 +347,8 @@ describe('announcements (« annonces d’écart »)', () => {
   // Chloé & Dan (Blancs) announced +3 and lost 8-10; Alice & Bob (Noirs) announced +2 and won by 2.
   const announced: Match = { ...match, betA: 3, betB: 2 }
   const bets: MatchResult['bets'] = [
-    { team: 'A', n: 3, chance: 0.2, success: false, delta: -3.2 },
-    { team: 'B', n: 2, chance: 0.5, success: true, delta: 8 },
+    { team: 'A', n: 3, chance: 0.2, success: false, short: 0, delta: -3.2 },
+    { team: 'B', n: 2, chance: 0.5, success: true, short: 0, delta: 8 },
   ]
 
   it('HistoryRow shows one pill per announcement, Blancs first', () => {

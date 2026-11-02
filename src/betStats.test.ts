@@ -44,7 +44,7 @@ function betDelta(success: boolean, chance: number): number {
 }
 
 function outcome(team: Team, success: boolean, chance: number, n = 3): BetOutcome {
-  return { team, n, chance, success, delta: betDelta(success, chance) }
+  return { team, n, chance, success, short: 0, delta: betDelta(success, chance) }
 }
 
 /** A replay result holding only the announcements, in the order given (byMatch is in replay order). */

@@ -39,7 +39,7 @@ const SECTIONS: Section[] = [
       'Plus le résultat était improbable, plus ça bouge : 16 points de base pour un match à 50/50. Chaque but ' +
       `d'écart ajoute 10${NNBSP}% : un 10-9 compte ×1,1, un 10-5 ×1,5, un 10-0 ×2 ; un 5-0 compte ×1,5, parce ` +
       "qu'une partie en 5 en dit moins qu'une partie en 10. Gagner fait toujours monter, perdre fait toujours " +
-      `descendre (sauf annonce ratée, voir «${NNBSP}Annonces${NNBSP}»).`,
+      'descendre, annonces comprises.',
     box: WHY_LINE,
   },
   {
@@ -83,19 +83,20 @@ const SECTIONS: Section[] = [
     title: 'Annonces',
     text:
       `Avant de jouer, chaque équipe peut annoncer «${NNBSP}on gagne d’au moins N buts${NNBSP}»${NNBSP}: sur la ` +
-      `feuille de match, «${NNBSP}🎯 Annoncer un écart${NNBSP}» sous son équipe (couilles sur la table, donc). Si ` +
-      `elle gagne avec au moins N buts d’écart, chacun de ses joueurs gagne un bonus${NNBSP}; sinon (défaite, ou ` +
-      `victoire trop courte), chacun perd des points. Tout dépend des chances de réussir, calculées d’après le ` +
-      `classement du match (1V1 en 1 contre 1, 2V2 mixte en 2 contre 2)${NNBSP}: réussie, l’annonce rapporte 16 × ` +
-      `les chances de la rater${NNBSP}; ratée, elle coûte 16 × les chances de la réussir. Une annonce facile ` +
-      `rapporte peu et coûte cher, une annonce osée rapporte gros et ` +
-      `coûte peu${NNBSP}: en moyenne, annoncer ne rapporte rien, ça ne paie que si vous faites mieux que prévu. ` +
-      `L’équipe d’en face n’est pas touchée, et l’annonce s’ajoute telle quelle (pas de partage entre coéquipiers, ` +
-      `ni ×débutant, ni marge, ni bonus). Exemple${NNBSP}: deux équipes de même niveau en 10, les Blancs annoncent ` +
-      `+4, soit 23${NNBSP}% de chances. Gagné 10-6 ou mieux${NNBSP}: +12,4 chacun en plus${NNBSP}; sinon${NNBSP}: ` +
-      `−3,6 chacun. Le détail du calcul est dans chaque match de l’historique. Les stats des annonces sont sur la ` +
-      `carte «${NNBSP}🎯 Annonces${NNBSP}» des fiches joueur et duo, dans la section «${NNBSP}Couilles sur la ` +
-      `table${NNBSP}» du Hall of Flair et dans l’«${NNBSP}Annonce du jour${NNBSP}» du Récap.`,
+      `feuille de match, «${NNBSP}🎯 Annoncer un écart${NNBSP}» sous son équipe (couilles sur la table, donc). Tout ` +
+      `dépend des chances de réussir, calculées d’après le classement du match (1V1 en 1 contre 1, 2V2 mixte en 2 ` +
+      `contre 2). Réussie (victoire avec au moins N buts d’écart)${NNBSP}: chacun de ses joueurs gagne en plus 16 × ` +
+      `les chances de la rater, donc une annonce osée rapporte gros. Victoire trop courte${NNBSP}: pas de ` +
+      `pénalité, la victoire rapporte juste un peu moins, 20${NNBSP}% de ses points de base en moins par but ` +
+      `manquant (10${NNBSP}% dans une partie en 10)${NNBSP}; une victoire ne fait jamais perdre de points. ` +
+      `Défaite${NNBSP}: chacun perd en plus 16 × les chances de la réussir. L’équipe d’en face n’est pas touchée, ` +
+      `et le bonus ou la pénalité s’ajoute tel quel (pas de partage entre coéquipiers, ni ×débutant). ` +
+      `Exemple${NNBSP}: deux équipes de même niveau en 10, les Blancs annoncent +4, soit 23${NNBSP}% de chances. ` +
+      `Gagné 10-6 ou mieux${NNBSP}: +12,4 chacun en plus${NNBSP}; gagné 10-8 (2 buts manquants)${NNBSP}: +7,7 au ` +
+      `lieu de +9,6${NNBSP}; perdu${NNBSP}: −3,6 chacun en plus. Le détail du calcul est dans chaque match de ` +
+      `l’historique. Les stats des annonces sont sur la carte «${NNBSP}🎯 Annonces${NNBSP}» des fiches joueur et ` +
+      `duo, dans la section «${NNBSP}Couilles sur la table${NNBSP}» du Hall of Flair et dans l’«${NNBSP}Annonce du ` +
+      `jour${NNBSP}» du Récap.`,
     box: BET_WHY_LINE,
   },
   {

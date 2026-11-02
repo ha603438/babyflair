@@ -400,6 +400,11 @@
   color: var(--neg);
 }
 
+/* Won, but by less than announced: the win only earns a bit less. */
+.bet__status--short {
+  color: var(--warn);
+}
+
 .bet__remove {
   min-height: 32px;
   padding: 0 var(--s2);

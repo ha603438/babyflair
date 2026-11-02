@@ -47,6 +47,7 @@ export {
   goalProbability,
   marginMultiplier,
   rookieMultiplier,
+  shortCut,
   whyFr as whyLine,
 } from './engine'
 export type { Config, PlayerDelta } from './engine'
@@ -145,7 +146,7 @@ function betsOf(deltas: PlayerDelta[]): BetOutcome[] {
   for (const team of ['A', 'B'] as const) {
     const bet = deltas.find((d) => d.team === team)?.bet ?? null
     if (bet === null) continue
-    bets.push({ team, n: bet.n, chance: bet.chance, success: bet.success, delta: bet.delta })
+    bets.push({ team, n: bet.n, chance: bet.chance, success: bet.success, short: bet.short, delta: bet.delta })
   }
   return bets
 }

@@ -106,7 +106,7 @@ function betPoints(
 const RECORD: BetRecord = { made: 3, won: 2, points: 8.6, best: null, faced: 2, broken: 1 }
 
 function rated(n: number, chance: number): RatedBet {
-  return { match: MATCHES[0], bet: { team: 'A', n, chance, success: true, delta: 12.4 } }
+  return { match: MATCHES[0], bet: { team: 'A', n, chance, success: true, short: 0, delta: 12.4 } }
 }
 
 describe('« 🎯 Annonces » copy', () => {

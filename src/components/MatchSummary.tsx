@@ -125,6 +125,7 @@ function PlayerLine({ entry, player, rookie, why, movement, position }: PlayerLi
 
 function betClass(bet: BetOutcome): string {
   if (bet.success) return 'ms-bet ms-bet--won'
+  if (bet.short > 0) return 'ms-bet ms-bet--short'
   return 'ms-bet ms-bet--lost'
 }
 

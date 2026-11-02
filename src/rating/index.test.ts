@@ -668,8 +668,8 @@ describe('announcements', () => {
     const chanceA = betChance(duo.expectedA, 5, 2)
     const chanceB = betChance(duo.expectedB, 5, 1)
     expect(duo.bets).toEqual([
-      { team: 'A', n: 2, chance: chanceA, success: true, delta: round3(16 * (1 - chanceA)) },
-      { team: 'B', n: 1, chance: chanceB, success: false, delta: round3(-16 * chanceB) },
+      { team: 'A', n: 2, chance: chanceA, success: true, short: 0, delta: round3(16 * (1 - chanceA)) },
+      { team: 'B', n: 1, chance: chanceB, success: false, short: 0, delta: round3(-16 * chanceB) },
     ])
     duo.perPlayer.forEach((entry, i) => {
       const bet = duo.bets.find((b) => b.team === entry.team)?.delta ?? 0

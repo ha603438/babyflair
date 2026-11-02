@@ -43,7 +43,7 @@ export type Config = {
   startRating: number;
   fannyBonus: number; // extra multiplier on the match when the loser scored 0 (5-0, 10-0)
   comebackBonus: number; // extra multiplier on a 5-4 flagged as a comeback
-  betStake: number; // an announcement pays betStake × (1 - p) to each member on a success, costs betStake × p otherwise
+  betStake: number; // an announcement pays betStake × (1 - p) to each member on a success, costs betStake × p on a loss
 };
 
 export const DEFAULT_CONFIG: Config = {
@@ -65,7 +65,8 @@ export const DEFAULT_CONFIG: Config = {
 };
 
 // A team's announcement as rated: n = announced minimum margin, chance = p, delta = the points it adds to EACH member.
-export type BetResult = { n: number; chance: number; success: boolean; delta: number };
+// short = goals missing on a win by less than n (0 on a success or a loss): such a win only earns a bit less.
+export type BetResult = { n: number; chance: number; success: boolean; short: number; delta: number };
 
 export type PlayerState = { rating: number; matches: number; wins: number; losses: number; lastPlayedAt: number | null };
 export type RatingsState = Record<string, PlayerState>;
@@ -184,8 +185,8 @@ export function betChance(expected: number, target: Target, n: number): number {
   return raceWin(goalProbability(expected, target), target, target - n);
 }
 
-// What an announcement of `n` is worth to each member: +stake × (1 - p) if it works, -stake × p otherwise. Zero
-// expected value under the model, so announcing cannot be gamed.
+// What an announcement of `n` is worth to each member: +stake × (1 - p) if it works, -stake × p if the match is lost.
+// A win by less than n is cut instead (shortCut), never below zero: a win never costs points.
 export function betOutlook(
   expected: number,
   target: Target,
@@ -196,20 +197,31 @@ export function betOutlook(
   return { chance, success: config.betStake * (1 - chance), failure: -config.betStake * chance };
 }
 
+// Share of the team's base win taken back per goal missing on a win by less than the announcement: 1 / target
+// (20 % in 5, 10 % in 10). At most (target - 1) / target, and a member's gain is at least 2 × shareMin = 90 % of the
+// base, so the win stays positive.
+export function shortCut(short: number, target: Target): number {
+  return short / target;
+}
+
 // The announcement of one side, rated: success = that side won with a margin (target - loser goals) of at least n.
-// Added as is to each member: no teammate split, rookie, margin or fanny / comeback multiplier.
+// Success and loss amounts are added as is to each member: no teammate split, rookie, margin or fanny / comeback
+// multiplier. A win by less than n costs shortCut × `base`, the side's per-member base delta (K × G × bonus × (1 - E)),
+// also the same for each member.
 export function rateBet(
   n: number | null | undefined,
-  side: { won: boolean; expected: number },
+  side: { won: boolean; expected: number; base: number },
   match: Pick<Match, 'target' | 'scoreA' | 'scoreB'>,
   config: Config = DEFAULT_CONFIG,
 ): BetResult | null {
   if (n === null || n === undefined) return null;
   const outlook = betOutlook(side.expected, match.target, n, config);
+  const rated = { n, chance: outlook.chance };
+  if (!side.won) return { ...rated, success: false, short: 0, delta: round3(outlook.failure) };
   const margin = match.target - Math.min(match.scoreA, match.scoreB);
-  const success = side.won && margin >= n;
-  if (success) return { n, chance: outlook.chance, success, delta: round3(outlook.success) };
-  return { n, chance: outlook.chance, success, delta: round3(outlook.failure) };
+  if (margin >= n) return { ...rated, success: true, short: 0, delta: round3(outlook.success) };
+  const short = n - margin;
+  return { ...rated, success: false, short, delta: round3(-side.base * shortCut(short, match.target)) };
 }
 
 // The points an announcement adds to each member of its team (0 without one).
@@ -410,15 +422,19 @@ export function whyFr(d: PlayerDelta): string {
   if (d.teamSize === 2) parts.push(`part ${Math.round(d.share * 100)} %`);
   if (d.bonusKind !== null) parts.push(`${d.bonusKind} ×${frTrim(d.bonus)}`);
   if (d.rookieK > 1) parts.push(`débutant ×${fr(d.rookieK, 1)}`);
-  if (d.bet) parts.push(betWhy(d.bet));
+  if (d.bet) parts.push(betWhy(d.bet, d.target));
   const sign = d.delta >= 0 ? '+' : '−';
   return `${parts.join(' · ')} → ${sign}${fr(Math.abs(d.delta), 1)}`;
 }
 
-// « annonce +4 réussie (23 % de chances) +12,4 » / « annonce +4 ratée (23 % de chances) −3,6 »
-function betWhy(bet: BetResult): string {
+// « annonce +4 réussie (23 % de chances) +12,4 » / « annonce +4 ratée (23 % de chances) −3,6 » on a loss /
+// « annonce +4 ratée à 2 buts près (−20 % sur la victoire) −1,9 » on a win by less.
+function betWhy(bet: BetResult, target: Target): string {
   const chance = `(${Math.round(bet.chance * 100)} % de chances)`;
   const points = Math.abs(bet.delta).toFixed(1).replace('.', ',');
   if (bet.success) return `annonce +${bet.n} réussie ${chance} +${points}`;
-  return `annonce +${bet.n} ratée ${chance} −${points}`;
+  if (bet.short === 0) return `annonce +${bet.n} ratée ${chance} −${points}`;
+  const goals = bet.short === 1 ? '1 but' : `${bet.short} buts`;
+  const cut = `(−${Math.round(shortCut(bet.short, target) * 100)} % sur la victoire)`;
+  return `annonce +${bet.n} ratée à ${goals} près ${cut} −${points}`;
 }

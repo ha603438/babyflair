@@ -8,6 +8,7 @@ import {
   betOutlook,
   goalProbability,
   rateBet,
+  shortCut,
   compareRows,
   DEFAULT_CONFIG,
   expectedScore,
@@ -395,7 +396,7 @@ describe('betOutlook / rateBet', () => {
     expect(round3(outlook.failure)).toBe(-11.2)
   })
 
-  it('has a zero expected value under the model, for any stake', () => {
+  it('balances a success against a loss under the model, for any stake', () => {
     for (const [e, target, n] of [[0.5, 10, 4], [0.3, 5, 2], [0.85, 10, 7]] as const) {
       const { chance, success, failure } = betOutlook(e, target, n)
       expect(chance * success + (1 - chance) * failure).toBeCloseTo(0, 12)
@@ -405,14 +406,24 @@ describe('betOutlook / rateBet', () => {
   })
 
   it('succeeds only on a win by at least N, and is null without announcement', () => {
-    const side = { won: true, expected: 0.5 }
+    const side = { won: true, expected: 0.5, base: 10 }
     expect(rateBet(null, side, { target: 10, scoreA: 10, scoreB: 2 })).toBeNull()
     expect(rateBet(undefined, side, { target: 10, scoreA: 10, scoreB: 2 })).toBeNull()
     expect(rateBet(4, side, { target: 10, scoreA: 10, scoreB: 6 })?.success).toBe(true) // exactly 4
     expect(rateBet(4, side, { target: 10, scoreA: 10, scoreB: 7 })?.success).toBe(false) // 3 only
-    expect(rateBet(4, { won: false, expected: 0.5 }, { target: 10, scoreA: 0, scoreB: 10 })?.success).toBe(false)
+    const lost = rateBet(4, { won: false, expected: 0.5, base: -10 }, { target: 10, scoreA: 0, scoreB: 10 })
+    expect(lost).toMatchObject({ success: false, short: 0, delta: -3.636 })
     const fanny = rateBet(5, side, { target: 5, scoreA: 0, scoreB: 5 })
-    expect(fanny).toEqual({ n: 5, chance: 1 / 32, success: true, delta: 15.5 })
+    expect(fanny).toEqual({ n: 5, chance: 1 / 32, success: true, short: 0, delta: 15.5 })
+  })
+
+  it('a win by less only takes back short / target of the base win: 1 / 5 per goal in 5, 1 / 10 in 10', () => {
+    const side = { won: true, expected: 0.5, base: 10 }
+    expect(rateBet(4, side, { target: 10, scoreA: 10, scoreB: 7 })).toMatchObject({ short: 1, delta: -1 })
+    expect(rateBet(4, side, { target: 10, scoreA: 10, scoreB: 9 })).toMatchObject({ short: 3, delta: -3 })
+    expect(rateBet(2, side, { target: 5, scoreA: 4, scoreB: 5 })).toMatchObject({ short: 1, delta: -2 })
+    expect(shortCut(1, 5)).toBe(0.2)
+    expect(shortCut(1, 10)).toBe(0.1)
   })
 })
 
@@ -428,7 +439,7 @@ describe('applyMatch with announcements', () => {
   it('success: equal teams in 10, the Blancs announce +4 and win 10-5 (+12 base, +12,364 announcement each)', () => {
     const { deltas } = applyMatch(EQUAL, { ...base, target: 10, scoreA: 10, scoreB: 5, betA: 4 })
     expect(deltas.map((d) => d.delta)).toEqual([24.364, 24.364, -12, -12])
-    expect(deltas[0].bet).toEqual({ n: 4, chance: betChance(0.5, 10, 4), success: true, delta: 12.364 })
+    expect(deltas[0].bet).toEqual({ n: 4, chance: betChance(0.5, 10, 4), success: true, short: 0, delta: 12.364 })
     expect(deltas[2].bet).toBeNull()
     expect(whyFr(deltas[0])).toBe(
       'Victoire 10-5 (en 10) · 50 % de chances · marge ×1,5 · part 50 % · ' +
@@ -437,11 +448,33 @@ describe('applyMatch with announcements', () => {
     expect(whyFr(deltas[2])).not.toContain('annonce')
   })
 
-  it('failure by a smaller win: 10-7 for +4 costs 3,636 each on top of the win', () => {
+  it('failure by a smaller win: 10-7 for +4, 1 goal short, keeps 90 % of the 10,4 win', () => {
     const { deltas } = applyMatch(EQUAL, { ...base, target: 10, scoreA: 10, scoreB: 7, betA: 4 })
-    expect(deltas.map((d) => d.delta)).toEqual([6.764, 6.764, -10.4, -10.4])
-    expect(deltas[0].bet?.success).toBe(false)
-    expect(whyFr(deltas[0])).toContain(' · annonce +4 ratée (23 % de chances) −3,6 → +6,8')
+    expect(deltas.map((d) => d.delta)).toEqual([9.36, 9.36, -10.4, -10.4])
+    expect(deltas[0].bet).toMatchObject({ success: false, short: 1, delta: -1.04 })
+    expect(whyFr(deltas[0])).toContain(' · annonce +4 ratée à 1 but près (−10 % sur la victoire) −1,0 → +9,4')
+  })
+
+  it('a 5-4 win for +2 (the real case): −20 % of the win, never a loss of points', () => {
+    const { deltas } = applyMatch(EQUAL, { ...base, target: 5, scoreA: 5, scoreB: 4, betA: 2 })
+    const plain = deltasOf(EQUAL, { ...base, target: 5, scoreA: 5, scoreB: 4 })
+    expect(deltas[0].delta).toBeGreaterThan(0)
+    expect(deltas[0].delta).toBeCloseTo(plain[0] * 0.8, 2)
+    expect(whyFr(deltas[0])).toContain('annonce +2 ratée à 1 but près (−20 % sur la victoire)')
+  })
+
+  it('a win stays positive for every announcement, score, teammate share and rookie', () => {
+    const uneven = { a: { rating: 900, matches: 30, wins: 15, losses: 15, lastPlayedAt: 0 }, ...established({ b: 1300, c: 1000, d: 1000 }), b: { rating: 1300, matches: 0, wins: 0, losses: 0, lastPlayedAt: 0 } }
+    for (const target of [5, 10] as const) {
+      for (let loser = 0; loser < target; loser++) {
+        for (let n = 1; n <= target; n++) {
+          for (const state of [EQUAL, uneven]) {
+            const { deltas } = applyMatch(state, { ...base, target, scoreA: target, scoreB: loser, betA: n })
+            for (const d of deltas.slice(0, 2)) expect(d.delta, `${target}-${loser} +${n}`).toBeGreaterThanOrEqual(0)
+          }
+        }
+      }
+    }
   })
 
   it('failure by a loss: the announcement adds to the defeat', () => {
@@ -480,8 +513,8 @@ describe('applyMatch with announcements', () => {
     expect(deltas[0].expected).toBe(eA)
     const chanceA = betChance(eA, 5, 2)
     const chanceB = betChance(1 - eA, 5, 1)
-    expect(deltas[0].bet).toEqual({ n: 2, chance: chanceA, success: true, delta: round3(16 * (1 - chanceA)) })
-    expect(deltas[3].bet).toEqual({ n: 1, chance: chanceB, success: false, delta: round3(-16 * chanceB) })
+    expect(deltas[0].bet).toEqual({ n: 2, chance: chanceA, success: true, short: 0, delta: round3(16 * (1 - chanceA)) })
+    expect(deltas[3].bet).toEqual({ n: 1, chance: chanceB, success: false, short: 0, delta: round3(-16 * chanceB) })
     expect(deltas[3].bet?.chance).toBeCloseTo(1 - eA, 10)
   })
 

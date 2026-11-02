@@ -238,8 +238,8 @@ describe('« Hold-up du jour »', () => {
 
 describe('« Annonce du jour »', () => {
   type Side = 'A' | 'B'
-  const won = (team: Side, n: number, chance: number): BetOutcome => ({ team, n, chance, success: true, delta: 1 })
-  const lost = (team: Side, n: number, chance: number): BetOutcome => ({ team, n, chance, success: false, delta: -1 })
+  const won = (team: Side, n: number, chance: number): BetOutcome => ({ team, n, chance, success: true, short: 0, delta: 1 })
+  const lost = (team: Side, n: number, chance: number): BetOutcome => ({ team, n, chance, success: false, short: 0, delta: -1 })
 
   it('takes the successful announcement with the lowest chance, on either side; failed ones never count', () => {
     const m1 = match({ day: 15, a: ['alice'], b: ['bob'], score: [10, 5], betA: 3 })

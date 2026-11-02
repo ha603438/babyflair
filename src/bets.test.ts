@@ -10,9 +10,11 @@ import {
   betSucceeded,
   betTitle,
   clampBet,
+  draftBetShort,
   draftBetSucceeds,
   goalsLabel,
   readBet,
+  shortCutText,
   withValidBets,
   winningMargin,
 } from './bets'
@@ -94,11 +96,19 @@ describe('announcement outcome (same rule as the engine)', () => {
 })
 
 describe('French copy', () => {
-  const won: BetOutcome = { team: 'A', n: 4, chance: 0.2272491455078125, success: true, delta: 12.364 }
-  const lost: BetOutcome = { team: 'B', n: 4, chance: 0.2272491455078125, success: false, delta: -3.636 }
+  const won: BetOutcome = { team: 'A', n: 4, chance: 0.2272491455078125, success: true, short: 0, delta: 12.364 }
+  const lost: BetOutcome = { team: 'B', n: 4, chance: 0.2272491455078125, success: false, short: 0, delta: -3.636 }
+  // Won 10-8 for +4: 2 goals short, 20 % of the 9,6 base win taken back.
+  const short: BetOutcome = { team: 'A', n: 4, chance: 0.2272491455078125, success: false, short: 2, delta: -1.92 }
 
-  it('stepper line: « 23 % », « +12 si réussi », « −4 sinon »', () => {
-    expect(betOddsParts(betOutlook(0.5, 10, 4))).toEqual([`23${NNBSP}%`, '+12 si réussi', '−4 sinon'])
+  it('stepper line: « 23 % », « +12 si réussi », « −4 si perdu », « −10 % par but manquant »', () => {
+    expect(betOddsParts(betOutlook(0.5, 10, 4), 10)).toEqual([
+      `23${NNBSP}%`,
+      '+12 si réussi',
+      '−4 si perdu',
+      `−10${NNBSP}% par but manquant`,
+    ])
+    expect(betOddsParts(betOutlook(0.5, 5, 2), 5)[3]).toBe(`−20${NNBSP}% par but manquant`)
     expect(goalsLabel(1)).toBe('1 but')
     expect(goalsLabel(4)).toBe('4 buts')
   })
@@ -118,9 +128,27 @@ describe('French copy', () => {
     expect(betCalculation(lost, MATCH)).toBe(
       `Perdu, +4 annoncé${NNBSP}: −16 × 22,7${NNBSP}% de chances = −3,6 chacun`,
     )
-    const short = { ...MATCH, teamA: ['a'], teamB: ['c'], scoreB: 7 }
-    expect(betCalculation({ ...lost, team: 'A' }, short)).toBe(
-      `Gagné de 3 buts, +4 annoncé${NNBSP}: −16 × 22,7${NNBSP}% de chances = −3,6`,
+    expect(betCalculation(lost, { ...MATCH, teamA: ['a'] })).toBe(
+      `Perdu, +4 annoncé${NNBSP}: −16 × 22,7${NNBSP}% de chances = −3,6`,
     )
+  })
+
+  it('match detail of a win by less than announced: a cut of the win, not a loss', () => {
+    expect(betTitle(short)).toBe(`🎯 Annonce des Blancs${NNBSP}: +4 · ratée à 2 buts près (23${NNBSP}% de chances)`)
+    expect(betCalculation(short, { ...MATCH, scoreB: 8 })).toBe(
+      `Gagné de 2 buts, +4 annoncé${NNBSP}: 2 buts manquants, victoire −20${NNBSP}% = −1,9 chacun`,
+    )
+    const solo = { ...MATCH, teamA: ['a'], teamB: ['c'], scoreB: 7 }
+    expect(betCalculation({ ...short, short: 1, delta: -0.96 }, solo)).toBe(
+      `Gagné de 3 buts, +4 annoncé${NNBSP}: 1 but manquant, victoire −10${NNBSP}% = −1,0`,
+    )
+  })
+
+  it('draftBetShort: goals missing on a win by less, 0 otherwise', () => {
+    expect(draftBetShort({ winner: 'A', loserGoals: 4 }, 5, 'A', 2)).toBe(1)
+    expect(draftBetShort({ winner: 'A', loserGoals: 4 }, 5, 'A', 4)).toBe(3)
+    expect(draftBetShort({ winner: 'A', loserGoals: 3 }, 5, 'A', 2)).toBe(0)
+    expect(draftBetShort({ winner: 'B', loserGoals: 4 }, 5, 'A', 2)).toBe(0)
+    expect(shortCutText(2, 5)).toBe(`−40${NNBSP}%`)
   })
 })

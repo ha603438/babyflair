@@ -453,10 +453,12 @@ describe('Hall of Flair, « Couilles sur la table »', () => {
       [1, 1],
       [2, 4],
     ])
-    // Three successes: m1 (23 %), then m3 (Alice's +3 judged in 1V1, 31 %) and m4 (31 %) ex æquo.
+    // Three successes: m1 (23 %), then m3 (Alice's +3 judged in 1V1) and m4, both near 31 % but not tied (m2's win
+    // by 3 for +5 only cut Alice and Bob's gain, so m4 starts from other ratings).
     expect(shapeOf(cards, 'Coup de poker')).toEqual([
       [1, 1],
-      [2, 2],
+      [2, 1],
+      [3, 1],
     ])
     // Alice saw two announcements fail against her (m2, m3); Bob, Chloé, Dan and Eve one each.
     expect(shapeOf(cards, 'Le Briseur de rêves')).toEqual([

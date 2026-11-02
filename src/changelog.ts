@@ -6,6 +6,17 @@ export type ChangelogEntry = { id: string; date: string; title: string; items: s
 
 export const CHANGELOG: ChangelogEntry[] = [
   {
+    id: '2026-11-02-1',
+    date: '2026-11-02',
+    title: 'Annonces plus douces',
+    items: [
+      'Une victoire ne fait plus jamais perdre de points, même avec une annonce ratée.',
+      'Gagné avec moins d’écart qu’annoncé\u202F: la victoire rapporte juste un peu moins, 20\u202F% de points en ' +
+        'moins par but manquant (10\u202F% dans une partie en 10). Les matchs déjà joués sont recalculés.',
+      'Annonce + défaite\u202F: rien ne change.',
+    ],
+  },
+  {
     id: '2026-10-29-1',
     date: '2026-10-29',
     title: 'Les têtes des joueurs',

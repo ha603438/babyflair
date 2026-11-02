@@ -3,7 +3,7 @@
 // screens and the history; the statistics can build on them too. The points themselves are the engine's
 // (src/rating/engine.ts: rateBet, betChance, betOutlook); nothing here moves a rating.
 import { fmtDelta, fmtPercent, plural } from './format'
-import { DEFAULT_CONFIG } from './rating/engine'
+import { DEFAULT_CONFIG, shortCut } from './rating/engine'
 import type { BetOutcome, Match, Score, Target, Team } from './types'
 
 /** The stepper's value when « Annoncer un écart » is tapped. */
@@ -99,6 +99,12 @@ export function draftBetSucceeds(score: Score, target: Target, team: Team, n: nu
   return isBetSuccess(score.winner === team, target - score.loserGoals, n)
 }
 
+/** Goals missing on a draft win by less than n (the engine's BetResult.short); 0 on a success or a loss. */
+export function draftBetShort(score: Score, target: Target, team: Team, n: number): number {
+  if (score.winner !== team) return 0
+  return Math.max(0, n - (target - score.loserGoals))
+}
+
 // ---------------------------------------------------------------------------
 // French copy
 // ---------------------------------------------------------------------------
@@ -108,9 +114,28 @@ export function goalsLabel(n: number): string {
   return plural(n, 'but')
 }
 
-/** The stepper's live line, in three unbreakable parts: « 23 % », « +12 si réussi », « −4 sinon ». */
-export function betOddsParts(outlook: { chance: number; success: number; failure: number }): string[] {
-  return [fmtPercent(outlook.chance), `${fmtDelta(outlook.success)} si réussi`, `${fmtDelta(outlook.failure)} sinon`]
+/** « 1 but manquant » / « 2 buts manquants ». */
+function missingLabel(short: number): string {
+  if (short === 1) return '1 but manquant'
+  return `${short} buts manquants`
+}
+
+/** « −20 % » off the win per missing goal (−10 % in 10): the engine's shortCut. */
+export function shortCutText(short: number, target: Target): string {
+  return `${MINUS}${fmtPercent(shortCut(short, target))}`
+}
+
+/**
+ * The stepper's live line, in four unbreakable parts: « 23 % », « +12 si réussi », « −4 si perdu », « −20 % par but
+ * manquant » (a win by less than announced only earns a bit less).
+ */
+export function betOddsParts(outlook: { chance: number; success: number; failure: number }, target: Target): string[] {
+  return [
+    fmtPercent(outlook.chance),
+    `${fmtDelta(outlook.success)} si réussi`,
+    `${fmtDelta(outlook.failure)} si perdu`,
+    `${shortCutText(1, target)} par but manquant`,
+  ]
 }
 
 /** History pill: « 🎯 +4 ✓ » / « 🎯 +4 ✗ ». */
@@ -130,10 +155,15 @@ export function betPillTitle(team: Team, n: number, success: boolean): string {
   return `Annonce des ${SIDE_NAME[team]}${NNBSP}: +${n}, ${outcomeWord(success)}`
 }
 
-/** Match detail: « 🎯 Annonce des Blancs : +4 · réussie (23 % de chances) ». */
+function outcomeText(bet: BetOutcome): string {
+  if (bet.short > 0) return `ratée à ${goalsLabel(bet.short)} près`
+  return outcomeWord(bet.success)
+}
+
+/** Match detail: « 🎯 Annonce des Blancs : +4 · réussie (23 % de chances) » / « · ratée à 1 but près (…) ». */
 export function betTitle(bet: BetOutcome): string {
   const chance = `(${fmtPercent(bet.chance)} de chances)`
-  return `🎯 Annonce des ${SIDE_NAME[bet.team]}${NNBSP}: +${bet.n} · ${outcomeWord(bet.success)} ${chance}`
+  return `🎯 Annonce des ${SIDE_NAME[bet.team]}${NNBSP}: +${bet.n} · ${outcomeText(bet)} ${chance}`
 }
 
 function percent1(p: number): string {
@@ -151,21 +181,24 @@ function resultPart(bet: BetOutcome, match: ScoreFields): string {
   return `Gagné de ${goalsLabel(winningMargin(match))}, +${bet.n} annoncé`
 }
 
-function formulaPart(bet: BetOutcome, stake: number): string {
+function formulaPart(bet: BetOutcome, stake: number, target: Target): string {
   if (bet.success) return `${stake} × ${percent1(1 - bet.chance)} de risque`
+  if (bet.short > 0) return `${missingLabel(bet.short)}, victoire ${shortCutText(bet.short, target)}`
   return `${MINUS}${stake} × ${percent1(bet.chance)} de chances`
 }
 
 /**
  * Match detail, under the title: how the points came out, e.g. « Gagné de 6 buts, +4 annoncé : 16 × 77,3 % de
- * risque = +12,4 chacun » or « Perdu, +4 annoncé : −16 × 22,7 % de chances = −3,6 chacun ».
+ * risque = +12,4 chacun », « Gagné de 2 buts, +4 annoncé : 2 buts manquants, victoire −20 % = −1,9 chacun » or
+ * « Perdu, +4 annoncé : −16 × 22,7 % de chances = −3,6 chacun ».
  */
 export function betCalculation(
   bet: BetOutcome,
   match: ScoreFields & Pick<Match, 'teamA'>,
   stake = DEFAULT_CONFIG.betStake,
 ): string {
-  return `${resultPart(bet, match)}${NNBSP}: ${formulaPart(bet, stake)} = ${points1(bet.delta)}${eachSuffix(match)}`
+  const formula = formulaPart(bet, stake, match.target)
+  return `${resultPart(bet, match)}${NNBSP}: ${formula} = ${points1(bet.delta)}${eachSuffix(match)}`
 }
 
 /** « chacun » only when there are two of them (2v2). */

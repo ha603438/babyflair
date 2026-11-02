@@ -246,7 +246,7 @@ describe('annonces d’écart', () => {
   })
 
   it('the edit sheet shows the stored announcement in the stepper, with its live stake and status', () => {
-    // Everybody at 1000 before m1: 50 % each side, +4 in 10 → 23 %, +12 / −4; 10-8 is a win by 2 only.
+    // Everybody at 1000 before m1: 50 % each side, +4 in 10 → 23 %, +12 / −4; 10-8 is a win by 2 only (2 short).
     const html = render(createElement(MatchEdit, { id: 'm1' }), storeOf(PLAYERS, [{ ...MATCH, betA: 4 }]))
     const copy = plain(html)
     expect(html).toContain('class="bet bet--A" role="group" aria-label="Annonce des Blancs"')
@@ -255,8 +255,9 @@ describe('annonces d’écart', () => {
     expect(copy).toContain('>4 buts<')
     expect(copy).toContain(`23${NNBSP}%`)
     expect(copy).toContain('+12 si réussi')
-    expect(copy).toContain('−4 sinon')
-    expect(copy).toContain(`✗ Ratée${NNBSP}: −4`)
+    expect(copy).toContain('−4 si perdu')
+    expect(copy).toContain(`−10${NNBSP}% par but manquant`)
+    expect(copy).toContain(`✗ Ratée à 2 buts près${NNBSP}: victoire −20${NNBSP}%`)
     expect(copy).toContain('>Retirer<')
     expect(html).toContain('aria-label="Annoncer un écart pour les Noirs"')
   })
@@ -301,9 +302,10 @@ describe('annonces d’écart', () => {
   it('the match detail explains the announcement and each why line carries it', () => {
     const html = render(createElement(MatchDetail, { id: 'm1' }), storeOf(PLAYERS, [{ ...MATCH, betA: 4 }]))
     const copy = plain(html)
-    expect(copy).toContain(`🎯 Annonce des Blancs${NNBSP}: +4 · ratée (23${NNBSP}% de chances)`)
-    expect(copy).toContain(`Gagné de 2 buts, +4 annoncé${NNBSP}: −16 × 22,7${NNBSP}% de chances = −3,6 chacun`)
-    expect(copy).toContain('annonce +4 ratée (23 % de chances) −3,6')
+    expect(copy).toContain(`🎯 Annonce des Blancs${NNBSP}: +4 · ratée à 2 buts près (23${NNBSP}% de chances)`)
+    // Fresh players, 10-8: 16 × 1,2 × 0,5 = 9,6 of base win, 20 % of it taken back.
+    expect(copy).toContain(`Gagné de 2 buts, +4 annoncé${NNBSP}: 2 buts manquants, victoire −20${NNBSP}% = −1,9 chacun`)
+    expect(copy).toContain('annonce +4 ratée à 2 buts près (−20 % sur la victoire) −1,9 → +26,9')
     expect(copy).toContain('🎯 +4 ✗')
   })
 
