@@ -6,6 +6,16 @@ export type ChangelogEntry = { id: string; date: string; title: string; items: s
 
 export const CHANGELOG: ChangelogEntry[] = [
   {
+    id: '2026-11-02-3',
+    date: '2026-11-02',
+    title: 'Le gros + au milieu',
+    items: [
+      'Le bouton Match devient un gros «\u202F+\u202F» rond au milieu de la barre du bas, pour lancer un match ' +
+        'd’un coup de pouce.',
+      'Android\u202F: la barre du bas ne devrait plus disparaître.',
+    ],
+  },
+  {
     id: '2026-11-02-2',
     date: '2026-11-02',
     title: 'Annonce à partir de +2',

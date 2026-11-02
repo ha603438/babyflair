@@ -124,12 +124,12 @@ describe('TabBar', () => {
     const links = html.match(/<a [^>]*>/g) ?? []
     expect(links).toHaveLength(5)
     expect(links[0]).toContain('href="#/"')
-    expect(links[1]).toContain('href="#/match"')
-    expect(links[2]).toContain('href="#/historique"')
+    expect(links[1]).toContain('href="#/historique"')
+    expect(links[2]).toContain('href="#/match"')
     expect(links[3]).toContain('href="#/stats"')
     expect(links[4]).toContain('href="#/nouveautes"')
-    expect(links[2]).toContain('aria-current="page"')
-    expect(links[2]).toContain('tab-active')
+    expect(links[1]).toContain('aria-current="page"')
+    expect(links[1]).toContain('tab-active')
     expect(html.match(/aria-current="page"/g)).toHaveLength(1)
     expect(html).toContain('>Classement<')
     expect(html).toContain('>Match<')
@@ -137,6 +137,16 @@ describe('TabBar', () => {
     expect(html).toContain('>Stats<')
     expect(html).not.toContain('>Joueurs<')
     expect(html).not.toContain('href="#/joueurs"')
+  })
+
+  it('puts Match in the middle as the raised round « + »', () => {
+    const html = render(TabBar, { current: 'match' })
+    const match = html.split('<a ')[3] ?? ''
+    expect(match).toContain('class="tab tab--cta tab-active"')
+    expect(match).toContain('<span class="tab-cta"><svg class="icon" width="26" height="26"')
+    expect(match).toContain('<path d="M12 5v14M5 12h14"></path>')
+    expect(match).toContain('<span class="tab-cta__label">Match</span>')
+    expect(html.match(/tab--cta/g)).toHaveLength(1)
   })
 
   it('draws the Stats tab with the bar chart icon', () => {
@@ -153,7 +163,8 @@ describe('TabBar', () => {
   })
 
   it('keeps the section tab active on pushed screens', () => {
-    expect(activeTab('match-detail')).toBe(2)
+    expect(activeTab('match-detail')).toBe(1)
+    expect(activeTab('match-edit')).toBe(2)
     expect(activeTab('reglages')).toBe(3)
     expect(activeTab('comment-ca-marche')).toBe(0)
     expect(activeTab('journal')).toBe(4)

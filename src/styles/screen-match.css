@@ -73,10 +73,11 @@
   -webkit-overflow-scrolling: touch;
 }
 
+/* 12 + 8 px: with <main>'s bottom room for the round « + », five rows of chips still fit on a 375 × 812 phone. */
 .match-chips__inner {
   margin-top: auto;
-  padding-top: var(--s4);
-  padding-bottom: var(--s4);
+  padding-top: var(--s3);
+  padding-bottom: var(--s2);
 }
 
 /* ---------- step B: score panel ---------- */
@@ -193,11 +194,13 @@
    bottom when the panel is short; position: sticky keeps it reachable when the panel scrolls (SE, En 10). */
 .match-save {
   position: sticky;
-  bottom: 0;
+  /* Down over <main>'s bottom room (the round « + » rises into it): flush with the tab bar, the button above it. */
+  bottom: calc(-1 * var(--tabbar-bulge));
   z-index: 1;
   flex: none;
   margin-top: auto;
-  padding: var(--s2) 0;
+  margin-bottom: calc(-1 * var(--tabbar-bulge));
+  padding: var(--s2) 0 calc(var(--s2) + var(--tabbar-bulge));
   background: var(--surface);
 }
 

@@ -77,6 +77,7 @@
 
   /* layout */
   --tabbar-h: 50px;
+  --tabbar-bulge: 14px; /* how far the round « + » Match button rises above the tab bar */
   --header-h: 44px;
   --content-max: 720px;
 }

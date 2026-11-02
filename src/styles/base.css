@@ -122,18 +122,23 @@ dialog::backdrop {
 }
 
 /* ---------- layout root (§2, §10) ---------- */
-/* Header and tab bar are grid rows, never position: fixed, so they never jump with the iOS toolbar. */
+/* Header and tab bar are grid rows, never position: fixed, so they never jump with the iOS toolbar. The shell itself
+   is pinned to the viewport (fixed, inset 0) instead of sized in dvh: Android sometimes keeps a stale 100dvh (after
+   the keyboard, back from another app) or lets the page scroll, which pushed the tab bar off the screen. Pinned,
+   the shell always matches the visible viewport and nothing outside <main> can scroll it away. */
 .app {
+  position: fixed;
+  inset: 0;
   display: grid;
   grid-template-rows: auto 1fr auto;
-  height: 100vh; /* fallback */
-  height: 100dvh;
   width: 100%;
 }
 
-/* The only scroll container of the app. min-height: 0 lets the 1fr row shrink below its content. */
+/* The only scroll container of the app. min-height: 0 lets the 1fr row shrink below its content. The bottom
+   padding is the room the round « + » of the tab bar rises into (shell.css). */
 .app > main {
   min-height: 0;
+  padding-bottom: var(--tabbar-bulge);
   overflow-y: auto;
   overscroll-behavior: contain;
   -webkit-overflow-scrolling: touch;

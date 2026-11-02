@@ -185,13 +185,57 @@
   line-height: 1.2;
 }
 
+/* Match, the main action: a raised 56 px round « + » in the middle, rising --tabbar-bulge above the bar. The
+   --surface ring cuts it out of the bar's top border; <main> keeps the same room at its bottom (base.css). */
+.tab--cta {
+  position: relative;
+}
+
+.tab-cta {
+  position: absolute;
+  top: calc(-1 * var(--tabbar-bulge));
+  left: 50%;
+  z-index: 1;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  width: 56px;
+  height: 56px;
+  margin-left: -28px;
+  border-radius: 50%;
+  background: var(--accent);
+  background: linear-gradient(150deg, color-mix(in srgb, var(--accent) 70%, #60a5fa), color-mix(in srgb, var(--accent) 75%, #312e81));
+  color: var(--on-accent);
+  box-shadow: 0 0 0 4px var(--surface), 0 6px 14px rgba(29, 78, 216, 0.35);
+  transition: transform var(--t-fast) var(--ease);
+}
+
+.tab--cta:active .tab-cta {
+  transform: scale(0.94);
+}
+
+/* On the match screens: a soft accent halo around the ring. */
+.tab--cta.tab-active .tab-cta {
+  box-shadow: 0 0 0 4px var(--surface), 0 0 0 7px var(--accent-soft), 0 6px 14px rgba(29, 78, 216, 0.35);
+}
+
+.tab-cta__label {
+  margin-top: -1px;
+  font-size: 10px;
+  font-weight: 700;
+  line-height: 1;
+  letter-spacing: 0.04em;
+  text-transform: uppercase;
+}
+
 /* ---------- Toast (§5, §8) ---------- */
 /* The region is always mounted (live region) but takes no space and no taps; the toast itself does. */
 .toast-region {
   position: fixed;
   left: max(var(--s4), var(--safe-left));
   right: max(var(--s4), var(--safe-right));
-  bottom: calc(var(--tabbar-h) + var(--safe-bottom) + var(--s2));
+  bottom: calc(var(--tabbar-h) + var(--tabbar-bulge) + var(--safe-bottom) + var(--s2));
   z-index: 20;
   pointer-events: none;
 }
