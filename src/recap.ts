@@ -76,7 +76,7 @@ export function localDayKey(iso: string): string {
 }
 
 /** Local midnight of the day of `iso`, `offset` days later (ms); DST-safe since the Date constructor normalises. */
-function localMidnight(iso: string, offset: number): number {
+export function localMidnight(iso: string, offset: number): number {
   const date = new Date(iso)
   return new Date(date.getFullYear(), date.getMonth(), date.getDate() + offset).getTime()
 }

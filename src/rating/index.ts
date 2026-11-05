@@ -265,6 +265,18 @@ export function leaderBefore(result: ReplayResult, players: Player[], until: num
   return board.ranked[0]?.player.id ?? null
 }
 
+/** Same board as leaderBefore: `playerId`'s 1-based rank among the ranked players, null while he is not ranked. */
+export function rankBefore(
+  result: ReplayResult,
+  players: Player[],
+  playerId: PlayerId,
+  until: number,
+  at: number,
+): number | null {
+  const board = leaderboard(players.map(toEnginePlayer), stateBefore(result, until), at)
+  return board.ranked.find((row) => row.player.id === playerId)?.rank ?? null
+}
+
 type PreviewBase = Omit<EngineMatch, 'scoreA' | 'scoreB'>
 
 function latestPlayedAt(result: ReplayResult): number {

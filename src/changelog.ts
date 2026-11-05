@@ -6,6 +6,16 @@ export type ChangelogEntry = { id: string; date: string; title: string; items: s
 
 export const CHANGELOG: ChangelogEntry[] = [
   {
+    id: '2026-11-05-1',
+    date: '2026-11-05',
+    title: 'Récap du jour sur les fiches',
+    items: [
+      'Chaque fiche joueur commence par le récap de sa journée (ou de sa dernière journée de baby)\u202F: points, ' +
+        'bilan, cote et place au classement, meilleur partenaire, bête noire, plus beau coup, annonces, fanny et ' +
+        'comebacks.',
+    ],
+  },
+  {
     id: '2026-11-02-3',
     date: '2026-11-02',
     title: 'Le gros + au milieu',

@@ -8,6 +8,7 @@ import type { PlayerFormValue } from '../../components/InlinePlayerForm'
 import { Pencil } from '../../components/icons'
 import { SectionHeader } from '../../components/SectionHeader'
 import { playerBetRecord } from '../../betStats'
+import { playerDayRecap } from '../../playerDay'
 import { HistoryRow } from '../../components/rows'
 import { duoId } from '../../duo'
 import type { Guard } from '../../profile/useWriteGuard'
@@ -32,10 +33,14 @@ import {
   winRateText,
 } from './labels'
 import { MAIN_LABEL } from './modeLabels'
+import { playerDayView } from './playerDayLines'
+import type { DayTile } from './playerDayLines'
 import { BetsCard, SparklineCard, Tile, Trend } from './profileParts'
+import { RecapLines } from './RecapView'
 
 // Joueur screen body (spec §3.7): hero card (the 2V2 mixte rating, labelled as such, with the « Renommer » pencil and
-// the inline rename form, and the 1V1 rating line when the player has 1v1 matches), the 2V2 mixte sparkline, stat
+// the inline rename form, and the 1V1 rating line when the player has 1v1 matches), « Récap du jour » (his latest day
+// with a match), the 2V2 mixte sparkline, stat
 // tiles over every match (1v1 and 2v2), « 🎯 Annonces » (once the player announced), favourite partner (a link to the
 // duo page), last matches (each with its deltas in its own ranking) and the danger zone. Unknown id → redirect to the
 // list.
@@ -258,12 +263,41 @@ function PartnerCard({ playerId, matches, players }: PartnerProps) {
   )
 }
 
+function DayTileView({ tile }: { tile: DayTile }) {
+  const valueClass = tile.tone === null ? 'tile-value t-num' : `tile-value t-num ${tile.tone}`
+  return (
+    <div className="tile">
+      <span className="tile-label">{tile.label}</span>
+      <span className={valueClass}>{tile.value}</span>
+    </div>
+  )
+}
+
+/** « Récap du jour »: the player's latest day with a match (today when he played today), tiles then highlight lines. */
+function DayRecapCard({ player, replay, matches }: { player: Player; replay: ReplayData; matches: Match[] }) {
+  const day = playerDayRecap(player.id, [...replay.players.values()], matches, replay.rankings)
+  if (day === null) return null
+  const view = playerDayView(player.id, day, replay.players, replay.now)
+  return (
+    <section className="card card-pad day-recap">
+      <h2 className="tiles-title">{view.title}</h2>
+      <div className="tiles tiles--2">
+        {view.tiles.map((tile) => (
+          <DayTileView key={tile.label} tile={tile} />
+        ))}
+      </div>
+      <RecapLines lines={view.lines} />
+    </section>
+  )
+}
+
 type DetailsProps = { player: Player; stats: PlayerStats; career: Career; replay: ReplayData; matches: Match[] }
 
 function Details({ player, stats, career, replay, matches }: DetailsProps) {
   if (career.played === 0) return <p className="lists-empty">{NO_MATCH_TEXT}</p>
   return (
     <>
+      <DayRecapCard player={player} replay={replay} matches={matches} />
       <SparklineCard stats={stats} />
       <StatsCard career={career} matches={replay.matches} />
       <PositionsCard playerId={player.id} matches={matches} />

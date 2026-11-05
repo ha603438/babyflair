@@ -306,3 +306,13 @@
 .duo-hr:not(:last-child) .row-divider::after { display: block; }
 .duo-hr--a .hr-team--a .hr-name,
 .duo-hr--b .hr-team--b .hr-name { color: var(--accent); }
+
+/* « Récap du jour » on the player page: the Récap's lines under the tiles, separated from them. */
+.day-recap .recap-lines {
+  margin-top: var(--s3);
+  border-top: 1px solid var(--border);
+}
+
+.day-recap .recap-lines:empty {
+  display: none;
+}

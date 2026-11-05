@@ -51,7 +51,8 @@ function RecapLine({ line }: { line: RecapLineView }) {
   )
 }
 
-function Lines({ lines }: { lines: RecapLineView[] }) {
+/** The highlight lines of a card; also the player page's « Récap du jour » (JoueurView). */
+export function RecapLines({ lines }: { lines: RecapLineView[] }) {
   if (lines.length === 0) return null
   return (
     <ul className="recap-lines">
@@ -72,7 +73,7 @@ function DayCard({ card }: { card: RecapCardView }) {
     <section className="card recap-day">
       <h2 className="recap-day__title">{card.title}</h2>
       <Summary text={card.summary} />
-      <Lines lines={card.lines} />
+      <RecapLines lines={card.lines} />
     </section>
   )
 }
