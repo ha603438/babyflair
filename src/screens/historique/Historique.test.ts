@@ -1,6 +1,7 @@
 import { afterEach, describe, expect, it, vi } from 'vitest'
 import { createElement } from 'react'
 import { renderToString } from 'react-dom/server'
+import { TIME_VIEWER_IDS } from '../../profile/times'
 import { AppStateProvider } from '../../store'
 import type { Match, Player, Store } from '../../types'
 import { Historique } from '../Historique'
@@ -30,22 +31,25 @@ const MATCHES: Match[] = [
   match('m3', 3, '2025-10-03T12:00:00.000Z', ['bob'], ['dan']),
 ]
 
-function storeOf(matches: Match[]): Store {
+/** The owner's profile (profile/times.ts): the only one who sees the day headers. */
+const OWNER: Player = { id: [...TIME_VIEWER_IDS][0], name: 'Owner', isGuest: false, createdAt: '2025-09-01T10:00:00.000Z' }
+
+function storeOf(matches: Match[], owner = true): Store {
   return {
     version: 1,
-    players: PLAYERS,
+    players: [...PLAYERS, OWNER],
     matches,
-    settings: { lastFormat: '2v2', lastTarget: 10 },
+    settings: { lastFormat: '2v2', lastTarget: 10, ...(owner ? { myPlayerId: OWNER.id } : {}) },
     nextSeq: matches.length + 1,
     calls: [],
     callPlayers: [],
   }
 }
 
-function render(filters: HistoryFilters, matches: Match[] = MATCHES): string {
+function render(filters: HistoryFilters, matches: Match[] = MATCHES, owner = true): string {
   saveHistoryFilters(filters)
   vi.stubGlobal('window', { location: { hash: '#/historique' }, history: { back: vi.fn() } })
-  vi.stubGlobal('localStorage', { getItem: () => JSON.stringify(storeOf(matches)), setItem: () => undefined })
+  vi.stubGlobal('localStorage', { getItem: () => JSON.stringify(storeOf(matches, owner)), setItem: () => undefined })
   return renderToString(createElement(AppStateProvider, null, createElement(Historique)))
 }
 
@@ -93,6 +97,14 @@ describe('Historique filters', () => {
     expect(html.match(/class="hist-day"/g)).toHaveLength(1)
     expect(plain(html)).toContain('1 match sur 3')
     expect(html).not.toContain('Aucun match pour ces filtres')
+  })
+
+  it('without the owner’s profile, the same matches in one list, no day header', () => {
+    const html = render(NO_FILTERS, MATCHES, false)
+    expect(matchLinks(html)).toEqual(['m3', 'm2', 'm1'])
+    expect(html).not.toContain('class="hist-day"')
+    expect(html.match(/class="hist-group"/g)).toHaveLength(1)
+    expect(render(NO_FILTERS, MATCHES, true).match(/class="hist-day"/g)).toHaveLength(3)
   })
 
   it('a player alone keeps every match he played, day headers follow the filtered list', () => {

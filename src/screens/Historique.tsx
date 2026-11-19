@@ -1,9 +1,11 @@
-// Historique (spec §3.3): every match, newest first, grouped by day under sticky day headers. A filter bar on top
-// (format chips, player selector) narrows the list; day headers and the count follow the filtered list.
+// Historique (spec §3.3): every match, newest first, grouped by day under sticky day headers for the owner's profile
+// only (like the times of day, profile/times.ts); everyone else gets one continuous list. A filter bar on top (format
+// chips, player selector) narrows the list; day headers and the count follow the filtered list.
 import { useMemo } from 'react'
 import { EmptyState } from '../components/EmptyState'
 import { HistoryRow } from '../components/rows'
 import { fmtDayHeader } from '../format'
+import { useShowsTimes } from '../profile/useShowsTimes'
 import { matchResult } from '../rating/rankings'
 import type { ReplayView } from '../rating/useReplay'
 import { useReplay } from '../rating/useReplay'
@@ -41,21 +43,34 @@ function groupByDay(matches: Match[], now: Date): DayGroup[] {
   return groups
 }
 
-type DayListProps = { groups: DayGroup[]; replay: ReplayView }
+function Rows({ matches, replay }: { matches: Match[]; replay: ReplayView }) {
+  return matches.map((match) => (
+    <HistoryRow
+      key={match.id}
+      match={match}
+      result={matchResult(replay.rankings, match.id)}
+      players={replay.players}
+      href={hrefOf({ name: 'match-detail', id: match.id })}
+    />
+  ))
+}
 
-function DayList({ groups, replay }: DayListProps) {
-  return groups.map((group) => (
+type DayListProps = { matches: Match[]; replay: ReplayView; showsDays: boolean }
+
+/** Day groups for the owner; for everyone else the same rows in one section, without any day. */
+function DayList({ matches, replay, showsDays }: DayListProps) {
+  if (!showsDays) {
+    if (matches.length === 0) return null
+    return (
+      <section className="hist-group">
+        <Rows matches={matches} replay={replay} />
+      </section>
+    )
+  }
+  return groupByDay(matches, replay.now).map((group) => (
     <section key={group.key} className="hist-group" aria-label={group.label}>
       <h2 className="hist-day">{group.label}</h2>
-      {group.matches.map((match) => (
-        <HistoryRow
-          key={match.id}
-          match={match}
-          result={matchResult(replay.rankings, match.id)}
-          players={replay.players}
-          href={hrefOf({ name: 'match-detail', id: match.id })}
-        />
-      ))}
+      <Rows matches={group.matches} replay={replay} />
     </section>
   ))
 }
@@ -67,7 +82,8 @@ export function Historique() {
   const options = useMemo(() => playerOptions(store.players, store.matches), [store.players, store.matches])
   const filters = useMemo(() => resolveFilters(stored, options), [stored, options])
   const shown = useMemo(() => filterMatches(store.matches, filters), [store.matches, filters])
-  const groups = useMemo(() => groupByDay(newestFirst(shown), replay.now), [shown, replay.now])
+  const ordered = useMemo(() => newestFirst(shown), [shown])
+  const showsDays = useShowsTimes()
   const filtered = isFiltered(filters)
 
   if (store.matches.length === 0) {
@@ -86,7 +102,7 @@ export function Historique() {
     <div className="hist-col">
       <HistoryFilterBar filters={filters} options={options} onChange={setFilters} />
       {shown.length === 0 && <NoFilteredMatch onClear={() => setFilters(NO_FILTERS)} />}
-      <DayList groups={groups} replay={replay} />
+      <DayList matches={ordered} replay={replay} showsDays={showsDays} />
       {shown.length > 0 && <p className="hist-footer">{countLine(shown.length, store.matches.length, filtered)}</p>}
     </div>
   )
