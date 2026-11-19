@@ -173,7 +173,8 @@ function AppShell() {
   const { store, draft, draftDispatch, toast, storageBlocked } = useAppState()
   const rules = useRules()
   // The bell: unseen app news, plus the rules waiting for this phone's vote.
-  const newsBadge = unseenEntries(store.settings).length + pendingVotes(rules.rules, rules.votes, rules.playerId)
+  const newsBadge =
+    unseenEntries(store.settings).length + pendingVotes(rules.rules, rules.votes, rules.playerId, rules.now)
   const showToast = toast.show
   const mainRef = useRef<HTMLElement>(null)
 

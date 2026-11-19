@@ -158,8 +158,9 @@ const SECTIONS: Section[] = [
     text:
       `Les règles du baby (pissette, gamelle, demi…) se votent sous la cloche, onglet «${NNBSP}Règlement${NNBSP}». ` +
       `Chacun peut proposer une règle, les autres reçoivent une notification et votent d’accord ou pas d’accord. ` +
-      `Une règle est adoptée dès 4 votes si plus de la moitié est d’accord, rejetée sinon, et chacun peut changer ` +
-      `d’avis à tout moment. L’auteur peut retirer sa règle.`,
+      `Le vote dure une semaine et chacun peut changer d’avis jusque-là. À la fin, la majorité l’emporte : plus ` +
+      `de d’accord que de pas d’accord, la règle est adoptée, sinon (égalité comprise) elle est rejetée. Pendant ` +
+      `la semaine, l’auteur peut retirer sa règle.`,
   },
   {
     title: 'Tes données',

@@ -1,5 +1,6 @@
 -- BabyFlair : règlement du bureau. Un joueur propose une règle (rules), chacun vote « d'accord » / « pas d'accord »
--- (rule_votes, un vote par joueur et par règle, modifiable à tout moment). À exécuter après notifications.sql.
+-- (rule_votes, un vote par joueur et par règle, modifiable) pendant une semaine ; ensuite la majorité décide et plus
+-- personne ne vote (rule_open). À exécuter après notifications.sql.
 
 create table if not exists public.rules (
   id uuid primary key,
@@ -23,6 +24,14 @@ drop policy if exists office_rules on public.rules;
 create policy office_rules on public.rules
   for all to anon, authenticated using (public.office_ok()) with check (public.office_ok());
 
+-- Le vote dure une semaine à partir de la proposition : passé ce délai, un vote (nouveau ou changé) est refusé.
+create or replace function public.rule_open(p_rule_id uuid) returns boolean
+language sql stable security definer set search_path = public as $$
+  select exists (select 1 from public.rules where id = p_rule_id and created_at > now() - interval '7 days');
+$$;
+grant execute on function public.rule_open(uuid) to anon, authenticated;
+
 drop policy if exists office_rule_votes on public.rule_votes;
 create policy office_rule_votes on public.rule_votes
-  for all to anon, authenticated using (public.office_ok()) with check (public.office_ok());
+  for all to anon, authenticated using (public.office_ok())
+  with check (public.office_ok() and public.rule_open(rule_id));

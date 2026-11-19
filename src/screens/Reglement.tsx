@@ -1,7 +1,8 @@
 // Règlement (`#/reglement`, onglet de la cloche, mode partagé): the office rules. « + Proposer une règle » opens the
 // form (the others get a notification), then three sections: the adopted rules (« Le règlement », numbered), the ones
-// still « En vote » and the « Rejetées ». Every card shows its share of « d'accord » / « pas d'accord » and lets each
-// player vote or change his mind; the author can withdraw his rule. Data and copy: src/rules/.
+// still « En vote » (a week from the proposal) and the « Rejetées ». Every card shows its share of « d'accord » /
+// « pas d'accord »; during the week each player votes or changes his mind and the author can withdraw his rule, then
+// the majority decides. Data and copy: src/rules/.
 import { useId, useState } from 'react'
 import type { FormEvent } from 'react'
 import { Button } from '../components/Button'
@@ -11,6 +12,7 @@ import { useWriteGuard } from '../profile/useWriteGuard'
 import type { Guard } from '../profile/useWriteGuard'
 import {
   bylineText,
+  myVoteText,
   RULE_TEXT_MAX,
   ruleSections,
   ruleTextError,
@@ -158,18 +160,30 @@ function RuleCard({ line, players, now, isAuthor, onVote, onWithdraw }: CardProp
       <Bar line={line} />
       <p className="rule__shares">
         {shares !== null && <span>{shares}</span>}
-        <span className="rule__votes">{votesText(line.tally)}</span>
+        <span className="rule__votes">{votesText(line, now)}</span>
       </p>
-      <div className="rule__actions">
-        <VoteButton value="yes" line={line} onVote={onVote} />
-        <VoteButton value="no" line={line} onVote={onVote} />
-      </div>
-      {isAuthor && (
+      <Actions line={line} onVote={onVote} />
+      {isAuthor && line.open && (
         <button type="button" className="rule__withdraw" onClick={onWithdraw}>
           {RULES_COPY.withdraw}
         </button>
       )}
     </article>
+  )
+}
+
+/** The two vote buttons for the week of vote; afterwards only « Ton vote : d'accord », if he voted. */
+function Actions({ line, onVote }: { line: RuleLine; onVote: (value: RuleVoteValue) => void }) {
+  if (!line.open) {
+    const text = myVoteText(line.mine)
+    if (text === null) return null
+    return <p className="rule__mine">{text}</p>
+  }
+  return (
+    <div className="rule__actions">
+      <VoteButton value="yes" line={line} onVote={onVote} />
+      <VoteButton value="no" line={line} onVote={onVote} />
+    </div>
   )
 }
 
@@ -212,13 +226,13 @@ function Section({ title, lines, rules, players, now, guard, onWithdraw }: Secti
 function RulesBody({ rules, guard }: { rules: RulesState; guard: Guard }) {
   const { store } = useAppState()
   const [withdrawing, setWithdrawing] = useState<string | null>(null)
-  // Only days are shown (« aujourd'hui », « hier »): the time the screen opened is precise enough.
-  const [now] = useState(() => new Date())
+  // The clock of the last fetch (every minute): opens and closes the weeks of vote, days only on screen.
+  const now = rules.now
   const players: Players = new Map(store.players.map((player) => [player.id, player]))
   if (rules.load === 'local') return <Message text={RULES_COPY.local} />
   if (rules.load === 'loading') return <Message text={RULES_COPY.loading} />
   if (rules.load === 'error') return <Message text={RULES_COPY.error} />
-  const sections = ruleSections(rules.rules, rules.votes, rules.playerId)
+  const sections = ruleSections(rules.rules, rules.votes, rules.playerId, now)
   const shared = { rules, players, now, guard, onWithdraw: setWithdrawing }
   return (
     <>

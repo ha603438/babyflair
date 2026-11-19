@@ -10,7 +10,7 @@ import type { RemoteApi } from '../remote/api'
 import { useAppState } from '../store'
 import { subscribeRefetch, toastTextFor } from '../store/remote-sync'
 import type { PlayerId, Rule, RuleVote, RuleVoteValue } from '../types'
-import { newRule, newVote, proposedToast, RULES_COPY, withVote } from './rules'
+import { isOpen, newRule, newVote, proposedToast, RULES_COPY, withVote } from './rules'
 
 /** Rules change slowly: a minute between polls while the app is visible (plus focus and visibility). */
 const RULES_REFETCH_MS = 60_000
@@ -21,6 +21,8 @@ export type RulesState = {
   load: RulesLoad
   rules: Rule[]
   votes: RuleVote[]
+  /** When the rules were last fetched: the clock that opens and closes the weeks of vote on screen. */
+  now: Date
   /** This phone's player; undefined for a visitor (read only). */
   playerId: PlayerId | undefined
   busy: boolean
@@ -31,14 +33,16 @@ export type RulesState = {
   withdraw: (ruleId: string) => void
 }
 
-type Data = { load: Exclude<RulesLoad, 'local'>; rules: Rule[]; votes: RuleVote[] }
+type Data = { load: Exclude<RulesLoad, 'local'>; rules: Rule[]; votes: RuleVote[]; now: Date }
 
-const INITIAL: Data = { load: 'loading', rules: [], votes: [] }
+function initialData(): Data {
+  return { load: 'loading', rules: [], votes: [], now: new Date() }
+}
 
 /** A failed poll keeps what was already shown; only a first load turns into an error. */
 function afterFailedFetch(current: Data): Data {
-  if (current.load === 'done') return current
-  return { ...current, load: 'error' }
+  if (current.load === 'done') return { ...current, now: new Date() }
+  return { ...current, load: 'error', now: new Date() }
 }
 
 /** Without a server (local mode, or before the office code) there is nothing to vote on. */
@@ -52,14 +56,14 @@ function useRulesState(): RulesState {
   const api = sync.api
   const showToast = toast.show
   const playerId = profileId(useProfile())
-  const [data, setData] = useState<Data>(INITIAL)
+  const [data, setData] = useState<Data>(initialData)
   const [busy, setBusy] = useState(false)
 
   const refresh = useCallback(async () => {
     if (api === null) return
     try {
       const fetched = await api.fetchRules()
-      setData({ load: 'done', ...fetched })
+      setData({ load: 'done', ...fetched, now: new Date() })
     } catch {
       setData(afterFailedFetch)
     }
@@ -72,7 +76,7 @@ function useRulesState(): RulesState {
     const load = () => {
       api.fetchRules().then(
         (fetched) => {
-          if (active) setData({ load: 'done', ...fetched })
+          if (active) setData({ load: 'done', ...fetched, now: new Date() })
         },
         () => {
           if (active) setData(afterFailedFetch)
@@ -128,11 +132,19 @@ function useRulesState(): RulesState {
   const vote = useCallback(
     (ruleId: string, value: RuleVoteValue) => {
       if (api === null || playerId === undefined) return
-      const next = newVote(ruleId, playerId, value, new Date())
+      const now = new Date()
+      // The week is over (the screen may have stayed open): the server would refuse it anyway.
+      const rule = data.rules.find((r) => r.id === ruleId)
+      if (rule === undefined || !isOpen(rule, now)) {
+        showToast({ text: RULES_COPY.closed })
+        void refresh()
+        return
+      }
+      const next = newVote(ruleId, playerId, value, now)
       setData((current) => ({ ...current, votes: withVote(current.votes, next) }))
       api.upsertRuleVote(next).catch(fail)
     },
-    [api, fail, playerId],
+    [api, data.rules, fail, playerId, refresh, showToast],
   )
 
   const withdraw = useCallback(

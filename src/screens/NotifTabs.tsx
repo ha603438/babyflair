@@ -10,12 +10,12 @@ type Section = 'nouveautes' | 'reglement' | 'journal'
 
 export function NotifTabs({ current }: { current: Section }) {
   const { sync } = useAppState()
-  const { rules, votes, playerId } = useRules()
+  const { rules, votes, playerId, now } = useRules()
   if (sync.mode !== 'shared') return null
   // « Règlement (2) »: the rules waiting for this phone's vote.
   const options = [
     { value: 'nouveautes', label: 'Nouveautés' },
-    { value: 'reglement', label: segmentLabel(pendingVotes(rules, votes, playerId)) },
+    { value: 'reglement', label: segmentLabel(pendingVotes(rules, votes, playerId, now)) },
     { value: 'journal', label: 'Journal' },
   ] as const satisfies readonly { value: Section; label: string }[]
   return (
