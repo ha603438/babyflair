@@ -63,7 +63,7 @@ function sectionOf(name: Route['name']): TabName {
   if (name === 'match' || name === 'match-edit') return 'match'
   if (name === 'historique' || name === 'match-detail') return 'historique'
   if (name === 'stats' || name === 'courbes' || name === 'top' || name === 'reglages') return 'stats'
-  if (name === 'journal') return 'nouveautes'
+  if (name === 'journal' || name === 'reglement') return 'nouveautes'
   if (name === 'nouveautes') return 'nouveautes'
   // classement, appel, joueurs, joueur, duo, comment-ca-marche
   return 'classement'

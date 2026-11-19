@@ -168,6 +168,7 @@ describe('TabBar', () => {
     expect(activeTab('reglages')).toBe(3)
     expect(activeTab('comment-ca-marche')).toBe(0)
     expect(activeTab('journal')).toBe(4)
+    expect(activeTab('reglement')).toBe(4)
   })
 
   it('keeps Classement active on the players list, a player profile and a duo page', () => {

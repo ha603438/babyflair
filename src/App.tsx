@@ -30,6 +30,9 @@ import { duoTitle } from './duo'
 import { unseenEntries } from './changelog'
 import { CodeGate } from './screens/CodeGate'
 import { Journal } from './screens/Journal'
+import { Reglement } from './screens/Reglement'
+import { pendingVotes, RULES_COPY } from './rules/rules'
+import { RulesProvider, useRules } from './rules/useRules'
 import { CallWatcher } from './calls/CallWatcher'
 import { JOURNAL_COPY } from './profile/journal'
 import { needsProfileChoice } from './profile/profile'
@@ -69,6 +72,8 @@ function Screen({ route }: { route: Route }): ReactNode {
       return <Nouveautes />
     case 'journal':
       return <Journal />
+    case 'reglement':
+      return <Reglement />
     case 'stats':
       return <Recap />
     case 'courbes':
@@ -148,6 +153,8 @@ function AppHeader({ route }: { route: Route }) {
       return <Header title="Nouveautés" onBrandDoubleTap={onBrandDoubleTap} />
     case 'journal':
       return <Header title={JOURNAL_COPY.title} onBrandDoubleTap={onBrandDoubleTap} />
+    case 'reglement':
+      return <Header title={RULES_COPY.title} onBrandDoubleTap={onBrandDoubleTap} />
     case 'stats':
     case 'courbes':
     case 'top':
@@ -164,7 +171,9 @@ function AppHeader({ route }: { route: Route }) {
 function AppShell() {
   const route = useRoute()
   const { store, draft, draftDispatch, toast, storageBlocked } = useAppState()
-  const newsBadge = unseenEntries(store.settings).length
+  const rules = useRules()
+  // The bell: unseen app news, plus the rules waiting for this phone's vote.
+  const newsBadge = unseenEntries(store.settings).length + pendingVotes(rules.rules, rules.votes, rules.playerId)
   const showToast = toast.show
   const mainRef = useRef<HTMLElement>(null)
 
@@ -234,7 +243,11 @@ function Root() {
   useProfilePush()
   if (isGateNeeded(sync.mode, store.settings.officeCode, sync.status)) return <CodeGate />
   if (needsProfileChoice(sync.mode, store.settings, store.players)) return <ProfileGate />
-  return <AppShell />
+  return (
+    <RulesProvider>
+      <AppShell />
+    </RulesProvider>
+  )
 }
 
 export default function App() {

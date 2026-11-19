@@ -1,4 +1,4 @@
-import { afterEach, describe, expect, it, vi } from 'vitest'
+import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest'
 import { createElement } from 'react'
 import type { ReactElement } from 'react'
 import { renderToString } from 'react-dom/server'
@@ -60,7 +60,14 @@ function renderApp(hash: string, store: Store): string {
   return renderToString(createElement(App))
 }
 
+// The fixtures are from mid-October: frozen a day later, or everybody turns inactive 30 days on and the Top 3 changes.
+beforeEach(() => {
+  vi.useFakeTimers({ toFake: ['Date'] })
+  vi.setSystemTime(new Date('2026-10-14T12:00:00.000Z'))
+})
+
 afterEach(() => {
+  vi.useRealTimers()
   vi.unstubAllGlobals()
 })
 

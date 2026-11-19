@@ -14,9 +14,12 @@ import {
   playerFromRow,
   playerToRow,
   RemoteError,
+  ruleToRow,
+  ruleVoteFromRow,
+  rulesFromRows,
   snapshotFromJson,
 } from './api'
-import type { CallRow, MatchEventRow } from './api'
+import type { CallRow, MatchEventRow, RuleRow } from './api'
 import { remoteConfigFrom } from './config'
 
 const config = { url: 'https://x.supabase.co', anonKey: 'anon-key' }
@@ -458,5 +461,67 @@ describe('createApi', () => {
       'unauthorized',
     )
     expect(await kindOf(api(() => ({ status: 200, body: [] })).fetchAll())).toBe('none')
+  })
+})
+
+describe('Règlement', () => {
+  const ruleRow: RuleRow = {
+    id: 'r1',
+    text: 'La pissette ne compte pas',
+    created_by: 'p1',
+    created_at: '2026-11-19T10:00:00+00:00',
+    rule_votes: [
+      { rule_id: 'r1', player_id: 'p1', vote: 'yes', voted_at: '2026-11-19T10:00:00+00:00' },
+      { rule_id: 'r1', player_id: 'p2', vote: 'no', voted_at: '2026-11-19T10:05:00+00:00' },
+      { rule_id: 'r1', player_id: 'p3', vote: 'maybe', voted_at: '2026-11-19T10:06:00+00:00' },
+    ],
+  }
+
+  it('maps the rules and their embedded votes, dropping a vote it cannot read', () => {
+    const { rules, votes } = rulesFromRows([ruleRow])
+    expect(rules).toEqual([
+      { id: 'r1', text: 'La pissette ne compte pas', createdBy: 'p1', createdAt: '2026-11-19T10:00:00.000Z' },
+    ])
+    expect(votes).toEqual([
+      { ruleId: 'r1', playerId: 'p1', vote: 'yes', votedAt: '2026-11-19T10:00:00.000Z' },
+      { ruleId: 'r1', playerId: 'p2', vote: 'no', votedAt: '2026-11-19T10:05:00.000Z' },
+    ])
+    expect(ruleVoteFromRow({ rule_id: 'r1', player_id: 'p3', vote: 'maybe', voted_at: 'x' })).toBeNull()
+    expect(ruleToRow(rules[0])).toEqual({
+      id: 'r1',
+      text: 'La pissette ne compte pas',
+      created_by: 'p1',
+      created_at: '2026-11-19T10:00:00.000Z',
+    })
+  })
+
+  it('reads every rule oldest first with its votes, writes rules, votes (upsert) and withdrawals', async () => {
+    const { fetch, calls } = fakeFetch((call) => {
+      if (call.method === 'GET') return { status: 200, body: [ruleRow] }
+      if (call.url.endsWith('/rules')) return { status: 201, body: [{ id: 'r2' }] }
+      return { status: 201 }
+    })
+    const api = createApi({ fetch, config, officeCode: 'secret', playerId: 'p1' })
+    const data = await api.fetchRules()
+    expect(data.rules).toHaveLength(1)
+    expect(calls[0].url).toBe('https://x.supabase.co/rest/v1/rules?select=*,rule_votes(*)&order=created_at.asc')
+    await api.insertRule({ id: 'r2', text: 'Gamelle = -1', createdBy: 'p1', createdAt: 'c' })
+    expect(calls[1]).toMatchObject({ method: 'POST', url: 'https://x.supabase.co/rest/v1/rules' })
+    await api.upsertRuleVote({ ruleId: 'r2', playerId: 'p1', vote: 'no', votedAt: 'v' })
+    expect(calls[2].url).toBe('https://x.supabase.co/rest/v1/rule_votes')
+    expect(calls[2].headers.Prefer).toBe('resolution=merge-duplicates,return=minimal')
+    expect(calls[2].body).toEqual({ rule_id: 'r2', player_id: 'p1', vote: 'no', voted_at: 'v' })
+    await api.deleteRule('r2')
+    expect(calls[3]).toMatchObject({ method: 'DELETE', url: 'https://x.supabase.co/rest/v1/rules?id=eq.r2' })
+  })
+
+  it('notifyRule calls the notify-rule function, the author endpoint excluded', async () => {
+    const { fetch, calls } = fakeFetch(() => ({ status: 200, body: { sent: 7, removed: 1 } }))
+    const api = createApi({ fetch, config, officeCode: 'secret', playerId: 'p1' })
+    expect(await api.notifyRule('r1', 'https://push/me')).toEqual({ sent: 7, removed: 1 })
+    expect(calls[0].url).toBe('https://x.supabase.co/functions/v1/notify-rule')
+    expect(calls[0].body).toEqual({ rule_id: 'r1', exclude_endpoint: 'https://push/me' })
+    await api.notifyRule('r1')
+    expect(calls[1].body).toEqual({ rule_id: 'r1' })
   })
 })

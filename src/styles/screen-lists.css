@@ -316,3 +316,146 @@
 .day-recap .recap-lines:empty {
   display: none;
 }
+
+/* ---------- Règlement (onglet de la cloche) ---------- */
+.rules-top {
+  padding-top: var(--s2);
+}
+
+.rules-hint {
+  margin-bottom: var(--s2);
+  font-size: var(--fs-caption);
+  line-height: 1.4;
+  color: var(--text-2);
+}
+
+.rule-form__input {
+  height: auto;
+  min-height: 96px;
+  padding-block: var(--s2);
+  resize: vertical;
+}
+
+.rule-form__count {
+  align-self: flex-end;
+  font-size: var(--fs-micro);
+  color: var(--text-3);
+  font-variant-numeric: tabular-nums;
+}
+
+.rules-list {
+  display: grid;
+  gap: var(--s3);
+}
+
+.rule {
+  display: flex;
+  flex-direction: column;
+  gap: var(--s2);
+  min-width: 0;
+}
+
+.rule--rejected {
+  opacity: 0.7;
+}
+
+/* « Article 3 »: the adopted rules are numbered, oldest first. */
+.rule__article {
+  font-size: var(--fs-micro);
+  font-weight: 700;
+  line-height: 1.4;
+  letter-spacing: 0.04em;
+  text-transform: uppercase;
+  color: var(--accent);
+}
+
+.rule__text {
+  font-size: var(--fs-body);
+  font-weight: 600;
+  line-height: 1.4;
+  overflow-wrap: anywhere;
+}
+
+.rule__byline,
+.rule__shares {
+  font-size: var(--fs-caption);
+  line-height: 1.4;
+  color: var(--text-2);
+  font-variant-numeric: tabular-nums;
+}
+
+.rule__shares {
+  display: flex;
+  flex-wrap: wrap;
+  justify-content: space-between;
+  column-gap: var(--s2);
+}
+
+.rule__votes {
+  color: var(--text-3);
+}
+
+/* « d'accord » green, « pas d'accord » red, in proportion; grey before the first vote. */
+.rule-bar {
+  display: flex;
+  gap: 2px;
+  height: 8px;
+  overflow: hidden;
+  border-radius: var(--r-pill);
+  background: var(--surface-2);
+}
+
+.rule-bar__yes {
+  background: var(--pos);
+}
+
+.rule-bar__no {
+  background: var(--neg);
+}
+
+.rule__actions {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: var(--s2);
+}
+
+.rule-vote {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 6px;
+  min-height: 44px;
+  padding: 0 var(--s2);
+  border: 1px solid var(--border);
+  border-radius: var(--r-md);
+  background: var(--surface);
+  color: var(--text-2);
+  font-size: var(--fs-label);
+  font-weight: 600;
+  transition: background-color var(--t-fast), border-color var(--t-fast), color var(--t-fast);
+}
+
+.rule-vote:active {
+  transform: scale(0.98);
+}
+
+.rule-vote--yes.is-pressed {
+  border-color: var(--pos);
+  background: color-mix(in srgb, var(--pos) 14%, var(--surface));
+  color: var(--pos);
+}
+
+.rule-vote--no.is-pressed {
+  border-color: var(--neg);
+  background: color-mix(in srgb, var(--neg) 14%, var(--surface));
+  color: var(--neg);
+}
+
+.rule__withdraw {
+  align-self: flex-start;
+  min-height: 32px;
+  font-size: var(--fs-caption);
+  font-weight: 600;
+  color: var(--text-3);
+  text-decoration: underline;
+}

@@ -154,6 +154,14 @@ const SECTIONS: Section[] = [
       'changer d’avis tant qu’il reste ouvert. Sans 4 joueurs au bout de 5 minutes, l’appel est annulé.',
   },
   {
+    title: 'Le règlement du bureau',
+    text:
+      `Les règles du baby (pissette, gamelle, demi…) se votent sous la cloche, onglet «${NNBSP}Règlement${NNBSP}». ` +
+      `Chacun peut proposer une règle, les autres reçoivent une notification et votent d’accord ou pas d’accord. ` +
+      `Une règle est adoptée dès 4 votes si plus de la moitié est d’accord, rejetée sinon, et chacun peut changer ` +
+      `d’avis à tout moment. L’auteur peut retirer sa règle.`,
+  },
+  {
     title: 'Tes données',
     text: 'Tout reste sur cet appareil. Exporte régulièrement depuis Réglages pour garder une copie.',
   },

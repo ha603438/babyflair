@@ -22,6 +22,8 @@ export type Route =
   | { name: 'top' }
   /** Réglages › Journal des modifications (mode partagé). */
   | { name: 'journal' }
+  /** Bell tab, « Règlement » segment (mode partagé): the office rules and their votes (src/rules/rules.ts). */
+  | { name: 'reglement' }
   /** Notification click target: Classement with the call's modal open (src/calls/CallWatcher.tsx). */
   | { name: 'appel'; id: string }
 
@@ -70,7 +72,15 @@ function parseAppel(segments: string[]): Route {
   return HOME
 }
 
-type SimpleName = 'reglages' | 'comment-ca-marche' | 'nouveautes' | 'journal' | 'stats' | 'courbes' | 'top'
+type SimpleName =
+  | 'reglages'
+  | 'comment-ca-marche'
+  | 'nouveautes'
+  | 'journal'
+  | 'reglement'
+  | 'stats'
+  | 'courbes'
+  | 'top'
 
 function parseSimple(segments: string[], name: SimpleName): Route {
   if (segments.length === 1) return { name }
@@ -101,6 +111,8 @@ export function parseHash(hash: string): Route {
       return parseSimple(segments, 'nouveautes')
     case 'journal':
       return parseSimple(segments, 'journal')
+    case 'reglement':
+      return parseSimple(segments, 'reglement')
     case 'stats':
       return parseSimple(segments, 'stats')
     case 'courbes':
@@ -144,6 +156,8 @@ export function hrefOf(route: Route): string {
       return '#/nouveautes'
     case 'journal':
       return '#/journal'
+    case 'reglement':
+      return '#/reglement'
     case 'stats':
       return '#/stats'
     case 'courbes':

@@ -87,6 +87,14 @@ export type Call = {
 /** « Chauuud 🔥 » = 'in' (takes one of the 4 places), « Non je fais semblant de bosser » = 'out'. */
 export type CallResponse = 'in' | 'out'
 
+// Règlement (mode partagé): a rule proposed by a player, voted « d'accord » ('yes') / « pas d'accord » ('no') by each
+// player, once, changeable at any time (docs/supabase/rules.sql).
+
+export type Rule = { id: string; text: string; createdBy: PlayerId; createdAt: string }
+export type RuleVoteValue = 'yes' | 'no'
+/** `votedAt`: the time of the latest vote (a change of mind replaces the row). */
+export type RuleVote = { ruleId: string; playerId: PlayerId; vote: RuleVoteValue; votedAt: string }
+
 /** One answer to a call. `joinedAt` is the time of the latest answer (a change of mind replaces the row). */
 export type CallPlayer = { callId: string; playerId: PlayerId; joinedAt: string; response: CallResponse }
 

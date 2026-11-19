@@ -6,6 +6,18 @@ export type ChangelogEntry = { id: string; date: string; title: string; items: s
 
 export const CHANGELOG: ChangelogEntry[] = [
   {
+    id: '2026-11-19-1',
+    date: '2026-11-19',
+    title: 'Le règlement du bureau',
+    items: [
+      'Sous la cloche, l’onglet «\u202FRèglement\u202F»\u202F: chacun peut proposer une règle (pissette, gamelle…), ' +
+        'les autres reçoivent une notification et votent d’accord ou pas d’accord.',
+      'Chaque règle affiche son pourcentage d’accord. Elle est adoptée dès 4 votes si plus de la moitié est ' +
+        'd’accord, et chacun peut changer d’avis à tout moment.',
+      'La cloche compte les règles qui attendent ton vote.',
+    ],
+  },
+  {
     id: '2026-11-05-1',
     date: '2026-11-05',
     title: 'Récap du jour sur les fiches',

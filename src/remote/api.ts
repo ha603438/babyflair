@@ -4,7 +4,18 @@
 import { readPhotoUrl } from '../avatar'
 import { readBet } from '../bets'
 import { parseCallResponse } from '../calls/calls'
-import type { Call, CallPlayer, Match, MatchEvent, MatchEventAction, MatchSnapshot, Player, Target } from '../types'
+import type {
+  Call,
+  CallPlayer,
+  Match,
+  MatchEvent,
+  MatchEventAction,
+  MatchSnapshot,
+  Player,
+  Rule,
+  RuleVote,
+  Target,
+} from '../types'
 import type { RemoteConfig } from './config'
 
 export type RemoteErrorKind = 'unauthorized' | 'network' | 'server'
@@ -27,6 +38,7 @@ export type ApiDeps = { fetch: FetchLike; config: RemoteConfig; officeCode: stri
 
 export type RemoteData = { players: Player[]; matches: Match[]; calls: Call[]; callPlayers: CallPlayer[] }
 export type CallsData = { calls: Call[]; callPlayers: CallPlayer[] }
+export type RulesData = { rules: Rule[]; votes: RuleVote[] }
 
 /** What the browser's PushSubscription boils down to (src/calls/push.ts); `playerId` is « Qui es-tu ? » or null. */
 export type PushSubscriptionInput = { endpoint: string; p256dh: string; auth: string; playerId: string | null }
@@ -58,6 +70,15 @@ export type RemoteApi = {
   replaceAll(players: Player[], matches: Match[]): Promise<void>
   /** Journal des modifications: the newest match_events first. */
   fetchMatchEvents(limit?: number): Promise<MatchEvent[]>
+  /** Règlement: every rule, oldest first, with its votes. */
+  fetchRules(): Promise<RulesData>
+  insertRule(rule: Rule): Promise<void>
+  /** Withdrawn by its author; its votes go with it (on delete cascade). */
+  deleteRule(id: string): Promise<void>
+  /** A vote, inserted or replacing the player's previous one on that rule. */
+  upsertRuleVote(vote: RuleVote): Promise<void>
+  /** Edge function notify-rule: Web Push « X propose une règle » to every subscribed phone but the author's. */
+  notifyRule(ruleId: string, excludeEndpoint?: string | null): Promise<NotifyResult>
 }
 
 // ---------------------------------------------------------------------------
@@ -287,6 +308,49 @@ export function callPlayerToRow(callPlayer: CallPlayer): CallPlayerRow {
   }
 }
 
+export type RuleVoteRow = { rule_id: string; player_id: string; vote: string; voted_at: string }
+
+export type RuleRow = {
+  id: string
+  text: string
+  created_by: string
+  created_at: string
+  /** Embedded by `select=*,rule_votes(*)`. */
+  rule_votes?: RuleVoteRow[]
+}
+
+export function ruleFromRow(row: RuleRow): Rule {
+  return { id: row.id, text: row.text, createdBy: row.created_by, createdAt: toIso(row.created_at) }
+}
+
+export function ruleToRow(rule: Rule): RuleRow {
+  return { id: rule.id, text: rule.text, created_by: rule.createdBy, created_at: rule.createdAt }
+}
+
+/** null for a vote the app cannot read (anything but 'yes' / 'no'). */
+export function ruleVoteFromRow(row: RuleVoteRow): RuleVote | null {
+  if (row.vote !== 'yes' && row.vote !== 'no') return null
+  return { ruleId: row.rule_id, playerId: row.player_id, vote: row.vote, votedAt: toIso(row.voted_at) }
+}
+
+export function ruleVoteToRow(vote: RuleVote): RuleVoteRow {
+  return { rule_id: vote.ruleId, player_id: vote.playerId, vote: vote.vote, voted_at: vote.votedAt }
+}
+
+/** Flattens the embedded rule_votes of each rule row into the two app arrays. */
+export function rulesFromRows(rows: RuleRow[]): RulesData {
+  const rules: Rule[] = []
+  const votes: RuleVote[] = []
+  for (const row of rows) {
+    rules.push(ruleFromRow(row))
+    for (const voteRow of row.rule_votes ?? []) {
+      const vote = ruleVoteFromRow(voteRow)
+      if (vote !== null) votes.push(vote)
+    }
+  }
+  return { rules, votes }
+}
+
 /** Flattens the embedded call_players of each call row into the two app arrays. */
 export function callsFromRows(rows: CallRow[]): CallsData {
   const calls: Call[] = []
@@ -375,6 +439,13 @@ async function sendDelete(deps: ApiDeps, path: string): Promise<void> {
   await send(deps, 'DELETE', path)
 }
 
+function notifyResultOf(data: unknown): NotifyResult {
+  const record = (data ?? {}) as { sent?: unknown; removed?: unknown }
+  const sent = typeof record.sent === 'number' ? record.sent : 0
+  const removed = typeof record.removed === 'number' ? record.removed : 0
+  return { sent, removed }
+}
+
 function rowsOf<T>(data: unknown): T[] {
   if (!Array.isArray(data)) return []
   return data as T[]
@@ -451,11 +522,12 @@ export function createApi(deps: ApiDeps): RemoteApi {
 
   async function notifyCall(callId: string, excludeEndpoint?: string | null): Promise<NotifyResult> {
     const body = excludeEndpoint ? { call_id: callId, exclude_endpoint: excludeEndpoint } : { call_id: callId }
-    const data = await invoke(deps, 'notify-call', body)
-    const record = (data ?? {}) as { sent?: unknown; removed?: unknown }
-    const sent = typeof record.sent === 'number' ? record.sent : 0
-    const removed = typeof record.removed === 'number' ? record.removed : 0
-    return { sent, removed }
+    return notifyResultOf(await invoke(deps, 'notify-call', body))
+  }
+
+  async function notifyRule(ruleId: string, excludeEndpoint?: string | null): Promise<NotifyResult> {
+    const body = excludeEndpoint ? { rule_id: ruleId, exclude_endpoint: excludeEndpoint } : { rule_id: ruleId }
+    return notifyResultOf(await invoke(deps, 'notify-rule', body))
   }
 
   async function insertPlayer(player: Player): Promise<void> {
@@ -520,6 +592,23 @@ export function createApi(deps: ApiDeps): RemoteApi {
     return events
   }
 
+  async function fetchRules(): Promise<RulesData> {
+    return rulesFromRows(rowsOf<RuleRow>(await send(deps, 'GET', 'rules?select=*,rule_votes(*)&order=created_at.asc')))
+  }
+
+  async function insertRule(rule: Rule): Promise<void> {
+    await sendWrite(deps, 'POST', 'rules', ruleToRow(rule))
+  }
+
+  async function deleteRule(id: string): Promise<void> {
+    await sendDelete(deps, `rules?id=eq.${id}`)
+  }
+
+  // Upsert on the primary key (rule_id, player_id), like upsertCallPlayer: a change of mind replaces the vote.
+  async function upsertRuleVote(vote: RuleVote): Promise<void> {
+    await send(deps, 'POST', 'rule_votes', ruleVoteToRow(vote), 'resolution=merge-duplicates,return=minimal')
+  }
+
   return {
     probeCode,
     fetchAll,
@@ -540,5 +629,10 @@ export function createApi(deps: ApiDeps): RemoteApi {
     restoreMatch,
     replaceAll,
     fetchMatchEvents,
+    fetchRules,
+    insertRule,
+    deleteRule,
+    upsertRuleVote,
+    notifyRule,
   }
 }
