@@ -85,6 +85,11 @@ describe('Règlement screen', () => {
     expect(html.match(/class="rule-vote rule-vote--yes is-pressed" aria-pressed="true"/g)).toHaveLength(1)
     expect(html.match(/class="rule__withdraw"/g)).toHaveLength(1)
     expect(html).not.toContain('Rejetées')
+    // Who voted what, under each rule: r1 has both sides, r2 only Alice's « d'accord ».
+    expect(html).toContain('<span class="rule__voters-emoji" aria-hidden="true">👍</span>D’accord</span> Alice, Bob, Chloe</li>')
+    expect(html).toContain('<span class="rule__voters-emoji" aria-hidden="true">👎</span>Pas d’accord</span> Dan</li>')
+    expect(html.match(/rule__voters-line--yes/g)).toHaveLength(2)
+    expect(html.match(/rule__voters-line--no/g)).toHaveLength(1)
   })
 
   it('invites the first proposal when there is none, and says so in local mode', () => {

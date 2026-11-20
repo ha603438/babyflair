@@ -6,6 +6,12 @@ export type ChangelogEntry = { id: string; date: string; title: string; items: s
 
 export const CHANGELOG: ChangelogEntry[] = [
   {
+    id: '2026-11-20-1',
+    date: '2026-11-20',
+    title: 'Votes à visage découvert',
+    items: ['Dans le Règlement, chaque règle affiche qui est d’accord et qui ne l’est pas, votes déjà faits compris.'],
+  },
+  {
     id: '2026-11-19-2',
     date: '2026-11-19',
     title: 'Le règlement du bureau',

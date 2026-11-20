@@ -15,6 +15,8 @@ import {
   sharesText,
   statusOf,
   tallyOf,
+  votersOf,
+  votersText,
   votesText,
   withVote,
 } from './rules'
@@ -110,6 +112,16 @@ describe('sections and badge', () => {
     expect(sections.voting[0].mine).toBe('no')
     expect(sections.voting[1].mine).toBeNull()
     expect(ruleSections(rules, votes, undefined, now).adopted[0].mine).toBeNull()
+    expect(sections.adopted[0].voters).toEqual({ yes: ['a', 'b'], no: ['c'] })
+  })
+
+  it('lists who voted what, names in alphabetical order', () => {
+    expect(votersOf('open', votes)).toEqual({ yes: ['bob'], no: ['a'] })
+    expect(votersOf('nothing', votes)).toEqual({ yes: [], no: [] })
+    const names = new Map<string, Player>(
+      [['z', 'Zoé'], ['e', 'Émile'], ['b', 'bob']].map(([id, name]) => [id, { id, name, isGuest: false, createdAt: 'x' }]),
+    )
+    expect(votersText(['z', 'e', 'b', 'gone'], names)).toBe('ancien joueur, bob, Émile, Zoé')
   })
 
   it('counts the open rules waiting for this player’s vote (none for a visitor)', () => {

@@ -18,6 +18,7 @@ import {
   ruleTextError,
   RULES_COPY,
   sharesText,
+  votersText,
   votesText,
 } from '../rules/rules'
 import type { RuleLine, RuleStatus } from '../rules/rules'
@@ -162,6 +163,7 @@ function RuleCard({ line, players, now, isAuthor, onVote, onWithdraw }: CardProp
         {shares !== null && <span>{shares}</span>}
         <span className="rule__votes">{votesText(line, now)}</span>
       </p>
+      <VoterLines line={line} players={players} />
       <Actions line={line} onVote={onVote} />
       {isAuthor && line.open && (
         <button type="button" className="rule__withdraw" onClick={onWithdraw}>
@@ -169,6 +171,32 @@ function RuleCard({ line, players, now, isAuthor, onVote, onWithdraw }: CardProp
         </button>
       )}
     </article>
+  )
+}
+
+function VoterLine({ value, ids, players }: { value: RuleVoteValue; ids: PlayerId[]; players: Players }) {
+  if (ids.length === 0) return null
+  return (
+    <li className={`rule__voters-line rule__voters-line--${value}`}>
+      <span className="rule__voters-label">
+        <span className="rule__voters-emoji" aria-hidden="true">
+          {value === 'yes' ? '👍' : '👎'}
+        </span>
+        {value === 'yes' ? RULES_COPY.yes : RULES_COPY.no}
+      </span>{' '}
+      {votersText(ids, players)}
+    </li>
+  )
+}
+
+/** Who voted what, one line per side (votes are public). */
+function VoterLines({ line, players }: { line: RuleLine; players: Players }) {
+  if (line.tally.total === 0) return null
+  return (
+    <ul className="rule__voters">
+      <VoterLine value="yes" ids={line.voters.yes} players={players} />
+      <VoterLine value="no" ids={line.voters.no} players={players} />
+    </ul>
   )
 }
 

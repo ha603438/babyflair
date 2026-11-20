@@ -160,7 +160,8 @@ const SECTIONS: Section[] = [
       `Chacun peut proposer une règle, les autres reçoivent une notification et votent d’accord ou pas d’accord. ` +
       `Le vote dure une semaine et chacun peut changer d’avis jusque-là. À la fin, la majorité l’emporte : plus ` +
       `de d’accord que de pas d’accord, la règle est adoptée, sinon (égalité comprise) elle est rejetée. Pendant ` +
-      `la semaine, l’auteur peut retirer sa règle.`,
+      `la semaine, l’auteur peut retirer sa règle. Les votes sont publics : chaque règle affiche qui est d’accord ` +
+      `et qui ne l’est pas.`,
   },
   {
     title: 'Tes données',

@@ -26,9 +26,13 @@ export type RuleLine = {
   deadline: string
   /** This phone's player vote; null when he has not voted (or for a visitor). */
   mine: RuleVoteValue | null
+  /** Who voted what: votes are public, shown under the shares. */
+  voters: Voters
   /** « Article 3 » in the adopted rules (oldest first), null elsewhere. */
   article: number | null
 }
+
+export type Voters = { yes: PlayerId[]; no: PlayerId[] }
 
 export type RuleSections = { adopted: RuleLine[]; voting: RuleLine[]; rejected: RuleLine[] }
 
@@ -127,6 +131,14 @@ function mineOf(ruleId: string, votes: RuleVote[], playerId: PlayerId | undefine
   return votes.find((vote) => vote.ruleId === ruleId && vote.playerId === playerId)?.vote ?? null
 }
 
+export function votersOf(ruleId: string, votes: RuleVote[]): Voters {
+  const voters: Voters = { yes: [], no: [] }
+  for (const vote of votes) {
+    if (vote.ruleId === ruleId) voters[vote.vote].push(vote.playerId)
+  }
+  return voters
+}
+
 /** Open rules this player has not voted on yet: the bell badge (0 for a visitor). */
 export function pendingVotes(rules: Rule[], votes: RuleVote[], playerId: PlayerId | undefined, now: Date): number {
   if (playerId === undefined) return 0
@@ -153,6 +165,7 @@ export function ruleSections(
       open: tally.status === 'voting',
       deadline: new Date(deadlineOf(rule)).toISOString(),
       mine: mineOf(rule.id, votes, playerId),
+      voters: votersOf(rule.id, votes),
       article: null,
     })
   }
@@ -203,6 +216,14 @@ export function votesText(line: Pick<RuleLine, 'tally' | 'open' | 'deadline'>, n
   if (left <= 0) return `${count} · dernier jour de vote`
   if (left === 1) return `${count} · vote ouvert jusqu’à demain`
   return `${count} · vote ouvert jusqu’au ${day}`
+}
+
+/** « Alice, Bob, Chloé »: the voters of one side, alphabetical; a deleted player reads « ancien joueur ». */
+export function votersText(ids: PlayerId[], players: ReadonlyMap<PlayerId, Player>): string {
+  return ids
+    .map((id) => players.get(id)?.name ?? 'ancien joueur')
+    .sort((a, b) => a.localeCompare(b, 'fr', { sensitivity: 'base' }))
+    .join(', ')
 }
 
 /** « Ton vote : d'accord » under a closed rule; null when he did not vote. */

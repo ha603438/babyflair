@@ -466,3 +466,31 @@
   line-height: 1.4;
   color: var(--text-2);
 }
+
+/* Who voted what: « 👍 D'accord Alice, Bob », « 👎 Pas d'accord Chloé ». */
+.rule__voters {
+  display: grid;
+  gap: 2px;
+  padding: 0;
+  list-style: none;
+  font-size: var(--fs-caption);
+  line-height: 1.4;
+  color: var(--text-2);
+  overflow-wrap: anywhere;
+}
+
+.rule__voters-label {
+  font-weight: 600;
+}
+
+.rule__voters-emoji {
+  margin-right: 4px;
+}
+
+.rule__voters-line--yes .rule__voters-label {
+  color: var(--pos);
+}
+
+.rule__voters-line--no .rule__voters-label {
+  color: var(--neg);
+}
